@@ -1,0 +1,8 @@
+{
+  "name": "SpotCam",
+  "description": "A web-based camera application that overlays real-time date, time, and geolocation data onto your photos. Capture, save, and share your moments with contextual information baked right in. Manages a local gallery of your most recent snapshots.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
