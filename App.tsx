@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { CameraView } from './components/CameraView';
 import { GalleryView } from './components/GalleryView';
 import { CapturedPhoto } from './types';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { usePersistedPhotos } from './hooks/usePersistedPhotos';
 
 // Define the possible views the application can be in.
 type View = 'camera' | 'gallery';
@@ -21,9 +21,9 @@ const App: React.FC = () => {
   // State to manage the current active view. Defaults to 'camera'.
   const [view, setView] = useState<View>('camera');
   
-  // Custom hook to manage the photos array, persisting it to localStorage.
-  // 'spotcam-photos' is the key used in localStorage.
-  const [photos, setPhotos] = useLocalStorage<CapturedPhoto[]>('spotcam-photos', []);
+  // Custom hook to manage the photos array, persisting it to IndexedDB.
+  
+  const [photos, setPhotos] = usePersistedPhotos();
 
   /**
    * Adds a new photo to the beginning of the photos array.

@@ -1,20 +1,20 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# SpotCam
 
-# Run and deploy your AI Studio app
+A web camera app that stamps date, time and location onto your photos. Fully client-side: photos never leave your browser.
 
-This contains everything you need to run your app locally.
+Live site: https://gnanaswaroop.github.io/Spot-Cam/
 
-View your app in AI Studio: https://ai.studio/apps/2846e06e-ed85-4eef-8305-a13a7f320ab4
+## Run locally
 
-## Run Locally
+Prerequisites: Node.js 22+
 
-**Prerequisites:**  Node.js
+```
+npm install
+npm run dev
+```
 
+## Deploy
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Pushes to `main` build and deploy automatically to GitHub Pages via `.github/workflows/deploy.yml`.
+One-time setup: repo Settings → Pages → Source → **GitHub Actions**.
+(GitHub Pages on a private repo requires a paid GitHub plan.)
