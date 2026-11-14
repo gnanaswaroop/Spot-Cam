@@ -44,6 +44,7 @@ The screenshots come from the real built site and can be regenerated with `npm r
 | `/` or `/home` | Landing page with a sample photo |
 | `/cam` | Camera. Asks for camera and location if they haven't been granted yet |
 | `/gallery` | Gallery |
+| `/privacy` | Privacy policy |
 
 GitHub Pages is static hosting, so the build emits a real `index.html` for each route plus a `404.html` that falls back to the landing page (see `spaRoutes` in `vite.config.ts`).
 
@@ -99,6 +100,7 @@ docs/         Architecture guide and README screenshots
 ## Docs
 
 - [DOCUMENTATION.md](DOCUMENTATION.md): user guide, how to use SpotCam
+- [Privacy policy](https://spotcam.in/privacy): what SpotCam does with your data (source: `components/PrivacyView.tsx`)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the code works and where things live
 
 ## License

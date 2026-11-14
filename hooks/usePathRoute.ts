@@ -4,6 +4,7 @@
  *   /  or  /home  -> landing
  *   /cam          -> camera (permissions are requested on load)
  *   /gallery      -> gallery
+ *   /privacy      -> privacy policy
  *
  * (Paths are relative to Vite's BASE_URL: '/' on the custom domain, '/Spot-Cam/' on a project site.)
  *
@@ -13,7 +14,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-export type View = 'landing' | 'camera' | 'gallery';
+export type View = 'landing' | 'camera' | 'gallery' | 'privacy';
 
 // BASE_URL is '/' (or e.g. '/Spot-Cam/'); drop its trailing slash so we can slice it off pathnames.
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -22,12 +23,14 @@ const PATHS: Record<View, string> = {
   landing: '/',
   camera: '/cam',
   gallery: '/gallery',
+  privacy: '/privacy',
 };
 
 export const parsePath = (pathname: string): View => {
   const route = (pathname.startsWith(BASE) ? pathname.slice(BASE.length) : pathname).replace(/^\/+|\/+$/g, '');
   if (route === 'cam') return 'camera';
   if (route === 'gallery') return 'gallery';
+  if (route === 'privacy') return 'privacy';
   return 'landing'; // '', 'home' and anything unknown
 };
 

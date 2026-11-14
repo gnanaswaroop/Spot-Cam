@@ -37,6 +37,7 @@ components/
   CameraView.tsx        Live camera, stamp overlay, capture, permission handling
   GalleryView.tsx       Photo grid, photo viewer, delete confirmation
   PermissionNotice.tsx  "We need this permission" message + browser-specific steps
+  PrivacyView.tsx       The privacy policy page (keep it true to what the code does)
   icons.tsx             Inline SVG icons
 
 hooks/
@@ -68,10 +69,11 @@ vite.config.ts          Plugins, base path, per-route page generation
 | `/` or `/home` (and any unknown path) | Landing |
 | `/cam` | Camera |
 | `/gallery` | Gallery |
+| `/privacy` | Privacy policy (a scrollable document page) |
 
 `App.tsx` renders exactly one view. Navigation calls `history.pushState`, so the browser's Back and Forward work.
 
-**Why real pages per route:** GitHub Pages is static hosting and cannot rewrite `/cam` to the app. The `spaRoutes` plugin in `vite.config.ts` copies the built `index.html` to `dist/home/`, `dist/cam/`, `dist/gallery/` and `dist/404.html` (unknown paths show the landing page). A direct visit or refresh of `/cam` therefore works.
+**Why real pages per route:** GitHub Pages is static hosting and cannot rewrite `/cam` to the app. The `spaRoutes` plugin in `vite.config.ts` copies the built `index.html` to `dist/home/`, `dist/cam/`, `dist/gallery/`, `dist/privacy/` and `dist/404.html` (unknown paths show the landing page). A direct visit or refresh of `/cam` therefore works.
 
 **Base path:** `base` is `/` for the custom domain. Set `BASE_PATH=/Spot-Cam/` to build for a plain `github.io/<repo>/` site. Router and asset URLs read Vite's `BASE_URL`, so both work.
 
@@ -171,6 +173,7 @@ Playwright end-to-end tests live in `e2e/` and run against the **production buil
 
 | File | What it covers |
 | --- | --- |
+| `privacy.spec.ts` | The policy page opens directly, is linked from the landing page, and matches what the app does |
 | `routes.spec.ts` | Every route, Start Cam and Back, landing page fits without scrolling, sample viewer |
 | `permissions.spec.ts` | Granted, blocked (soft and hard), recovery, per-browser steps. Mocked in-page, so identical in all engines |
 | `chromium-native.spec.ts` | Real Chromium permission prompts (the only engine Playwright can drive natively) |
@@ -188,7 +191,11 @@ Playwright end-to-end tests live in `e2e/` and run against the **production buil
 - **Comments** explain *why* (browser quirks, permission behaviour), not what the code says.
 - **Where things go:** UI in `components/`, behaviour in `hooks/`, pure helpers in `utils/`, tests in `e2e/`.
 
-## 15. Known limits and ideas
+## 15. Privacy policy
+
+The policy lives in `components/PrivacyView.tsx` and is served at `/privacy`. It describes what the code really does: the camera and location are used on-device, photos stay in IndexedDB, and **the only data that leaves the device is the coordinates sent to OpenStreetMap Nominatim** for the address lookup. **Keep it in step with the code:** if you add analytics, uploads, cookies or change the geocoder, update the page text and `PRIVACY_LAST_UPDATED`. The test in `privacy.spec.ts` checks for the key statements.
+
+## 16. Known limits and ideas
 
 - No service worker, so no offline use or install prompt control yet.
 - Public Nominatim is fine for light use only.

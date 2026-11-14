@@ -32,13 +32,14 @@ const shareSample = async () => {
 
 interface LandingViewProps {
   onStart: () => void;
+  onPrivacy: () => void;
 }
 
 export const TAGLINE = 'Spot it. Snap it. Stamp it.';
 
 const FEATURES = ['Date & time', 'GPS & address', 'Stays on your device'];
 
-export const LandingView: React.FC<LandingViewProps> = ({ onStart }) => {
+export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) => {
   // The sample viewer owns a history entry, so the Back gesture closes it instead of leaving the page.
   const [sample, openSample, closeSample] = useHistoryOverlay<true>('sample');
   const showSample = sample !== null;
@@ -69,7 +70,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart }) => {
 
           {/* Desktop call to action (mobile one sits under the sample) */}
           <div className="hidden md:mt-10 md:block md:w-72">
-            <StartButton onStart={onStart} />
+            <StartButton onStart={onStart} onPrivacy={onPrivacy} />
           </div>
         </section>
 
@@ -93,7 +94,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart }) => {
 
         {/* Mobile call to action */}
         <div className="shrink-0 md:hidden">
-          <StartButton onStart={onStart} />
+          <StartButton onStart={onStart} onPrivacy={onPrivacy} />
         </div>
       </main>
 
@@ -123,7 +124,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart }) => {
   );
 };
 
-const StartButton = ({ onStart }: { onStart: () => void }) => (
+const StartButton = ({ onStart, onPrivacy }: { onStart: () => void; onPrivacy: () => void }) => (
   <div className="text-center">
     <button
       onClick={onStart}
@@ -131,6 +132,19 @@ const StartButton = ({ onStart }: { onStart: () => void }) => (
     >
       Start Cam
     </button>
-    <p className="mt-2 text-xs text-gray-500">Camera and location access required</p>
+    <p className="mt-2 text-xs text-gray-400">
+      Camera and location access required
+      <span aria-hidden="true"> · </span>
+      <a
+        href={`${import.meta.env.BASE_URL}privacy`}
+        onClick={e => {
+          e.preventDefault();
+          onPrivacy();
+        }}
+        className="underline hover:text-gray-200"
+      >
+        Privacy
+      </a>
+    </p>
   </div>
 );

@@ -32,7 +32,7 @@ export default defineConfig({
     host: '0.0.0.0',
   },
   // basicSsl: self-signed HTTPS for the dev server so phones can use camera/geolocation.
-  plugins: [react(), tailwindcss(), basicSsl(), spaRoutes(['home', 'cam', 'gallery'])],
+  plugins: [react(), tailwindcss(), basicSsl(), spaRoutes(['home', 'cam', 'gallery', 'privacy'])],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),

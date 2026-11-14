@@ -7,6 +7,7 @@ import React from 'react';
 import { CameraView } from './components/CameraView';
 import { GalleryView } from './components/GalleryView';
 import { LandingView } from './components/LandingView';
+import { PrivacyView } from './components/PrivacyView';
 import { CapturedPhoto } from './types';
 import { usePersistedPhotos } from './hooks/usePersistedPhotos';
 import { usePathRoute } from './hooks/usePathRoute';
@@ -44,7 +45,8 @@ const App: React.FC = () => {
 
   return (
     <div className="w-full h-full bg-gray-900">
-      {view === 'landing' && <LandingView onStart={() => switchView('camera')} />}
+      {view === 'landing' && <LandingView onStart={() => switchView('camera')} onPrivacy={() => switchView('privacy')} />}
+      {view === 'privacy' && <PrivacyView onBack={() => switchView('landing')} />}
       {/* Conditionally render the CameraView */}
       {view === 'camera' && (
         <CameraView

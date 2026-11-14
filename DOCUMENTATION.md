@@ -84,6 +84,10 @@ Tap a photo to open it.
 
 ---
 
-## 5. Technical overview
+## 5. Privacy
+
+The full policy is at **https://spotcam.in/privacy** (also linked under the Start Cam button on the landing page).
+
+## 6. Technical overview
 
 SpotCam is a single-page React app that uses standard web APIs: `getUserMedia` (camera), the Geolocation API with `watchPosition` (location), an HTML `<canvas>` (drawing the stamp), IndexedDB (storage) and the Web Share API (sharing). The full explanation of how it fits together is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
