@@ -10,6 +10,7 @@ import { LandingView } from './components/LandingView';
 import { CapturedPhoto } from './types';
 import { usePersistedPhotos } from './hooks/usePersistedPhotos';
 import { usePathRoute } from './hooks/usePathRoute';
+import { useViewportHeight } from './hooks/useViewportHeight';
 
 /**
  * The main App component.
@@ -17,6 +18,8 @@ import { usePathRoute } from './hooks/usePathRoute';
  * and passing down photo data and event handlers.
  */
 const App: React.FC = () => {
+  // Track the visible viewport height so bottom controls are never hidden behind browser/system bars.
+  useViewportHeight();
   // Current view comes from the URL path (/, /cam, /gallery), so each page is bookmarkable.
   const [view, switchView] = usePathRoute();
   

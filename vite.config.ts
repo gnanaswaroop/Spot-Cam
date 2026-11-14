@@ -24,8 +24,9 @@ const spaRoutes = (routes: string[]): Plugin => ({
 });
 
 export default defineConfig({
-  // Served from https://<user>.github.io/Spot-Cam/ on GitHub Pages (path is case-sensitive).
-  base: '/Spot-Cam/',
+  // Served from the root of the custom domain (https://spotcam.in/).
+  // For a plain GitHub project site (https://<user>.github.io/Spot-Cam/) build with BASE_PATH=/Spot-Cam/.
+  base: process.env.BASE_PATH ?? '/',
   server: {
     port: 3000,
     host: '0.0.0.0',

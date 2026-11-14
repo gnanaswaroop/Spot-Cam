@@ -33,10 +33,12 @@ export const getEnableSteps = (what: PermissionName, ua?: string): string[] => {
         reload,
       ];
     case 'android':
+      // The site-info icon is not always shown at the left of the address bar, so lead with the menu.
       return [
-        'Tap the lock (or settings) icon at the left of the address bar.',
+        'Tap the ⋮ menu (top right), then tap the ⓘ (info) icon in the row at the top. If you see a lock or settings icon at the left of the address bar, you can tap that instead.',
         'Tap "Permissions".',
         `Switch ${what} to "Allow".`,
+        `Still blocked? Open your phone's Settings > Apps > your browser > Permissions and allow ${what} there.`,
         reload,
       ];
     case 'firefox':

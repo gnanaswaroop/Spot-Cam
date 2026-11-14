@@ -1,10 +1,29 @@
 @import "tailwindcss";
 
-html, body, #root {
+/* Visible viewport height: --app-height is kept in sync by useViewportHeight; dvh is the fallback. */
+.app-h {
+  height: 100%;
+  height: 100dvh;
+  height: var(--app-height, 100dvh);
+}
+
+html,
+body {
   margin: 0;
   padding: 0;
-  height: 100%;
   width: 100%;
+  height: 100%;
   overflow: hidden;
   background-color: #111827; /* gray-900 */
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow: hidden;
+  background-color: #111827;
+  height: 100%;
+  height: 100dvh;
+  height: var(--app-height, 100dvh);
 }

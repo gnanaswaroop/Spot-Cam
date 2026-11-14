@@ -2,11 +2,12 @@
  * @file Landing page shown first. Explains what SpotCam is and offers a one-tap start.
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { CloseIcon, ShareIcon } from './icons';
 import { dataURLtoFile } from '../utils/helpers';
+import { useHistoryOverlay } from '../hooks/useHistoryOverlay';
 
-// Bundled sample photo (public/sample.jpg). BASE_URL keeps it working under /Spot-Cam/ on GitHub Pages.
+// Bundled sample photo (public/sample.jpg). BASE_URL keeps it working whatever path the site is served from.
 const SAMPLE_URL = `${import.meta.env.BASE_URL}sample.jpg`;
 const SAMPLE_CAPTION = 'Taken on 14/11/2026, 18:42:10 at Champ de Mars, Paris, France (sample location).';
 
@@ -33,12 +34,16 @@ interface LandingViewProps {
   onStart: () => void;
 }
 
+export const TAGLINE = 'Spot it. Snap it. Stamp it.';
+
 const FEATURES = ['Date & time', 'GPS & address', 'Stays on your device'];
 
 export const LandingView: React.FC<LandingViewProps> = ({ onStart }) => {
-  const [showSample, setShowSample] = useState(false);
+  // The sample viewer owns a history entry, so the Back gesture closes it instead of leaving the page.
+  const [sample, openSample, closeSample] = useHistoryOverlay<true>('sample');
+  const showSample = sample !== null;
   return (
-    <div className="relative h-dvh w-full overflow-hidden bg-gray-950 text-white">
+    <div className="app-h relative w-full overflow-hidden bg-gray-950 text-white">
       {/* Soft background glow */}
       <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-blue-600/25 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-24 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl" />
@@ -50,7 +55,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart }) => {
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-11 w-11 md:h-14 md:w-14" />
             <h1 className="text-2xl font-semibold tracking-tight md:text-4xl">SpotCam</h1>
           </div>
-          <p className="mt-3 max-w-sm text-balance text-base text-gray-300 md:mt-6 md:text-xl">
+          <p className="mt-2 text-sm font-semibold tracking-wide text-blue-400 md:mt-4 md:text-lg">{TAGLINE}</p>
+          <p className="mt-2 max-w-sm text-balance text-base text-gray-300 md:mt-4 md:text-xl">
             A camera that stamps the <span className="text-white">date, time and location</span> onto every photo.
           </p>
           <ul className="mt-3 flex flex-wrap justify-center gap-2 md:mt-6 md:justify-start">
@@ -70,7 +76,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart }) => {
         {/* Sample photo: scales to the space left, so the page never scrolls */}
         <section className="flex min-h-0 justify-center md:flex-1 md:max-h-full">
           <button
-            onClick={() => setShowSample(true)}
+            onClick={() => openSample(true)}
             className="group relative inline-flex max-w-full"
             aria-label="View a sample photo"
           >
@@ -92,20 +98,22 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart }) => {
       </main>
 
       {showSample && (
-        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-black/90 p-4" role="dialog" aria-modal="true" aria-label="Sample photo">
-          <button onClick={() => setShowSample(false)} className="absolute right-4 top-4 rounded-full bg-gray-800 p-2 text-white hover:bg-gray-700" aria-label="Close sample">
+        <div className="app-h fixed inset-x-0 top-0 z-40 flex flex-col items-center bg-black/90 px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom))]" role="dialog" aria-modal="true" aria-label="Sample photo">
+          <button onClick={closeSample} className="absolute right-4 top-3 rounded-full bg-gray-800 p-2 text-white hover:bg-gray-700" aria-label="Close sample">
             <CloseIcon className="h-6 w-6" />
           </button>
-          <div className="flex max-h-[65vh] w-full max-w-4xl items-center justify-center">
+          <div className="flex min-h-0 w-full max-w-4xl flex-1 items-center justify-center">
             <img src={SAMPLE_URL} alt="Sample SpotCam photo" className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
           </div>
-          <div className="mt-4 max-w-xl text-center text-sm text-gray-300">
+          <div className="mt-3 max-w-xl shrink-0 text-center text-sm text-gray-300">
             <p>14/11/2026, 18:42:10</p>
-            <p>Lat: 48.85837, Lon: 2.29448</p>
-            <p className="mt-1 text-gray-400">Champ de Mars, Paris, France (sample location)</p>
-            <p className="mt-3 text-gray-500">This is what your photos will look like. Try sharing it.</p>
+            <div className="[@media(max-height:480px)]:hidden">
+              <p>Lat: 48.85837, Lon: 2.29448</p>
+              <p className="mt-1 text-gray-400">Champ de Mars, Paris, France (sample location)</p>
+              <p className="mt-3 text-gray-500">This is what your photos will look like. Try sharing it.</p>
+            </div>
           </div>
-          <button onClick={shareSample} className="mt-5 flex flex-col items-center text-white transition-colors hover:text-blue-400" aria-label="Share sample photo">
+          <button onClick={shareSample} className="mt-4 flex shrink-0 flex-col items-center text-white transition-colors hover:text-blue-400" aria-label="Share sample photo">
             <ShareIcon className="h-8 w-8" />
             <span className="mt-1 text-xs">Share</span>
           </button>

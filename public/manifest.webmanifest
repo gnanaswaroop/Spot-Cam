@@ -1,7 +1,7 @@
 {
   "name": "SpotCam",
   "short_name": "SpotCam",
-  "description": "A camera that stamps the date, time and location onto every photo.",
+  "description": "Spot it. Snap it. Stamp it. A camera that stamps the date, time and location onto every photo.",
   "start_url": "./cam",
   "scope": ".",
   "display": "standalone",

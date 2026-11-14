@@ -54,7 +54,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Why the camera failed: lets us show a specific, actionable message.
-  const [cameraIssue, setCameraIssue] = useState<'denied' | 'insecure' | 'notfound' | 'other' | null>(null);
+  const [cameraIssue, setCameraIssue] = useState<'denied' | 'insecure' | 'unsupported' | 'notfound' | 'other' | null>(null);
 
   // Custom hook for geolocation data
   const { location, error: geoError, permissionDenied: geoDenied, retry: retryGeo } = useGeolocation();
@@ -90,10 +90,10 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
     
     const initializeCamera = async () => {
         try {
-            // getUserMedia only exists in secure contexts (HTTPS or localhost).
+            // getUserMedia only exists in secure contexts (HTTPS or localhost), and in browsers that support it.
             if (!navigator.mediaDevices?.getUserMedia) {
-                setCameraIssue('insecure');
-                setError('Camera is unavailable on this connection.');
+                setCameraIssue(window.isSecureContext ? 'unsupported' : 'insecure');
+                setError('Camera is unavailable.');
                 return;
             }
             // Request camera access from the user
@@ -112,7 +112,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
             // Check for zoom capabilities on the video track
             const track = newStream.getVideoTracks()[0];
             if (track) {
-                const capabilities = track.getCapabilities();
+                const capabilities = track.getCapabilities?.() ?? {}; // not available in every browser
                 // 'zoom' is a non-standard capability, so check for its existence
                 if ('zoom' in capabilities && capabilities.zoom) {
                     const zoomCapability = capabilities.zoom as { min: number; max: number; step: number; };
@@ -296,12 +296,14 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
         <PermissionNotice
           title={
             cameraIssue === 'insecure' ? 'Secure connection required'
+            : cameraIssue === 'unsupported' ? 'Camera not supported'
             : cameraIssue === 'notfound' ? 'No camera found'
             : cameraIssue === 'denied' ? 'Camera access is blocked'
             : 'Camera unavailable'
           }
           message={
             cameraIssue === 'insecure' ? 'Browsers only allow camera and location on HTTPS pages. Open this site using an https:// address.'
+            : cameraIssue === 'unsupported' ? "This browser can't open the camera. Try the latest version of Chrome, Safari, Firefox or Edge."
             : cameraIssue === 'notfound' ? 'We could not find a usable camera on this device.'
             : cameraIssue === 'denied'
               ? (cameraPerm === 'denied'
