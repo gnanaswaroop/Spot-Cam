@@ -18,7 +18,7 @@ The app is built with privacy and convenience in mind. All captured photos are s
 - **Photo Management**: View, share, and delete individual photos directly from the gallery.
 - **Web Share API Integration**: Natively share your photos with other applications on your device, like social media, messaging apps, or cloud storage.
 - **Cross-Browser Compatibility**: Built using standard web APIs to ensure it works on modern mobile browsers like Chrome, Safari, and Firefox.
-- **Privacy First**: All photos and data are stored exclusively in your browser's `localStorage`. Nothing is uploaded to a server.
+- **Privacy First**: All photos and data are stored exclusively in your browser (IndexedDB). Nothing is uploaded to a server.
 
 ---
 
@@ -79,6 +79,6 @@ Tap on any photo thumbnail in the gallery grid to open it in a detailed modal vi
 - **Framework**: The app is built as a Single Page Application using **React**.
 - **Camera Access**: It uses the `navigator.mediaDevices.getUserMedia` Web API to access the device's camera stream.
 - **Geolocation**: It uses the `navigator.geolocation` API with `watchPosition` to get continuous, high-accuracy location updates. It also uses the free **OpenStreetMap Nominatim API** for reverse geocoding to convert GPS coordinates into a human-readable address.
-- **Local Storage**: The `localStorage` Web API is used to persist the captured photos. To prevent exceeding storage quotas, the gallery is capped at a maximum of 12 photos.
+- **Local Storage (IndexedDB)**: IndexedDB (via `idb-keyval`) is used to persist the captured photos. To keep storage bounded, the gallery is capped at a maximum of 12 photos.
 - **Image Processing**: The HTML `<canvas>` element is used to draw the video frame and the data overlay onto a new image when a photo is captured.
 - **Sharing**: The native **Web Share API** (`navigator.share`) is used for seamless integration with the device's sharing capabilities.
