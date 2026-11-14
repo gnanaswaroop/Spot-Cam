@@ -2,7 +2,8 @@
  * The camera page on a phone held sideways. The stamp and the control bar used to cover about half
  * of a 800x360 screen; now the controls sit in a side column and the stamp is compact.
  */
-import { Page, test, expect } from '@playwright/test';
+import { Page } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { SITE, installMocks, mockGeocoder, grantLocation } from './helpers';
 
 const SIZES = [
@@ -94,5 +95,20 @@ test.describe('camera page in landscape', () => {
     const box = (await action.boundingBox())!;
     expect(box.y).toBeGreaterThanOrEqual(0);
     expect(box.y + box.height).toBeLessThanOrEqual(320);
+  });
+
+  test('the "Address unavailable" line and its Retry button stay inside the compact stamp', async ({ page, context }) => {
+    await page.setViewportSize({ width: 568, height: 320 });
+    await installMocks(page, { camera: 'granted', location: 'granted' });
+    await grantLocation(context); // address services are blocked by default (fixtures.ts), so the lookup fails
+    await page.goto(`${SITE}/cam`);
+
+    const retry = page.getByRole('button', { name: 'Retry address lookup' });
+    await expect(retry).toBeVisible();
+    const stamp = (await page.getByTestId('stamp-overlay').boundingBox())!;
+    const box = (await retry.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(stamp.y + stamp.height + 1);
+    expect(box.x + box.width).toBeLessThanOrEqual(stamp.x + stamp.width);
+    expect(stamp.height).toBeLessThanOrEqual(320 * 0.34);
   });
 });
