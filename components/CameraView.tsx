@@ -5,8 +5,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { CapturedPhoto, GeolocationData } from '../types';
 import { useGeolocation } from '../hooks/useGeolocation';
+import { usePermissionState } from '../hooks/usePermissionState';
+import { PermissionNotice } from './PermissionNotice';
 import { GalleryIcon, SwitchCameraIcon } from './icons';
-import { FONT_FAMILY_MONO } from '../utils/constants';
+import { FONT_FAMILY_OVERLAY } from '../utils/constants';
 
 /** Props for the CameraView component. */
 interface CameraViewProps {
@@ -14,13 +16,20 @@ interface CameraViewProps {
   onCapture: (photo: CapturedPhoto) => void;
   /** Callback function to switch to the gallery view. */
   onSwitchView: () => void;
+  /** Callback to return to the landing page. */
+  onHome: () => void;
 }
 
 /**
  * A component that displays real-time data (date, time, location) as an overlay on the camera view.
  */
-const Overlay = ({ location, dateTime }: { location: GeolocationData | null; dateTime: string }) => (
-    <div className="absolute top-0 left-0 right-0 p-2 text-white text-center text-xs font-mono bg-black bg-opacity-50 backdrop-blur-sm" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.7)' }}>
+const Overlay = ({ location, dateTime, onHome }: { location: GeolocationData | null; dateTime: string; onHome: () => void }) => (
+    <div className="absolute top-0 left-0 right-0 px-3 py-2 text-white text-center text-sm font-semibold bg-black bg-opacity-55 backdrop-blur-sm" style={{ fontFamily: FONT_FAMILY_OVERLAY, textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
+        {/* Brand badge: lives inside the existing band so it costs no vertical space. Tap to go home. */}
+        <button onClick={onHome} className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-white/10 p-1 pr-1 hover:bg-white/20 sm:pr-2.5" aria-label="SpotCam home">
+            <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-6 w-6" />
+            <span className="hidden text-xs font-semibold tracking-tight sm:inline">SpotCam</span>
+        </button>
         <p>{dateTime}</p>
         {location ? (
             <>
@@ -36,7 +45,7 @@ const Overlay = ({ location, dateTime }: { location: GeolocationData | null; dat
 /**
  * The main component for the camera interface.
  */
-export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView }) => {
+export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView, onHome }) => {
   // Refs for video and canvas elements
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -44,9 +53,17 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView 
   // State for camera stream and errors
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Why the camera failed: lets us show a specific, actionable message.
+  const [cameraIssue, setCameraIssue] = useState<'denied' | 'insecure' | 'notfound' | 'other' | null>(null);
 
   // Custom hook for geolocation data
-  const { location, error: geoError } = useGeolocation();
+  const { location, error: geoError, permissionDenied: geoDenied, retry: retryGeo } = useGeolocation();
+
+  // Permissions API state (where supported); real API errors above are the fallback signal.
+  const cameraPerm = usePermissionState('camera');
+  const geoPerm = usePermissionState('geolocation');
+  const cameraBlocked = cameraIssue === 'denied' || cameraPerm === 'denied';
+  const locationBlocked = geoDenied || geoPerm === 'denied';
   
   // State for UI elements and effects
   const [dateTime, setDateTime] = useState(new Date().toLocaleString());
@@ -73,6 +90,12 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView 
     
     const initializeCamera = async () => {
         try {
+            // getUserMedia only exists in secure contexts (HTTPS or localhost).
+            if (!navigator.mediaDevices?.getUserMedia) {
+                setCameraIssue('insecure');
+                setError('Camera is unavailable on this connection.');
+                return;
+            }
             // Request camera access from the user
             const newStream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: currentFacingMode },
@@ -84,6 +107,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView 
                 videoRef.current.srcObject = newStream;
             }
             setError(null);
+            setCameraIssue(null);
 
             // Check for zoom capabilities on the video track
             const track = newStream.getVideoTracks()[0];
@@ -113,7 +137,15 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView 
 
         } catch (err) {
             console.error(err);
-            setError('Could not access camera. Please grant permission.');
+            const name = (err as DOMException)?.name;
+            if (name === 'NotAllowedError' || name === 'SecurityError') {
+                setCameraIssue('denied');
+            } else if (name === 'NotFoundError' || name === 'OverconstrainedError') {
+                setCameraIssue('notfound');
+            } else {
+                setCameraIssue('other');
+            }
+            setError('Could not access camera.');
             setHasMultipleCameras(false);
             setZoomCapabilities(null);
         }
@@ -133,6 +165,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView 
    * Handles the photo capture process.
    */
   const handleCapture = () => {
+    if (!canCapture) return;
     if (videoRef.current && canvasRef.current) {
         // Trigger a flash effect for user feedback
         setIsFlashing(true);
@@ -156,41 +189,52 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView 
         const overlayText2 = location ? `Lat: ${location.latitude.toFixed(5)}, Lon: ${location.longitude.toFixed(5)}` : 'Location not available';
         const overlayText3 = location?.address || '';
         
-        // Style and draw the overlay text onto the canvas
+        // Draw the stamp: bold sans text on a translucent dark band so it stays readable on any photo.
+        const pad = Math.round(videoWidth / 50);
+        const headSize = Math.round(videoWidth / 32);
+        const addrSize = Math.round(videoWidth / 38);
+        const headLine = Math.round(headSize * 1.35);
+        const addrLine = Math.round(addrSize * 1.35);
+        const maxLineWidth = canvas.width * 0.92;
+
+        // Wrap the address into lines that fit the image width.
+        context.font = `600 ${addrSize}px ${FONT_FAMILY_OVERLAY}`;
+        const addrLines: string[] = [];
+        let line = '';
+        for (const word of overlayText3.split(' ').filter(Boolean)) {
+            const test = line ? `${line} ${word}` : word;
+            if (line && context.measureText(test).width > maxLineWidth) {
+                addrLines.push(line);
+                line = word;
+            } else {
+                line = test;
+            }
+        }
+        if (line) addrLines.push(line);
+
+        const bandHeight = pad * 2 + headLine * 2 + addrLines.length * addrLine;
+        context.fillStyle = 'rgba(0, 0, 0, 0.55)';
+        context.fillRect(0, 0, canvas.width, bandHeight);
+
         context.fillStyle = 'white';
         context.textAlign = 'center';
-        context.shadowColor = 'black';
-        context.shadowBlur = 7;
+        context.textBaseline = 'alphabetic';
+        context.shadowColor = 'rgba(0, 0, 0, 0.9)';
+        context.shadowBlur = 4;
 
-        const textYStart = 50;
-        context.font = `bold ${Math.round(videoWidth / 40)}px ${FONT_FAMILY_MONO}`;
-        context.fillText(overlayText1, canvas.width / 2, textYStart);
-        context.fillText(overlayText2, canvas.width / 2, textYStart + (videoWidth / 35));
-        
-        // Handle multi-line text wrapping for the address
-        if (overlayText3) {
-            context.font = `${Math.round(videoWidth / 45)}px ${FONT_FAMILY_MONO}`;
-            const maxLineWidth = canvas.width * 0.95;
-            const words = overlayText3.split(' ');
-            let line = '';
-            let y = textYStart + (videoWidth / 35) * 2;
-            const lineHeight = videoWidth / 40;
-            
-            for(let n = 0; n < words.length; n++) {
-                let testLine = line + words[n] + ' ';
-                let metrics = context.measureText(testLine);
-                let testWidth = metrics.width;
-                if (testWidth > maxLineWidth && n > 0) {
-                    context.fillText(line, canvas.width / 2, y);
-                    line = words[n] + ' ';
-                    y += lineHeight;
-                } else {
-                    line = testLine;
-                }
-            }
-            context.fillText(line, canvas.width / 2, y);
+        let y = pad + headSize;
+        context.font = `700 ${headSize}px ${FONT_FAMILY_OVERLAY}`;
+        context.fillText(overlayText1, canvas.width / 2, y);
+        y += headLine;
+        context.fillText(overlayText2, canvas.width / 2, y);
+        y += addrLine;
+        context.font = `600 ${addrSize}px ${FONT_FAMILY_OVERLAY}`;
+        for (const l of addrLines) {
+            context.fillText(l, canvas.width / 2, y);
+            y += addrLine;
         }
-        
+        context.shadowBlur = 0;
+
         // Generate the final image as a data URL
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         const newPhoto: CapturedPhoto = {
@@ -203,6 +247,23 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView 
         onCapture(newPhoto);
     }
   };
+
+  /** Re-requests both permissions (works if the user just enabled them in browser settings). */
+  const handleRetryPermissions = () => {
+    setCameraIssue(null);
+    setRetryTrigger(c => c + 1);
+    retryGeo();
+  };
+
+  // Auto-retry when the browser reports a permission was switched to 'granted'.
+  useEffect(() => {
+    if (cameraPerm === 'granted' && error) setRetryTrigger(c => c + 1);
+  }, [cameraPerm]);
+  useEffect(() => {
+    if (geoPerm === 'granted' && geoError) retryGeo();
+  }, [geoPerm]);
+
+  const canCapture = !error && !cameraBlocked && !locationBlocked;
 
   /** Toggles between 'user' and 'environment' (front/back) cameras. */
   const handleSwitchCamera = () => {
@@ -232,21 +293,52 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView 
       <canvas ref={canvasRef} className="hidden" />
       
       {error ? (
-        <div className="text-center text-red-400 p-4">
-          <p>{error}</p>
-          <button onClick={() => setRetryTrigger(c => c + 1)} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            Retry Camera
-          </button>
-        </div>
+        <PermissionNotice
+          title={
+            cameraIssue === 'insecure' ? 'Secure connection required'
+            : cameraIssue === 'notfound' ? 'No camera found'
+            : cameraIssue === 'denied' ? 'Camera access is blocked'
+            : 'Camera unavailable'
+          }
+          message={
+            cameraIssue === 'insecure' ? 'Browsers only allow camera and location on HTTPS pages. Open this site using an https:// address.'
+            : cameraIssue === 'notfound' ? 'We could not find a usable camera on this device.'
+            : cameraIssue === 'denied'
+              ? (cameraPerm === 'denied'
+                  ? "Your browser has blocked the camera for this site, so it won't ask again on its own. SpotCam can't work without it. Turn it back on and we'll pick up from there."
+                  : 'SpotCam needs the camera to take photos. Tap "Allow access" and choose Allow when your browser asks.')
+            : 'Something went wrong starting the camera. Make sure no other app is using it, then try again.'
+          }
+          what={cameraIssue === 'denied' ? 'Camera' : undefined}
+          hardBlocked={cameraIssue === 'denied' && cameraPerm === 'denied'}
+          onRetry={handleRetryPermissions}
+        />
       ) : (
         <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover"></video>
       )}
 
       {/* Live data overlay */}
-      <Overlay location={location} dateTime={dateTime} />
+      <Overlay location={location} dateTime={dateTime} onHome={onHome} />
       
-      {/* Geolocation error message */}
-      {geoError && <p className="absolute bottom-24 text-red-500 text-xs bg-black bg-opacity-50 p-1 rounded">{geoError}</p>}
+      {/* Location permission is required: the stamp is the whole point of the app */}
+      {locationBlocked && !error && (
+        <div className="absolute inset-x-0 top-0 bottom-28 z-30 bg-black bg-opacity-85 flex items-center justify-center">
+          <PermissionNotice
+            title="Location access is blocked"
+            message={
+              geoPerm === 'denied'
+                ? "Your browser has blocked location for this site, so it won't ask again on its own. SpotCam cannot stamp your photos without it, so capture is disabled."
+                : 'SpotCam stamps your location onto every photo, so capture is disabled until you allow it. Tap "Allow access" and choose Allow when your browser asks.'
+            }
+            what="Location"
+            hardBlocked={geoPerm === 'denied'}
+            onRetry={handleRetryPermissions}
+          />
+        </div>
+      )}
+
+      {/* Geolocation error message (non-permission problems, e.g. timeout) */}
+      {geoError && !locationBlocked && <p className="absolute bottom-24 text-red-500 text-xs bg-black bg-opacity-50 p-1 rounded">{geoError}</p>}
       
       {/* Zoom control slider */}
       {zoomCapabilities && (
@@ -268,14 +360,14 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView 
       )}
       
       {/* Bottom control bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-28 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-around">
-        <button onClick={onSwitchView} className="text-white p-3 rounded-full hover:bg-gray-700 transition-colors" aria-label="Open gallery">
+      <div className="absolute bottom-0 left-0 right-0 h-28 bg-gray-950/70 border-t border-white/10 backdrop-blur-md flex items-center justify-around">
+        <button onClick={onSwitchView} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors" aria-label="Open gallery">
           <GalleryIcon className="w-8 h-8" />
         </button>
-        <button onClick={handleCapture} className="w-20 h-20 rounded-full border-4 border-white bg-transparent flex items-center justify-center group" aria-label="Capture photo">
-            <div className="w-16 h-16 rounded-full bg-white group-hover:bg-gray-300 transition-colors"></div>
+        <button onClick={handleCapture} disabled={!canCapture} className="disabled:opacity-40 disabled:cursor-not-allowed w-20 h-20 rounded-full border-4 border-white bg-transparent flex items-center justify-center group" aria-label="Capture photo">
+            <div className="w-16 h-16 rounded-full bg-white group-hover:bg-blue-200 group-active:scale-95 transition"></div>
         </button>
-        <button onClick={handleSwitchCamera} disabled={!hasMultipleCameras} className="text-white p-3 rounded-full hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Switch camera">
+        <button onClick={handleSwitchCamera} disabled={!hasMultipleCameras} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Switch camera">
             <SwitchCameraIcon className="w-8 h-8" />
         </button>
       </div>

@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Two-tone vertical split matching the icon's subtle depth -->
+    <linearGradient id="spotcam-split" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="50%" stop-color="#2563EB" />
+      <stop offset="50%" stop-color="#1D4ED8" />
+    </linearGradient>
+
+    <!-- Mask to cut out the dark navy gap around the location pin -->
+    <mask id="pin-cutout">
+      <rect width="512" height="512" fill="white" />
+      <path d="M 256 138 C 187.5 138 132 193.5 132 262 C 132 332 216 418 245 450 C 251 456.5 261 456.5 267 450 C 296 418 380 332 380 262 C 380 193.5 324.5 138 256 138 Z" fill="black" />
+    </mask>
+  </defs>
+
+  <!-- Camera Body (with pin cutout) -->
+  <path fill="url(#spotcam-split)" mask="url(#pin-cutout)" d="
+    M 176 92
+    L 336 92
+    C 348 92 356 99 362 110
+    L 376 136
+    L 424 136
+    C 452.7 136 476 159.3 476 188
+    L 476 356
+    C 476 384.7 452.7 408 424 408
+    L 88 408
+    C 59.3 408 36 384.7 36 356
+    L 36 188
+    C 36 159.3 59.3 136 88 136
+    L 136 136
+    L 150 110
+    C 156 99 164 92 176 92 Z" />
+
+  <!-- Top-Right Flash / Indicator Dot -->
+  <circle cx="422" cy="184" r="18" fill="#FFFFFF" />
+
+  <!-- Bottom-Right Digital Timestamp ("00:00") -->
+  <g fill="#BAE6FD" transform="translate(362, 354)">
+    <!-- First 0 -->
+    <rect x="0" y="0" width="14" height="3.5" rx="1.5" />
+    <rect x="0" y="24.5" width="14" height="3.5" rx="1.5" />
+    <rect x="0" y="2" width="3.5" height="11" rx="1.5" />
+    <rect x="10.5" y="2" width="3.5" height="11" rx="1.5" />
+    <rect x="0" y="15" width="3.5" height="11" rx="1.5" />
+    <rect x="10.5" y="15" width="3.5" height="11" rx="1.5" />
+
+    <!-- Second 0 -->
+    <g transform="translate(20, 0)">
+      <rect x="0" y="0" width="14" height="3.5" rx="1.5" />
+      <rect x="0" y="24.5" width="14" height="3.5" rx="1.5" />
+      <rect x="0" y="2" width="3.5" height="11" rx="1.5" />
+      <rect x="10.5" y="2" width="3.5" height="11" rx="1.5" />
+      <rect x="0" y="15" width="3.5" height="11" rx="1.5" />
+      <rect x="10.5" y="15" width="3.5" height="11" rx="1.5" />
+    </g>
+
+    <!-- Colon -->
+    <circle cx="42" cy="9" r="2.2" />
+    <circle cx="42" cy="19" r="2.2" />
+
+    <!-- Third 0 -->
+    <g transform="translate(50, 0)">
+      <rect x="0" y="0" width="14" height="3.5" rx="1.5" />
+      <rect x="0" y="24.5" width="14" height="3.5" rx="1.5" />
+      <rect x="0" y="2" width="3.5" height="11" rx="1.5" />
+      <rect x="10.5" y="2" width="3.5" height="11" rx="1.5" />
+      <rect x="0" y="15" width="3.5" height="11" rx="1.5" />
+      <rect x="10.5" y="15" width="3.5" height="11" rx="1.5" />
+    </g>
+
+    <!-- Fourth 0 -->
+    <g transform="translate(70, 0)">
+      <rect x="0" y="0" width="14" height="3.5" rx="1.5" />
+      <rect x="0" y="24.5" width="14" height="3.5" rx="1.5" />
+      <rect x="0" y="2" width="3.5" height="11" rx="1.5" />
+      <rect x="10.5" y="2" width="3.5" height="11" rx="1.5" />
+      <rect x="0" y="15" width="3.5" height="11" rx="1.5" />
+      <rect x="10.5" y="15" width="3.5" height="11" rx="1.5" />
+    </g>
+  </g>
+
+  <!-- Central Location Pin -->
+  <path fill="url(#spotcam-split)" d="
+    M 256 156
+    C 197.5 156 150 203.5 150 262
+    C 150 324 225 401 249.5 428.5
+    C 253 432.5 259 432.5 262.5 428.5
+    C 287 401 362 324 362 262
+    C 362 203.5 314.5 156 256 156 Z" />
+
+  <!-- Lens Ring + Clock Dial -->
+  <circle cx="256" cy="262" r="66" fill="#FFFFFF" />
+  <circle cx="256" cy="262" r="46" fill="#111827" />
+
+  <!-- Clock Hands (pointing to 4:00) -->
+  <path d="M 256 228 L 256 262 L 278 282" fill="none" stroke="#BAE6FD" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

@@ -1,16 +1,15 @@
 /**
  * @file This is the root component of the SpotCam application.
- * It manages the current view (camera or gallery) and the state of captured photos.
+ * It manages the current view (landing, camera or gallery; chosen by the URL path) and the state of captured photos.
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { CameraView } from './components/CameraView';
 import { GalleryView } from './components/GalleryView';
+import { LandingView } from './components/LandingView';
 import { CapturedPhoto } from './types';
 import { usePersistedPhotos } from './hooks/usePersistedPhotos';
-
-// Define the possible views the application can be in.
-type View = 'camera' | 'gallery';
+import { usePathRoute } from './hooks/usePathRoute';
 
 /**
  * The main App component.
@@ -18,11 +17,10 @@ type View = 'camera' | 'gallery';
  * and passing down photo data and event handlers.
  */
 const App: React.FC = () => {
-  // State to manage the current active view. Defaults to 'camera'.
-  const [view, setView] = useState<View>('camera');
+  // Current view comes from the URL path (/, /cam, /gallery), so each page is bookmarkable.
+  const [view, switchView] = usePathRoute();
   
   // Custom hook to manage the photos array, persisting it to IndexedDB.
-  
   const [photos, setPhotos] = usePersistedPhotos();
 
   /**
@@ -41,21 +39,15 @@ const App: React.FC = () => {
     setPhotos(prevPhotos => prevPhotos.filter(p => p.id !== id));
   };
 
-  /**
-   * Switches the application view.
-   * @param {View} targetView The view to switch to ('camera' or 'gallery').
-   */
-  const switchView = (targetView: View) => {
-    setView(targetView);
-  };
-
   return (
     <div className="w-full h-full bg-gray-900">
+      {view === 'landing' && <LandingView onStart={() => switchView('camera')} />}
       {/* Conditionally render the CameraView */}
       {view === 'camera' && (
         <CameraView
           onCapture={handleCapture}
           onSwitchView={() => switchView('gallery')}
+          onHome={() => switchView('landing')}
         />
       )}
       {/* Conditionally render the GalleryView */}
