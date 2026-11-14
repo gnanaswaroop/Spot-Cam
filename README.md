@@ -65,6 +65,14 @@ The dev server uses HTTPS with a self-signed certificate, so you can open it on 
 
 ## Test
 
+```
+npm run typecheck   # TypeScript
+npm run test:unit   # fast unit tests (Vitest, tests/unit/)
+npm run test:e2e    # browser tests (Playwright, e2e/)
+```
+
+The same checks run in GitHub Actions on every pull request, and a release to Pages only goes ahead if they all pass.
+
 End-to-end tests run against the production build, served by a small server that behaves like GitHub Pages (no single-page-app fallback). They cover routing, the landing page layout, camera and location permissions, the browser-specific recovery steps, the Back gesture, and the gallery on small screens.
 
 ```
@@ -93,6 +101,7 @@ components/   Landing, camera, gallery and permission-notice views
 hooks/        Routing, geolocation, permissions, history layers, storage
 utils/        Shared helpers and browser-specific permission help
 public/       Icons, manifest and the sample photo
+tests/unit/   Vitest unit tests
 e2e/          Playwright tests and the Pages-like test server
 docs/         Architecture guide and README screenshots
 ```

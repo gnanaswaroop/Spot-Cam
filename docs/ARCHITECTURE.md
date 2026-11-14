@@ -169,6 +169,8 @@ To stay current, **Dependabot** (`.github/dependabot.yml`) opens weekly pull req
 
 ## 13. Testing
 
+**Unit tests** (Vitest, `tests/unit/`) cover pure logic such as helpers and the address lookup. **CI** (`.github/workflows/ci.yml`) runs the type check, the unit tests and the Playwright suite (one job per browser engine) on every pull request. The deploy workflow calls the same file first, so a failing test blocks a release.
+
 Playwright end-to-end tests live in `e2e/` and run against the **production build**, served by `e2e/pages-server.mjs`, which imitates GitHub Pages (directory redirects, `404.html`, **no** single-page-app fallback). That proves the deployed site works on plain static hosting.
 
 | File | What it covers |
@@ -189,7 +191,7 @@ Playwright end-to-end tests live in `e2e/` and run against the **production buil
 - **Line endings:** LF everywhere (`.gitattributes`).
 - **`tmp/`** is a git-ignored scratch folder.
 - **Comments** explain *why* (browser quirks, permission behaviour), not what the code says.
-- **Where things go:** UI in `components/`, behaviour in `hooks/`, pure helpers in `utils/`, tests in `e2e/`.
+- **Where things go:** UI in `components/`, behaviour in `hooks/`, pure helpers in `utils/`, tests in `tests/unit/` (logic) and `e2e/` (browser).
 
 ## 15. Privacy policy
 
