@@ -24,7 +24,7 @@ const primaryButton =
   'px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-full shadow-lg shadow-blue-600/30 hover:bg-blue-500';
 
 export const PermissionNotice: React.FC<PermissionNoticeProps> = ({ title, message, what, hardBlocked, onRetry }) => (
-  <div className="max-w-sm p-6 text-center text-white" role="alert">
+  <div className="max-w-sm max-h-full overflow-y-auto p-6 text-center text-white short:p-3 short:max-w-md" role="alert">
     <h2 className="mb-3 text-xl font-semibold text-red-400">{title}</h2>
     <p className="mb-5 text-gray-300">{message}</p>
 

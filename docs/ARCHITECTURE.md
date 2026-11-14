@@ -94,6 +94,7 @@ Phones have browser toolbars and Android's navigation bar, so `100vh` is taller 
 - `hooks/useViewportHeight.ts` sets the CSS variable `--app-height` to `window.innerHeight` on load, resize and rotation. (`innerHeight` ignores pinch-zoom, unlike `visualViewport.height`.)
 - `.app-h` in `index.css` uses it, with `100dvh` as the fallback before JS runs.
 - Full-screen layers are flex columns: the image takes the leftover space (`flex-1 min-h-0`), while the details and Share/Delete buttons are `shrink-0`. Controls can't be pushed out of view. Bottom padding uses `env(safe-area-inset-bottom)`.
+- On a phone held sideways (the `short` Tailwind variant: landscape and under 500 px tall, defined in `index.css`), the camera page moves its controls into a column on the right and compacts the stamp, so most of the preview stays free. `e2e/camera-landscape.spec.ts` measures this.
 - The landing page fits one screen with no scrolling on small phones (360x640), and tests guard this.
 
 ## 6. Camera, permissions and capture

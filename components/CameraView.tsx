@@ -38,7 +38,7 @@ const AddressLine = ({ location, status, onRetry }: { location: GeolocationData;
 };
 
 const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress }: { location: GeolocationData | null; addressStatus: AddressStatus; dateTime: string; onHome: () => void; onRetryAddress: () => void }) => (
-    <div className="absolute top-0 left-0 right-0 px-3 py-2 text-white text-center text-sm font-semibold bg-black bg-opacity-55 backdrop-blur-sm" style={{ fontFamily: FONT_FAMILY_OVERLAY, textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
+    <div data-testid="stamp-overlay" className="absolute top-0 left-0 right-0 px-3 py-2 text-white text-center text-sm font-semibold bg-black bg-opacity-55 backdrop-blur-sm short:right-24 short:py-1 short:pl-12 short:text-xs short:leading-tight" style={{ fontFamily: FONT_FAMILY_OVERLAY, textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
         {/* Brand badge: lives inside the existing band so it costs no vertical space. Tap to go home. */}
         <button onClick={onHome} className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-white/10 p-1 pr-1 hover:bg-white/20 sm:pr-2.5" aria-label="SpotCam home">
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-6 w-6" />
@@ -339,7 +339,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
       
       {/* Location permission is required: the stamp is the whole point of the app */}
       {locationBlocked && !error && (
-        <div className="absolute inset-x-0 top-0 bottom-28 z-30 bg-black bg-opacity-85 flex items-center justify-center">
+        <div className="absolute inset-x-0 top-0 bottom-28 z-30 bg-black bg-opacity-85 flex items-center justify-center overflow-y-auto short:bottom-0 short:right-24">
           <PermissionNotice
             title="Location access is blocked"
             message={
@@ -355,11 +355,11 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
       )}
 
       {/* Geolocation error message (non-permission problems, e.g. timeout) */}
-      {geoError && !locationBlocked && <p className="absolute bottom-24 text-red-500 text-xs bg-black bg-opacity-50 p-1 rounded">{geoError}</p>}
+      {geoError && !locationBlocked && <p className="absolute bottom-24 text-red-500 text-xs bg-black bg-opacity-50 p-1 rounded short:bottom-2 short:left-2">{geoError}</p>}
       
       {/* Zoom control slider */}
       {zoomCapabilities && (
-        <div className="absolute bottom-32 left-0 right-0 px-6 z-10">
+        <div className="absolute bottom-32 left-0 right-0 px-6 z-10 short:bottom-2 short:right-24 short:px-3">
             <div className="bg-black bg-opacity-40 backdrop-blur-sm rounded-full p-2 flex items-center space-x-3">
                 <span className="text-white text-xs font-mono pl-2">ZOOM</span>
                 <input 
@@ -377,7 +377,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
       )}
       
       {/* Bottom control bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-28 bg-gray-950/70 border-t border-white/10 backdrop-blur-md flex items-center justify-around">
+      <div data-testid="control-bar" className="absolute bottom-0 left-0 right-0 h-28 bg-gray-950/70 border-t border-white/10 backdrop-blur-md flex items-center justify-around short:top-0 short:left-auto short:h-auto short:w-24 short:flex-col short:border-t-0 short:border-l">
         <button onClick={onSwitchView} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors" aria-label="Open gallery">
           <GalleryIcon className="w-8 h-8" />
         </button>

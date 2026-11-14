@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/*
+ * "short" = a phone held sideways (landscape with little height). The camera page then moves its
+ * controls to a side column and compacts the stamp so the preview keeps most of the screen.
+ */
+@custom-variant short (@media (orientation: landscape) and (max-height: 500px));
+
 /* Visible viewport height: --app-height is kept in sync by useViewportHeight; dvh is the fallback. */
 .app-h {
   height: 100%;
