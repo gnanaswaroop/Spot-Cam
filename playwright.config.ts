@@ -12,7 +12,8 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: '**/screenshots.spec.ts', // run with `npm run screenshots`
+  // screenshots: `npm run screenshots`; live: post-deploy checks against the real site (see playwright.live.config.ts)
+  testIgnore: ['**/screenshots.spec.ts', '**/live/**'],
   fullyParallel: true,
   // Three browser engines in parallel is heavy; keep the default light so a laptop stays responsive.
   workers: 2,

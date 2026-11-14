@@ -173,6 +173,8 @@ To stay current, **Dependabot** (`.github/dependabot.yml`) opens weekly pull req
 
 **Unit tests** (Vitest, `tests/unit/`) cover pure logic such as helpers and the address lookup. **CI** (`.github/workflows/ci.yml`) runs the type check, the unit tests and the Playwright suite (one job per browser engine) on every pull request. The deploy workflow calls the same file first, so a failing test blocks a release.
 
+**After a release goes out** the deploy workflow checks the real site: it waits until `/version.txt` shows the new commit, then runs `e2e/live/smoke.spec.ts` against `https://spotcam.in` (`npm run test:live-site`): every route answers, the script and stylesheet exist, the landing, camera, gallery and privacy pages render with no JavaScript errors or failed requests. If any of that fails, the `rollback` job rebuilds and redeploys the last release that passed (found as the most recent successful run), waits for it to be served, and opens an issue. The failing commit stays on `main`, so it still needs a fix or a revert. Failed runs are never counted as "good", so repeated failures keep rolling back to the same healthy release.
+
 Playwright end-to-end tests live in `e2e/` and run against the **production build**, served by `e2e/pages-server.mjs`, which imitates GitHub Pages (directory redirects, `404.html`, **no** single-page-app fallback). That proves the deployed site works on plain static hosting.
 
 | File | What it covers |

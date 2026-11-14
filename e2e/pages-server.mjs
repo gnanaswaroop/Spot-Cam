@@ -11,7 +11,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
+// DIST_DIR lets a test serve some other build (for example a deliberately broken one).
+const dist = process.env.DIST_DIR
+  ? path.resolve(process.env.DIST_DIR)
+  : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
 const BASE = (process.env.BASE_PATH ?? '').replace(/\/$/, '');
 const port = Number(process.env.PORT ?? 4173);
 

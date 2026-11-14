@@ -1,5 +1,6 @@
 name: Deploy to GitHub Pages
 
+# Release flow: test -> build -> deploy -> verify the live site -> roll back automatically if it is broken.
 on:
   push:
     branches: [main]
@@ -10,9 +11,14 @@ permissions:
   pages: write
   id-token: write
 
+# Queue releases instead of cancelling one half way through (a cancelled verify or rollback would leave
+# the site unchecked). A newer push waits for the current release, and only the newest waiting one runs.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
+
+env:
+  SITE_URL: https://spotcam.in
 
 jobs:
   # Deploys only if the full test suite passes.
@@ -30,6 +36,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # A marker the verify step reads to be sure the NEW build is the one being served.
+      - run: echo "$GITHUB_SHA" > dist/version.txt
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
@@ -43,3 +51,110 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Looks at the real site like a visitor would. Fails the run if the site is broken.
+  verify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Wait for the new version to be served
+        run: |
+          for i in $(seq 1 60); do
+            served=$(curl -fsS --max-time 15 "$SITE_URL/version.txt?cb=$(date +%s)$i" || true)
+            if [ "$served" = "$GITHUB_SHA" ]; then echo "New version is live after $i check(s)."; exit 0; fi
+            echo "Check $i: serving '${served:-nothing}', waiting for $GITHUB_SHA"
+            sleep 10
+          done
+          echo "The new version never appeared at $SITE_URL" >&2
+          exit 1
+      - name: Smoke-test the live site
+        run: npm run test:live-site
+        env:
+          LIVE_URL: ${{ env.SITE_URL }}
+          EXPECTED_SHA: ${{ github.sha }}
+      - name: Upload traces from failed checks
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-smoke-traces
+          path: test-results/
+          retention-days: 7
+
+  # If the live site failed its checks, put the last release that passed them back.
+  rollback:
+    needs: [deploy, verify]
+    if: ${{ always() && needs.deploy.result == 'success' && needs.verify.result == 'failure' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      actions: read
+      issues: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Find the last release that passed its live checks
+        id: good
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Runs that fail verification (or roll back) end up "failure", so only healthy releases are "success".
+          sha=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy.yml --branch main --status success --limit 1 --json headSha --jq '.[0].headSha')
+          if [ -z "$sha" ] || [ "$sha" = "null" ]; then
+            echo "No earlier successful release to roll back to." >&2
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Rolling back to $sha"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.good.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: echo "${{ steps.good.outputs.sha }}" > dist/version.txt
+      # A different artifact name: the build job already uploaded "github-pages" in this run.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          name: github-pages-rollback
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-rollback
+      - name: Confirm the old version is being served again
+        run: |
+          for i in $(seq 1 60); do
+            served=$(curl -fsS --max-time 15 "$SITE_URL/version.txt?cb=$(date +%s)$i" || true)
+            if [ "$served" = "${{ steps.good.outputs.sha }}" ]; then echo "Rollback is live."; exit 0; fi
+            sleep 10
+          done
+          echo "Rollback deployed but not yet visible at $SITE_URL" >&2
+          exit 1
+      - name: Open an issue so the failure is not missed
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GOOD_SHA: ${{ steps.good.outputs.sha }}
+        run: |
+          {
+            echo "The release of commit \`$GITHUB_SHA\` was deployed but failed the post-deploy smoke tests, so the site was automatically rolled back to the last good release (\`$GOOD_SHA\`)."
+            echo
+            echo "- Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "- The failing commit is still on \`main\`. Fix it or revert it before the next release, otherwise the next deploy fails the same way."
+          } > issue-body.md
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Release ${GITHUB_SHA::7} failed its live checks and was rolled back" \
+            --body-file issue-body.md

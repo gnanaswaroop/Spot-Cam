@@ -72,7 +72,7 @@ npm run test:e2e    # browser tests (Playwright, e2e/)
 npm run test:live   # optional: one real request to each address service (see below)
 ```
 
-The same checks run in GitHub Actions on every pull request, and a release to Pages only goes ahead if they all pass.
+The same checks run in GitHub Actions on every pull request, and a release to Pages only goes ahead if they all pass. After each release, smoke tests browse the live site (`npm run test:live-site`), and if it is broken the previous good release is put back automatically.
 
 End-to-end tests run against the production build, served by a small server that behaves like GitHub Pages (no single-page-app fallback). They cover routing, the landing page layout, camera and location permissions, the browser-specific recovery steps, the Back gesture, and the gallery on small screens.
 
