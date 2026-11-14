@@ -14,6 +14,10 @@ import { GeolocationData } from '../types';
 export function useGeolocation() {
   const [location, setLocation] = useState<GeolocationData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // True when the user (or browser policy) denied location access.
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  // Bump to restart the position watch (e.g. after the user re-enables permission).
+  const [retryTrigger, setRetryTrigger] = useState(0);
 
   useEffect(() => {
     // A flag to prevent state updates after the component has unmounted.
@@ -36,6 +40,7 @@ export function useGeolocation() {
           address: prev?.address || 'Fetching address...'
       }));
       setError(null);
+      setPermissionDenied(false);
 
       // STEP 2: Asynchronously fetch the reverse-geocoded address.
       // TODO: Fetch to a better hosted Reverse Geo-coding endpoint
@@ -65,7 +70,9 @@ export function useGeolocation() {
      * @param {GeolocationPositionError} err - The error object from the Geolocation API.
      */
     const handlePositionError = (err: GeolocationPositionError) => {
-      if (isMounted) setError(err.message);
+      if (!isMounted) return;
+      setError(err.message);
+      setPermissionDenied(err.code === err.PERMISSION_DENIED);
     };
 
     // Check if the Geolocation API is supported by the browser.
@@ -91,7 +98,13 @@ export function useGeolocation() {
       // Stop watching the position to save battery and resources.
       navigator.geolocation.clearWatch(watchId);
     };
-  }, []); // Empty dependency array ensures this effect runs only once on mount.
+  }, [retryTrigger]); // Re-runs only when retry() is called.
 
-  return { location, error };
+  const retry = () => {
+    setError(null);
+    setPermissionDenied(false);
+    setRetryTrigger(c => c + 1);
+  };
+
+  return { location, error, permissionDenied, retry };
 }

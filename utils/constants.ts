@@ -3,7 +3,7 @@
  */
 
 /**
- * Defines the monospace font family used for data overlays and other technical text.
- * Using a constant ensures consistency across the app, especially for canvas drawing.
+ * Bold sans-serif used for the date/location stamp on photos and the live overlay.
+ * System fonts only, so canvas drawing needs no font loading and works offline.
  */
-export const FONT_FAMILY_MONO = '"Courier New", monospace';
+export const FONT_FAMILY_OVERLAY = '"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';

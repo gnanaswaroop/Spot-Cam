@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Scratch folder for local working files
+tmp/
+
+# Playwright
+test-results/
+playwright-report/
