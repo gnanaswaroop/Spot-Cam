@@ -50,7 +50,7 @@ GitHub Pages is static hosting, so the build emits a real `index.html` for each 
 
 ## Tech
 
-Vite, React 19, TypeScript, Tailwind CSS v4, [`idb-keyval`](https://github.com/jakearchibald/idb-keyval) for storage, Playwright for tests. Location names come from [OpenStreetMap Nominatim](https://nominatim.org/).
+Vite, React 19, TypeScript, Tailwind CSS v4, [`idb-keyval`](https://github.com/jakearchibald/idb-keyval) for storage, Playwright for tests. Addresses come from free public geocoders built on OpenStreetMap data ([Photon](https://photon.komoot.io/), with BigDataCloud and [Nominatim](https://nominatim.org/) as fallbacks).
 
 ## Run locally
 
@@ -69,6 +69,7 @@ The dev server uses HTTPS with a self-signed certificate, so you can open it on 
 npm run typecheck   # TypeScript
 npm run test:unit   # fast unit tests (Vitest, tests/unit/)
 npm run test:e2e    # browser tests (Playwright, e2e/)
+npm run test:live   # optional: one real request to each address service (see below)
 ```
 
 The same checks run in GitHub Actions on every pull request, and a release to Pages only goes ahead if they all pass.
@@ -84,6 +85,7 @@ npm run test:e2e
 - Run one browser: `npm run test:e2e -- --project=firefox`
 - On Windows you can reuse the installed Edge for Chromium: `PW_CHANNEL=msedge npm run test:e2e`
 - Some tests need a fake camera stream and skip themselves in browser builds that can't make one (Playwright's WebKit on Windows). Run the full set on Linux or macOS, or in CI.
+- Tests never contact the real address services, so running them can't get your IP address rate limited: unit tests use a fake `fetch`, and the Playwright tests block those hosts and answer from mocks. `npm run test:live` is the one exception. It sends a single request to each service (for the Eiffel Tower, not your location) to check they still answer in the shape the code expects. Run it rarely, by hand. It is not part of `npm test` or CI.
 - Regenerate the README screenshots: `npm run screenshots`
 
 ## Deploy

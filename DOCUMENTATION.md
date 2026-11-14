@@ -79,7 +79,8 @@ Tap a photo to open it.
 
 - Photos are saved **only in your browser**. Clearing site data or switching browsers removes them. Share or save photos you want to keep.
 - The gallery keeps your **latest 12** photos.
-- The address comes from [OpenStreetMap](https://www.openstreetmap.org/). Your coordinates are sent to it only to look up the address. Photos are never sent anywhere.
+- The address comes from free public services based on [OpenStreetMap](https://www.openstreetmap.org/) data: Photon first, then BigDataCloud, then OpenStreetMap Nominatim if the others are unavailable. Your coordinates are sent only to the one that answers, only to look up the address. Photos are never sent anywhere.
+- SpotCam looks up the address only after you have moved a short way, not on every GPS update. If no service answers, the screen says "Address unavailable" with a Retry button, and a photo is stamped with the coordinates only (never with an error message).
 - SpotCam needs a modern browser (recent Chrome, Edge, Firefox or Safari) and a secure (HTTPS) connection for the camera and location.
 
 ---

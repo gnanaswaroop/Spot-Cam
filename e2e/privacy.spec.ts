@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { SITE } from './helpers';
 
 test.describe('privacy policy', () => {
@@ -11,8 +11,11 @@ test.describe('privacy policy', () => {
 
   test('says what really happens to camera, location and photos', async ({ page }) => {
     await page.goto(`${SITE}/privacy`);
-    // The policy must match the app: coordinates go to OpenStreetMap Nominatim, photos stay on the device.
-    await expect(page.getByText('OpenStreetMap Nominatim')).toBeVisible();
+    // The policy must match the app: coordinates go to the address lookup services (Photon, BigDataCloud, Nominatim), photos stay on the device.
+    await expect(page.getByText('Address lookup services.')).toBeVisible();
+    for (const name of ['Photon', 'BigDataCloud', 'OpenStreetMap Nominatim']) {
+      await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
+    }
     await expect(page.getByText('Photos are not uploaded to us or to anyone else.')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'What we don\'t do' })).toBeVisible();
     // No contact details are published on the page.

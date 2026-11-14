@@ -4,7 +4,7 @@
  */
 import React, { useRef, useEffect, useState } from 'react';
 import { CapturedPhoto, GeolocationData } from '../types';
-import { useGeolocation } from '../hooks/useGeolocation';
+import { useGeolocation, AddressStatus } from '../hooks/useGeolocation';
 import { usePermissionState } from '../hooks/usePermissionState';
 import { PermissionNotice } from './PermissionNotice';
 import { GalleryIcon, SwitchCameraIcon } from './icons';
@@ -23,7 +23,21 @@ interface CameraViewProps {
 /**
  * A component that displays real-time data (date, time, location) as an overlay on the camera view.
  */
-const Overlay = ({ location, dateTime, onHome }: { location: GeolocationData | null; dateTime: string; onHome: () => void }) => (
+const AddressLine = ({ location, status, onRetry }: { location: GeolocationData; status: AddressStatus; onRetry: () => void }) => {
+    if (location.address) return <p className="px-2 break-words">{location.address}</p>;
+    if (status === 'offline') return <p className="px-2">Offline: the address will appear when you are back online</p>;
+    if (status === 'failed') {
+        return (
+            <p className="px-2">
+                Address unavailable.{' '}
+                <button onClick={onRetry} className="underline underline-offset-2" aria-label="Retry address lookup">Retry</button>
+            </p>
+        );
+    }
+    return <p className="px-2">Looking up address...</p>;
+};
+
+const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress }: { location: GeolocationData | null; addressStatus: AddressStatus; dateTime: string; onHome: () => void; onRetryAddress: () => void }) => (
     <div className="absolute top-0 left-0 right-0 px-3 py-2 text-white text-center text-sm font-semibold bg-black bg-opacity-55 backdrop-blur-sm" style={{ fontFamily: FONT_FAMILY_OVERLAY, textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
         {/* Brand badge: lives inside the existing band so it costs no vertical space. Tap to go home. */}
         <button onClick={onHome} className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-white/10 p-1 pr-1 hover:bg-white/20 sm:pr-2.5" aria-label="SpotCam home">
@@ -34,7 +48,7 @@ const Overlay = ({ location, dateTime, onHome }: { location: GeolocationData | n
         {location ? (
             <>
                 <p>Lat: {location.latitude.toFixed(5)}, Lon: {location.longitude.toFixed(5)}</p>
-                <p className="px-2 break-words">{location.address || 'Locating...'}</p>
+                <AddressLine location={location} status={addressStatus} onRetry={onRetryAddress} />
             </>
         ) : (
             <p>Locating...</p>
@@ -57,7 +71,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
   const [cameraIssue, setCameraIssue] = useState<'denied' | 'insecure' | 'unsupported' | 'notfound' | 'other' | null>(null);
 
   // Custom hook for geolocation data
-  const { location, error: geoError, permissionDenied: geoDenied, retry: retryGeo } = useGeolocation();
+  const { location, addressStatus, error: geoError, permissionDenied: geoDenied, retry: retryGeo, retryAddress } = useGeolocation();
 
   // Permissions API state (where supported); real API errors above are the fallback signal.
   const cameraPerm = usePermissionState('camera');
@@ -187,6 +201,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
         // Prepare overlay text
         const overlayText1 = dateTime;
         const overlayText2 = location ? `Lat: ${location.latitude.toFixed(5)}, Lon: ${location.longitude.toFixed(5)}` : 'Location not available';
+        // Only a real address is ever stamped. If none was found, the stamp carries the coordinates alone.
         const overlayText3 = location?.address || '';
         
         // Draw the stamp: bold sans text on a translucent dark band so it stays readable on any photo.
@@ -320,7 +335,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
       )}
 
       {/* Live data overlay */}
-      <Overlay location={location} dateTime={dateTime} onHome={onHome} />
+      <Overlay location={location} addressStatus={addressStatus} dateTime={dateTime} onHome={onHome} onRetryAddress={retryAddress} />
       
       {/* Location permission is required: the stamp is the whole point of the app */}
       {locationBlocked && !error && (

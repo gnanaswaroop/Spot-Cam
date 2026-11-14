@@ -112,11 +112,21 @@ export async function grantLocation(context: BrowserContext) {
   await context.setGeolocation(paris);
 }
 
-/** Stub reverse geocoding so tests never hit the network. */
-export const mockGeocoder = (page: Page) =>
-  page.route('**/nominatim.openstreetmap.org/**', route =>
+/**
+ * Stub reverse geocoding so tests never hit the network. Photon answers first (the default order),
+ * so the other two are stubbed too in case a test makes the first one fail.
+ */
+export const mockGeocoder = async (page: Page) => {
+  await page.route('**/photon.komoot.io/**', route =>
+    route.fulfill({ json: { features: [{ properties: { name: 'Champ de Mars', city: 'Paris', country: 'France' } }] } }),
+  );
+  await page.route('**/api.bigdatacloud.net/**', route =>
+    route.fulfill({ json: { locality: 'Champ de Mars', city: 'Paris', countryName: 'France' } }),
+  );
+  await page.route('**/nominatim.openstreetmap.org/**', route =>
     route.fulfill({ json: { display_name: 'Champ de Mars, Paris, France' } }),
   );
+};
 
 /** Everything granted: synthetic camera + real (granted) location + stubbed address. */
 export async function setUpGrantedCamera(page: Page, context: BrowserContext) {

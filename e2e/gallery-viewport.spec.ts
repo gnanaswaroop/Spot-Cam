@@ -3,7 +3,8 @@
  * area (the image was sized with 70vh, which ignores browser toolbars and Android's navigation bar).
  * The buttons must stay fully visible however short the visible viewport is.
  */
-import { test, expect, Page } from '@playwright/test';
+import { Page } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { SITE, setUpGrantedCamera, takePhotos } from './helpers';
 
 const VIEWPORTS = [

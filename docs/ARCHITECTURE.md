@@ -15,12 +15,12 @@ flowchart LR
     Canvas --> DB[(IndexedDB photos)]
     UI --> Share[Web Share API]
   end
-  Geo -. address lookup .-> OSM[OpenStreetMap Nominatim]
+  Geo -. address lookup .-> OSM[Photon, then BigDataCloud, then Nominatim]
   Host[GitHub Pages: static files] --> Browser
 ```
 
 - **Hosting:** GitHub Pages serves static files at https://spotcam.in. It scales with the CDN, and our cost doesn't grow with traffic.
-- **Privacy:** photos never leave the browser. The only network calls are for the app's own files and one address lookup (coordinates sent to Nominatim).
+- **Privacy:** photos never leave the browser. The only network calls are for the app's own files and address lookups (coordinates sent to the geocoding service that answers: Photon, BigDataCloud or Nominatim).
 - **Stack:** Vite, React 19, TypeScript, Tailwind CSS v4, `idb-keyval`, Playwright.
 
 ## 2. Folder map
@@ -110,7 +110,7 @@ flowchart TD
   C -- ok --> F[Live preview]
   A --> G[useGeolocation: watchPosition asks for location]
   G -- denied --> H[Location blocked notice]
-  G -- position --> I[Fetch address from Nominatim]
+  G -- position --> I[Look up address only after moving, via geocoder]
   F & I --> J{camera ok AND location not blocked?}
   J -- yes --> K[Capture button enabled]
   J -- no --> L[Capture disabled + explanation]
@@ -138,7 +138,9 @@ flowchart TD
 
 ## 8. Address lookup
 
-`hooks/useGeolocation.ts` calls `watchPosition` and, for each position, fetches a readable address from OpenStreetMap Nominatim. The coordinates update immediately and the address follows. Nominatim's usage policy is light-use only (about 1 request per second); heavy traffic would need a hosted geocoder or caching. There's a `TODO` in the hook.
+`hooks/useGeolocation.ts` calls `watchPosition`. The coordinates update immediately; the address follows from `utils/geocoder.ts`, and is looked up only after the user has moved about 25 m, not on every GPS update.
+
+The geocoder is built to be gentle on free public services, because the public Nominatim server answers HTTP 429 to clients that send too many requests, and browsers hide that status behind a CORS error. It therefore: caches by rounded coordinates, keeps one request in flight, spaces lookups at least a second apart, tries providers in order (Photon, BigDataCloud, Nominatim), and puts a failing provider on a cool-down that doubles on each failure (5 s up to 60 s, with jitter). The lookup status (`loading`, `ok`, `failed`, `offline`) is kept apart from the address text, so a message such as "Address unavailable" can never be stamped on a photo. Attribution: map data © OpenStreetMap contributors.
 
 ## 9. Sharing
 
@@ -200,6 +202,6 @@ The policy lives in `components/PrivacyView.tsx` and is served at `/privacy`. It
 ## 16. Known limits and ideas
 
 - No service worker, so no offline use or install prompt control yet.
-- Public Nominatim is fine for light use only.
+- The address services are free public servers with no uptime guarantee and fair-use limits. For real traffic, move to a keyed provider or a small proxy (the provider list in `utils/geocoder.ts` is the one place to change).
 - All text is English only (tracked in an issue); accessibility work is tracked in another.
 - Real-device checks (camera, location, the share sheet) are still manual: the tests use mocks.

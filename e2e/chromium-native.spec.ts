@@ -3,7 +3,7 @@
  * Chromium (with a fake capture device), so these run in Chromium projects only; the other
  * engines are covered by the in-page mocks in permissions.spec.ts.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { SITE, mockGeocoder, paris } from './helpers';
 
 test.describe('native Chromium permissions', () => {

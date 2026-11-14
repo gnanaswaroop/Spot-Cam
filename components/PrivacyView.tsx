@@ -82,11 +82,16 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
 
         <Section title="Services we rely on">
           <p>
-            <strong className="text-white">OpenStreetMap Nominatim (address lookup).</strong> To turn your coordinates into an address,
-            your browser sends them directly to the Nominatim service run by the OpenStreetMap community. Like any website request, this
-            also reveals your IP address and basic browser details to that service. We do not receive or store this information. See the{' '}
-            <ExternalLink href="https://osmfoundation.org/wiki/Privacy_Policy">OpenStreetMap Foundation privacy policy</ExternalLink>. Map
-            data © OpenStreetMap contributors.
+            <strong className="text-white">Address lookup services.</strong> To turn your coordinates into an address, your browser sends
+            them directly to a public geocoding service. It tries <strong className="text-white">Photon</strong> (run by Komoot, using
+            OpenStreetMap data) first. If that is unavailable it falls back to <strong className="text-white">BigDataCloud</strong>, and then
+            to <strong className="text-white">OpenStreetMap Nominatim</strong>. Only the service that answers receives your coordinates, and
+            like any website request it also sees your IP address and basic browser details. We do not receive or store this information.
+            See the privacy policies of{' '}
+            <ExternalLink href="https://photon.komoot.io/">Photon</ExternalLink>,{' '}
+            <ExternalLink href="https://www.bigdatacloud.com/privacy">BigDataCloud</ExternalLink> and the{' '}
+            <ExternalLink href="https://osmfoundation.org/wiki/Privacy_Policy">OpenStreetMap Foundation</ExternalLink>. Map data ©
+            OpenStreetMap contributors.
           </p>
           <p>
             <strong className="text-white">GitHub Pages (hosting).</strong> The SpotCam website is served by GitHub Pages. When you open

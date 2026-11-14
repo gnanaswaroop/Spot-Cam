@@ -4,7 +4,8 @@
  * history entry, so Back left the page and the browser later restored it with the viewer open.
  * Full-screen layers now own a history entry: Back closes the top layer and nothing else.
  */
-import { test, expect, Page } from '@playwright/test';
+import { Page } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { SITE, setUpGrantedCamera, takePhotos } from './helpers';
 
 const sampleViewer = (page: Page) => page.getByRole('dialog', { name: 'Sample photo' });

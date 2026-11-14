@@ -2,7 +2,7 @@
  * Permission handling on /cam. Camera and permission outcomes are mocked in the page, so these
  * run identically in Chromium, Firefox and WebKit. Real Chromium prompts: chromium-native.spec.ts.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { SITE, askedFor, installMocks, mockGeocoder, grantLocation, setMock, setUpGrantedCamera, skipIfNoCameraFrames } from './helpers';
 
 test.describe('granted', () => {
