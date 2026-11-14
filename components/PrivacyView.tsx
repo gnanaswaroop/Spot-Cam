@@ -47,7 +47,7 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
           }}
           className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300"
         >
-          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-7 w-7" />
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-7 w-7 rounded-[22%]" />
           <span>Back to SpotCam</span>
         </a>
 

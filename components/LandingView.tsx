@@ -53,7 +53,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) 
         {/* Intro */}
         <section className="flex flex-col items-center text-center md:flex-1 md:items-start md:text-left">
           <div className="flex items-center gap-3">
-            <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-11 w-11 md:h-14 md:w-14" />
+            <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-11 w-11 rounded-[22%] md:h-14 md:w-14" />
             <h1 className="text-2xl font-semibold tracking-tight md:text-4xl">SpotCam</h1>
           </div>
           <p className="mt-2 text-sm font-semibold tracking-wide text-blue-400 md:mt-4 md:text-lg">{TAGLINE}</p>

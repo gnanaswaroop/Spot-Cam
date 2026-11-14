@@ -13,7 +13,40 @@
     </mask>
   </defs>
 
-  <!-- Camera Body (with pin cutout) -->
+  <!-- Optional Dark Navy Background (remove this <rect> for a transparent background) -->
+  <rect width="512" height="512" fill="#111827" />
+
+  <!-- Outer White Border Silhouette (Camera Body + Bottom Pin Tip) -->
+  <g stroke="#FFFFFF" stroke-width="20" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Camera Body Outline -->
+    <path fill="#FFFFFF" d="
+      M 176 92
+      L 336 92
+      C 348 92 356 99 362 110
+      L 376 136
+      L 424 136
+      C 452.7 136 476 159.3 476 188
+      L 476 356
+      C 476 384.7 452.7 408 424 408
+      L 88 408
+      C 59.3 408 36 384.7 36 356
+      L 36 188
+      C 36 159.3 59.3 136 88 136
+      L 136 136
+      L 150 110
+      C 156 99 164 92 176 92 Z" />
+
+    <!-- Location Pin Tip Outline -->
+    <path fill="#FFFFFF" d="
+      M 256 156
+      C 197.5 156 150 203.5 150 262
+      C 150 324 225 401 249.5 428.5
+      C 253 432.5 259 432.5 262.5 428.5
+      C 287 401 362 324 362 262
+      C 362 203.5 314.5 156 256 156 Z" />
+  </g>
+
+  <!-- Camera Body (with dark navy pin cutout) -->
   <path fill="url(#spotcam-split)" mask="url(#pin-cutout)" d="
     M 176 92
     L 336 92
