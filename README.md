@@ -100,3 +100,7 @@ docs/         Architecture guide and README screenshots
 
 - [DOCUMENTATION.md](DOCUMENTATION.md): user guide, how to use SpotCam
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the code works and where things live
+
+## License
+
+[MIT](LICENSE) © 2026 Swaroop
