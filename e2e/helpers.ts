@@ -41,11 +41,17 @@ export async function installMocks(page: Page, options: MockOptions) {
       asked: [],
     };
 
+    const override = (target: object, name: string, value: unknown) =>
+      Object.defineProperty(target, name, { value, configurable: true, writable: true });
+
     if (o.camera) {
       if (!navigator.mediaDevices) {
         Object.defineProperty(navigator, 'mediaDevices', { value: {}, configurable: true });
       }
-      navigator.mediaDevices.getUserMedia = async () => {
+      // Patch the prototype, not the instance: in WebKit the instance can be re-wrapped (we saw our
+      // override vanish on a cold start), while the prototype keeps the override for good.
+      const mediaDevicesTarget: object = (window as any).MediaDevices?.prototype ?? navigator.mediaDevices;
+      override(mediaDevicesTarget, 'getUserMedia', async () => {
         w.__mock.asked.push('camera');
         if (w.__mock.camera === 'denied') throw new DOMException('Permission denied', 'NotAllowedError');
         if (w.__mock.camera === 'notfound') throw new DOMException('Requested device not found', 'NotFoundError');
@@ -63,13 +69,14 @@ export async function installMocks(page: Page, options: MockOptions) {
         // Some engines (e.g. Playwright's WebKit on Windows) have no canvas.captureStream: fall back to
         // an empty stream, which is enough for the permission screens (but not for real photo frames).
         return typeof canvas.captureStream === 'function' ? canvas.captureStream(10) : new MediaStream();
-      };
-      navigator.mediaDevices.enumerateDevices = async () => [{ kind: 'videoinput' } as MediaDeviceInfo];
+      });
+      override(mediaDevicesTarget, 'enumerateDevices', async () => [{ kind: 'videoinput' } as MediaDeviceInfo]);
     }
 
     if (o.location) {
-      const realWatch = navigator.geolocation.watchPosition.bind(navigator.geolocation);
-      navigator.geolocation.watchPosition = (ok, err, opts) => {
+      const geoTarget: Geolocation = (window as any).Geolocation?.prototype ?? navigator.geolocation;
+      const realWatch = geoTarget.watchPosition;
+      Object.defineProperty(geoTarget, 'watchPosition', { configurable: true, writable: true, value: function (this: Geolocation, ok: PositionCallback, err?: PositionErrorCallback | null, opts?: PositionOptions) {
         w.__mock.asked.push('geolocation');
         if (w.__mock.location === 'denied') {
           setTimeout(
@@ -85,23 +92,24 @@ export async function installMocks(page: Page, options: MockOptions) {
           );
           return 1;
         }
-        return realWatch(ok, err, opts);
-      };
+        return realWatch.call(this, ok, err, opts);
+      } });
     }
 
     // Keep navigator.permissions consistent with the mocked outcomes, as in a real browser:
     // granted -> 'granted'; otherwise 'prompt', unless a test pins an explicit state (e.g. 'denied').
     if (navigator.permissions) {
-      const realQuery = navigator.permissions.query.bind(navigator.permissions);
-      navigator.permissions.query = async (desc: PermissionDescriptor) => {
+      const permTarget: Permissions = (window as any).Permissions?.prototype ?? navigator.permissions;
+      const realQuery = permTarget.query;
+      override(permTarget, 'query', async function (this: Permissions, desc: PermissionDescriptor) {
         const pinned = (w.__mock.permissionStates as Record<string, PermState | undefined>)[desc.name];
         const mode = desc.name === 'camera' ? w.__mock.camera : desc.name === 'geolocation' ? w.__mock.location : null;
         if (pinned || mode) {
           const state = pinned ?? (mode === 'granted' ? 'granted' : 'prompt');
           return { state, addEventListener() {}, removeEventListener() {} } as unknown as PermissionStatus;
         }
-        return realQuery(desc);
-      };
+        return realQuery.call(this, desc);
+      });
     }
   }, options);
 }
