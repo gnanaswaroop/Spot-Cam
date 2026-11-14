@@ -1,7 +1,7 @@
 /**
  * Minimal static server that mimics GitHub Pages for the production build in dist/:
- *  - serves under /Spot-Cam/
- *  - /Spot-Cam/cam  -> 301 to /Spot-Cam/cam/ -> cam/index.html (directories, like Pages)
+ *  - serves at the site root (the custom domain), or under BASE_PATH (e.g. /Spot-Cam) for a project site
+ *  - /cam  -> 301 to /cam/ -> cam/index.html (directories, like Pages)
  *  - anything missing -> 404.html with a 404 status
  * Unlike `vite preview`, there is NO single-page-app fallback, so these tests prove the
  * deployed site works on plain static hosting.
@@ -12,7 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
-const BASE = '/Spot-Cam';
+const BASE = (process.env.BASE_PATH ?? '').replace(/\/$/, '');
 const port = Number(process.env.PORT ?? 4173);
 
 const types = {

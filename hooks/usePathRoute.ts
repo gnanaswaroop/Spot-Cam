@@ -1,9 +1,11 @@
 /**
  * @file Tiny path-based router using the History API.
  *
- *   /Spot-Cam/ or /Spot-Cam/home -> landing
- *   /Spot-Cam/cam                -> camera (permissions are requested on load)
- *   /Spot-Cam/gallery            -> gallery
+ *   /  or  /home  -> landing
+ *   /cam          -> camera (permissions are requested on load)
+ *   /gallery      -> gallery
+ *
+ * (Paths are relative to Vite's BASE_URL: '/' on the custom domain, '/Spot-Cam/' on a project site.)
  *
  * GitHub Pages is static hosting, so the build emits a real index.html for each of these paths
  * (see the `spaRoutes` plugin in vite.config.ts) and a 404.html that falls back to the landing page.
@@ -13,7 +15,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 export type View = 'landing' | 'camera' | 'gallery';
 
-// BASE_URL is e.g. '/Spot-Cam/'; drop its trailing slash so we can slice it off pathnames.
+// BASE_URL is '/' (or e.g. '/Spot-Cam/'); drop its trailing slash so we can slice it off pathnames.
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 const PATHS: Record<View, string> = {

@@ -1,84 +1,89 @@
-# SpotCam - Documentation
+# SpotCam: user guide
 
-## 1. Introduction
+> Looking for how the code works? See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). For setup and deployment, see the [README](README.md).
 
-Welcome to SpotCam! This is a modern, web-based camera application designed to run on any mobile device (Android or iOS) directly from the browser. It allows you to capture photos with a real-time overlay of the current date, time, and precise GPS location, including the full street address.
+## 1. What is SpotCam?
 
-The app is built with privacy and convenience in mind. All captured photos are stored locally on your device's browser storage, giving you full control over your data. You can view your recent captures in a built-in gallery, share them with other apps, or delete them permanently.
+SpotCam is a web camera that stamps the **date, time and location** onto every photo you take, so each picture shows when and where it was taken. It runs in your browser on phones and computers. There is nothing to install and no account.
 
----
+It is built for privacy: your photos stay in your browser. Nothing is uploaded.
 
-## 2. Key Features
-
-- **Live Camera Feed**: Access your device's camera directly in the browser.
-- **Real-time Data Overlay**: Automatically embeds the current date, time, GPS coordinates (Latitude/Longitude), and the full street address onto the live camera preview and the final captured image.
-- **Full Address Display (Reverse Geocoding)**: Automatically converts GPS data into a human-readable address.
-- **Instant Capture**: A responsive capture button allows you to snap photos instantly.
-- **Local Gallery**: A built-in gallery stores your last 12 photos. The oldest photos are automatically replaced as you take new ones to manage storage.
-- **Photo Management**: View, share, and delete individual photos directly from the gallery.
-- **Web Share API Integration**: Natively share your photos with other applications on your device, like social media, messaging apps, or cloud storage.
-- **Cross-Browser Compatibility**: Built using standard web APIs to ensure it works on modern mobile browsers like Chrome, Safari, and Firefox.
-- **Privacy First**: All photos and data are stored exclusively in your browser (IndexedDB). Nothing is uploaded to a server.
+Open it at **https://spotcam.in**.
 
 ---
 
-## 3. User Guide
+## 2. Features
 
-### 3.1. The Camera View
-
-When you first launch the application, you'll be in the Camera View. You may be prompted by your browser to grant permission to access your camera and location. Please accept these permissions for the app to function correctly.
-
-**Anatomy of the Camera View:**
-
-1.  **Live Preview**: The main area of the screen shows the live feed from your device's rear-facing camera.
-2.  **Data Overlay**: At the top-center of the screen, you'll see a semi-transparent overlay displaying:
-    - The current date and time, updated every second.
-    - Your current GPS coordinates (Latitude and Longitude).
-    - Your current address, fetched from your GPS coordinates. It will display "Fetching address..." until the location is resolved. Long addresses will automatically wrap to fit the screen.
-3.  **Capture Button**: The large, circular button at the bottom-center is the shutter. Tap it to instantly capture a photo. A subtle flash effect will confirm the capture.
-4.  **Gallery Button**: The icon on the bottom-left will take you to the Gallery View where you can see your recently captured photos.
-
-**Screenshot of the Camera View:**
-
-![The main camera interface showing the live preview with the data overlay at the top, and the capture and gallery buttons at the bottom.](placeholder-camera-view.png "Camera View")
-
-### 3.2. The Gallery View
-
-From the Camera View, tap the **Gallery Button** to access your collection of recent photos.
-
-**Anatomy of the Gallery View:**
-
-1.  **Photo Grid**: Your captured photos are displayed in a grid, sorted from newest to oldest.
-2.  **Back to Camera Button**: The camera icon in the header allows you to return to the Camera View to take more pictures.
-3.  **Empty Gallery Message**: If you haven't taken any photos yet, a message will prompt you to go back and start snapping.
-
-**Screenshot of the Gallery View:**
-
-![The gallery interface showing a grid of recently captured photo thumbnails.](placeholder-gallery-view.png "Gallery View")
-
-### 3.3. Managing a Photo
-
-Tap on any photo thumbnail in the gallery grid to open it in a detailed modal view.
-
-**Anatomy of the Photo Detail View:**
-
-1.  **Full-Size Image**: The selected photo is displayed in a larger format. The embedded date, time, and location data are visible on the image itself.
-2.  **Photo Information**: Below the image, you'll find the capture timestamp, GPS coordinates, and the full address where the photo was taken.
-3.  **Close Button**: An 'X' button at the top-right corner to close the modal and return to the gallery grid.
-4.  **Share Button**: Tapping this button will open your device's native share sheet, allowing you to send the photo to other apps.
-5.  **Delete Button**: Tapping this will permanently delete the photo from your local storage.
-
-**Screenshot of the Photo Detail View:**
-
-![The photo detail modal showing a captured image in full view, with Share and Delete action buttons below it.](placeholder-photo-detail-view.png "Photo Detail View")
+- **Live camera** straight in the browser.
+- **Date, time and place on every photo**: current date and time, GPS coordinates and the street address, shown live and burned into the saved image on a dark band so it stays readable.
+- **Local gallery** of your latest 12 photos. The oldest is replaced as you take new ones.
+- **Share** photos through your device's share sheet, or **delete** them.
+- **Helpful permission messages**: if camera or location is blocked, SpotCam says why it needs it and shows how to turn it back on for your browser.
+- **Direct links**: bookmark `/cam` to open the camera straight away.
+- **Private by design**: photos and data stay in your browser (IndexedDB).
 
 ---
 
-## 4. Technical Details
+## 3. User guide
 
-- **Framework**: The app is built as a Single Page Application using **React**.
-- **Camera Access**: It uses the `navigator.mediaDevices.getUserMedia` Web API to access the device's camera stream.
-- **Geolocation**: It uses the `navigator.geolocation` API with `watchPosition` to get continuous, high-accuracy location updates. It also uses the free **OpenStreetMap Nominatim API** for reverse geocoding to convert GPS coordinates into a human-readable address.
-- **Local Storage (IndexedDB)**: IndexedDB (via `idb-keyval`) is used to persist the captured photos. To keep storage bounded, the gallery is capped at a maximum of 12 photos.
-- **Image Processing**: The HTML `<canvas>` element is used to draw the video frame and the data overlay onto a new image when a photo is captured.
-- **Sharing**: The native **Web Share API** (`navigator.share`) is used for seamless integration with the device's sharing capabilities.
+### 3.1. The landing page
+
+The first page explains what SpotCam is and shows a **sample photo**. Tap the sample to see what your photos will look like (with its date, time and location). You can share the sample to try the share sheet. Tap **Start Cam** to begin.
+
+<img src="docs/screenshots/01-landing.png" alt="The landing page" width="260" />
+
+> **Tip:** you don't have to see this page every time. Go to **spotcam.in/cam** (or bookmark it) to open the camera directly.
+
+### 3.2. Allowing camera and location
+
+The first time, your browser asks for permission to use your **camera** and **location**. Please allow both. SpotCam can't take stamped photos without them, so the shutter stays disabled until both work.
+
+If you blocked one, SpotCam shows a notice with what to do:
+
+<img src="docs/screenshots/06-permission-blocked.png" alt="A notice explaining the camera is blocked, with steps to turn it back on" width="260" />
+
+- Browsers don't show a blocked prompt again by themselves, so follow the steps for your browser (they're written for iPhone Safari, Android, Firefox, Chrome, Edge and Safari on Mac).
+- Then tap **Reload page** (or **Allow access** if the prompt can still appear). If you change the setting while the page is open, SpotCam usually notices by itself.
+
+### 3.3. The camera
+
+<img src="docs/screenshots/03-camera.png" alt="The camera view" width="260" />
+
+1. **Live preview**: the main area shows your camera.
+2. **Stamp**: the top band shows the current date and time, your GPS coordinates and your address. The address shows "Locating..." until your position is found. The small SpotCam badge at its left takes you back to the landing page.
+3. **Shutter**: the large round button in the middle takes the photo.
+4. **Gallery**: the button on the left opens your photos.
+5. **Switch camera**: the button on the right flips between front and back cameras (if your device has both).
+6. **Zoom**: if your camera supports it, a zoom slider appears above the controls.
+
+### 3.4. The gallery
+
+<img src="docs/screenshots/04-gallery.png" alt="The gallery" width="260" />
+
+Your photos appear in a grid, newest first. The camera icon at the top returns to the camera. With no photos yet, you'll see a message pointing you back to the camera.
+
+### 3.5. A single photo
+
+Tap a photo to open it.
+
+<img src="docs/screenshots/05-photo.png" alt="A photo opened in the viewer" width="260" />
+
+- You see the full photo with its stamp, and the date, coordinates and address below it.
+- **Share** opens your device's share sheet.
+- **Delete** asks you to confirm, then removes the photo for good.
+- **X** or your phone's **Back** gesture closes the photo and returns to the gallery.
+
+---
+
+## 4. Good to know
+
+- Photos are saved **only in your browser**. Clearing site data or switching browsers removes them. Share or save photos you want to keep.
+- The gallery keeps your **latest 12** photos.
+- The address comes from [OpenStreetMap](https://www.openstreetmap.org/). Your coordinates are sent to it only to look up the address. Photos are never sent anywhere.
+- SpotCam needs a modern browser (recent Chrome, Edge, Firefox or Safari) and a secure (HTTPS) connection for the camera and location.
+
+---
+
+## 5. Technical overview
+
+SpotCam is a single-page React app that uses standard web APIs: `getUserMedia` (camera), the Geolocation API with `watchPosition` (location), an HTML `<canvas>` (drawing the stamp), IndexedDB (storage) and the Web Share API (sharing). The full explanation of how it fits together is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
