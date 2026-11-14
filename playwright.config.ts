@@ -27,7 +27,8 @@ export default defineConfig({
       name: 'chromium-android',
       use: {
         ...devices['Pixel 7'],
-        channel: process.env.PW_CHANNEL || undefined,
+        // 'chromium' = full Chromium in new headless mode; the default headless shell has no fake camera.
+        channel: process.env.PW_CHANNEL || 'chromium',
         // Fake capture device so getUserMedia works without hardware when permission is granted.
         launchOptions: { args: ['--use-fake-device-for-media-stream'] },
       },
