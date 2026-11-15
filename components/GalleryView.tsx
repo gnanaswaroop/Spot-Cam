@@ -7,7 +7,8 @@ import React from 'react';
 import { CapturedPhoto } from '../types';
 import { useHistoryOverlay, hasOverlayEntry } from '../hooks/useHistoryOverlay';
 import { dataURLtoFile, formatDateTime } from '../utils/helpers';
-import { CameraIcon, ShareIcon, DeleteIcon, CloseIcon, GalleryIcon } from './icons';
+import { ShareIcon, DeleteIcon, CloseIcon, GalleryIcon } from './icons';
+import { AppHeader } from './AppHeader';
 
 /** Props for the GalleryView component. */
 interface GalleryViewProps {
@@ -152,12 +153,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
 
   return (
     <div className="app-h w-full bg-gray-900 text-white flex flex-col">
-      <header className="w-full p-4 bg-gray-800 shadow-md flex items-center justify-between z-10">
-        <h1 className="text-xl font-bold">Gallery</h1>
-        <button onClick={onSwitchView} className="p-2 rounded-full hover:bg-gray-700 transition-colors" aria-label="Go to camera view">
-          <CameraIcon className="w-7 h-7" />
-        </button>
-      </header>
+      <AppHeader onBack={onSwitchView} />
+      <h1 className="px-4 pt-4 text-xl font-bold">Gallery</h1>
       {photos.length === 0 ? (
         // Display a message when the gallery is empty
         <div className="flex-grow flex flex-col items-center justify-center text-gray-500">

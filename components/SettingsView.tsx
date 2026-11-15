@@ -13,7 +13,7 @@ import {
   isCacheRadiusCustomised,
   setCacheRadiusM,
 } from '../utils/settings';
-import { CameraIcon } from './icons';
+import { AppHeader } from './AppHeader';
 
 interface SettingsViewProps {
   /** How many photos are saved in the gallery. */
@@ -111,12 +111,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, onDelete
 
   return (
     <div className="app-h w-full bg-gray-900 text-white flex flex-col">
-      <header className="w-full p-4 bg-gray-800 shadow-md flex items-center justify-between z-10">
-        <h1 className="text-xl font-bold">Settings</h1>
-        <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-700 transition-colors" aria-label="Back to camera">
-          <CameraIcon className="w-7 h-7" />
-        </button>
-      </header>
+      <AppHeader onBack={onBack} />
+      <h1 className="px-4 pt-4 text-xl font-bold">Settings</h1>
 
       <main className="flex-1 overflow-y-auto p-4 space-y-4 w-full max-w-xl mx-auto">
         <p role="status" aria-live="polite" className="min-h-[1.5em] text-sm text-green-300">

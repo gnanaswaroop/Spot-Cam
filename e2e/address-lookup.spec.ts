@@ -63,6 +63,63 @@ test.describe('address lookup', () => {
     await expect.poll(() => counts.photon).toBe(2);
   });
 
+  test('several places: each one is looked up once, then served from the cache, including after a reload', async ({ page, context }) => {
+    const counts = countRequests(page);
+    // The service names each place from its coordinates, so a wrong or repeated lookup shows on screen.
+    await page.route('**/photon.komoot.io/**', route => {
+      const url = new URL(route.request().url());
+      const lat = Number(url.searchParams.get('lat'));
+      const lon = Number(url.searchParams.get('lon'));
+      const name = lat > 48.87 ? 'Gare du Nord' : lon > 2.31 ? 'Pont Alexandre III' : 'Champ de Mars';
+      return route.fulfill(photonReply(name));
+    });
+    await openCamera(page, context);
+    await page.goto(`${SITE}/cam`);
+    const at = (metres: number, north: boolean) =>
+      context.setGeolocation(
+        north
+          ? { latitude: paris.latitude + metres / 111_195, longitude: paris.longitude }
+          : { latitude: paris.latitude, longitude: paris.longitude + metres / 78_850 },
+      );
+
+    // Place A: Champ de Mars. The first visit is a real lookup.
+    await expect(page.getByText('Champ de Mars, Paris, France')).toBeVisible();
+    expect(counts.photon).toBe(1);
+
+    // Place B: about 3 km north. A new place, so one more lookup.
+    await at(3000, true);
+    await expect(page.getByText('Gare du Nord, Paris, France')).toBeVisible();
+    expect(counts.photon).toBe(2);
+
+    // Back to place A (about 20 m away from where it was looked up): served from the cache.
+    await page.waitForTimeout(300);
+    await at(0, true);
+    await expect(page.getByText('Champ de Mars, Paris, France')).toBeVisible();
+    await page.waitForTimeout(800);
+    expect(counts.photon).toBe(2);
+
+    // Place C: about 2 km east, a third place. One more lookup.
+    await at(2000, false);
+    await expect(page.getByText('Pont Alexandre III, Paris, France')).toBeVisible();
+    expect(counts.photon).toBe(3);
+
+    // Back to B and to C again, a few metres from the saved points: still no new requests.
+    await at(3000, true);
+    await expect(page.getByText('Gare du Nord, Paris, France')).toBeVisible();
+    await at(2000, false);
+    await expect(page.getByText('Pont Alexandre III, Paris, France')).toBeVisible();
+    await page.waitForTimeout(800);
+    expect(counts.photon).toBe(3);
+
+    // A full reload at place A: the cache is kept on the device, so no request is made.
+    await at(0, true);
+    await page.reload();
+    await expect(page.getByText('Champ de Mars, Paris, France')).toBeVisible();
+    await page.waitForTimeout(800);
+    expect(counts.photon).toBe(3);
+    expect(counts.bigdata + counts.nominatim).toBe(0);
+  });
+
   test('moving a long way looks up the new place', async ({ page, context }) => {
     await page.route('**/photon.komoot.io/**', route => {
       const lat = Number(new URL(route.request().url()).searchParams.get('lat'));
