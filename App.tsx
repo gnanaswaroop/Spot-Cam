@@ -8,6 +8,7 @@ import { CameraView } from './components/CameraView';
 import { GalleryView } from './components/GalleryView';
 import { LandingView } from './components/LandingView';
 import { PrivacyView } from './components/PrivacyView';
+import { SettingsView } from './components/SettingsView';
 import { CapturedPhoto } from './types';
 import { usePersistedPhotos } from './hooks/usePersistedPhotos';
 import { usePathRoute } from './hooks/usePathRoute';
@@ -53,6 +54,14 @@ const App: React.FC = () => {
           onCapture={handleCapture}
           onSwitchView={() => switchView('gallery')}
           onHome={() => switchView('landing')}
+          onOpenSettings={() => switchView('settings')}
+        />
+      )}
+      {view === 'settings' && (
+        <SettingsView
+          photoCount={photos.length}
+          onDeleteAllPhotos={() => setPhotos([])}
+          onBack={() => switchView('camera')}
         />
       )}
       {/* Conditionally render the GalleryView */}

@@ -71,7 +71,7 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
           <p>
             <strong className="text-white">Location.</strong> SpotCam asks for your location (GPS) so it can print the date, time,
             coordinates and address onto each photo. Your coordinates are used on your device to draw the stamp, and they are also sent to
-            a third party to get the address (see "Services we rely on" below). SpotCam does not keep a history of where you have been. To avoid repeating address lookups, your browser keeps the addresses it has already found, with the coordinates they were found for, in its storage on this device for up to 30 days. This cache is never sent anywhere, and clearing this site's data in your browser removes it.
+            a third party to get the address (see "Services we rely on" below). SpotCam does not keep a history of where you have been. To avoid repeating address lookups, your browser keeps the addresses it has already found, with the coordinates they were found for, in its storage on this device for up to 30 days. This cache is never sent anywhere. You can clear it, or change how far it reaches, in Settings, and clearing this site's data in your browser also removes it.
           </p>
           <p>
             <strong className="text-white">Your photos.</strong> When you take a photo, it is saved in your browser's storage (IndexedDB)

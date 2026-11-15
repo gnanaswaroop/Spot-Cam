@@ -6,9 +6,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { GeolocationData } from '../types';
 import { geocoder } from '../utils/geocoder';
 import { distanceMeters } from '../utils/geo';
+import { getCacheRadiusM } from '../utils/settings';
 
-/** Look up a new address once the user has moved this far (metres) from where the last one was found. */
-export const ADDRESS_MOVE_THRESHOLD_M = 50; // the same as the cache radius, so both agree on "the same place"
 /** An address older than this distance is no longer shown: it would describe somewhere else. */
 export const ADDRESS_STALE_DISTANCE_M = 200;
 
@@ -61,7 +60,8 @@ export function useGeolocation() {
 
     const known = resolved.current;
     const moved = known ? distanceMeters(pos.latitude, pos.longitude, known.latitude, known.longitude) : Infinity;
-    if (!force && moved < ADDRESS_MOVE_THRESHOLD_M) return; // still at the spot we already have an address for
+    // Look up a new address only after moving beyond the cache radius, so both agree on "the same place".
+    if (!force && moved < getCacheRadiusM()) return; // still at the spot we already have an address for
     if (!force && Date.now() < notBefore.current) return; // backing off after a failure
 
     inFlight.current = true;

@@ -260,6 +260,33 @@ describe('geocoder', () => {
     expect(calls).toHaveLength(4);
   });
 
+  it('reports how many saved addresses are in use, and clears them all', async () => {
+    const { geocoder, calls, advance } = setup({ a: [good('S1'), good('S2'), good('S1 again')] }, { minIntervalMs: 0, cacheMaxEntries: 5 });
+    await geocoder.lookup(10, 10);
+    advance(1);
+    await geocoder.lookup(20, 20);
+    expect(await geocoder.cacheStats()).toEqual({ count: 2, max: 5 });
+
+    await geocoder.clearCache();
+    expect(await geocoder.cacheStats()).toEqual({ count: 0, max: 5 });
+    await geocoder.lookup(10, 10);
+    expect(calls).toHaveLength(3); // cleared, so the same place is looked up again
+  });
+
+  it('changing the radius applies to later lookups, and saved entries are kept', async () => {
+    const { geocoder, calls, advance } = setup({ a: [good('Here'), good('Further')] }, { minIntervalMs: 0, cacheRadiusM: 50 });
+    await geocoder.lookup(48.85841, 2.29451);
+    advance(10_000);
+    geocoder.setCacheRadius(200); // now a point about 75 m away is close enough to reuse
+    const near = await geocoder.lookup(48.8590, 2.2950);
+    expect(near).toMatchObject({ address: 'Here', cached: true });
+    geocoder.setCacheRadius(10); // and a tighter radius stops reuse
+    advance(10_000);
+    const tight = await geocoder.lookup(48.8595, 2.2955);
+    expect(tight).toMatchObject({ address: 'Further', cached: false });
+    expect(calls).toHaveLength(2);
+  });
+
   it('keeps working from memory when the store fails to load or save', async () => {
     const store: AddressStore = {
       load: async () => {

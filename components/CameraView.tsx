@@ -7,7 +7,7 @@ import { CapturedPhoto, GeolocationData } from '../types';
 import { useGeolocation, AddressStatus } from '../hooks/useGeolocation';
 import { usePermissionState } from '../hooks/usePermissionState';
 import { PermissionNotice } from './PermissionNotice';
-import { GalleryIcon, SwitchCameraIcon } from './icons';
+import { GalleryIcon, SettingsIcon, SwitchCameraIcon } from './icons';
 import { FONT_FAMILY_OVERLAY } from '../utils/constants';
 
 /** Props for the CameraView component. */
@@ -18,6 +18,8 @@ interface CameraViewProps {
   onSwitchView: () => void;
   /** Callback to return to the landing page. */
   onHome: () => void;
+  /** Callback to open the settings view. */
+  onOpenSettings: () => void;
 }
 
 /**
@@ -37,12 +39,15 @@ const AddressLine = ({ location, status, onRetry }: { location: GeolocationData;
     return <p className="px-2">Looking up address...</p>;
 };
 
-const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress }: { location: GeolocationData | null; addressStatus: AddressStatus; dateTime: string; onHome: () => void; onRetryAddress: () => void }) => (
+const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress, onOpenSettings }: { location: GeolocationData | null; addressStatus: AddressStatus; dateTime: string; onHome: () => void; onRetryAddress: () => void; onOpenSettings: () => void }) => (
     <div data-testid="stamp-overlay" className="absolute top-0 left-0 right-0 px-3 py-2 text-white text-center text-sm font-semibold bg-black bg-opacity-55 backdrop-blur-sm short:right-24 short:py-1 short:pl-12 short:text-xs short:leading-tight" style={{ fontFamily: FONT_FAMILY_OVERLAY, textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
         {/* Brand badge: lives inside the existing band so it costs no vertical space. Tap to go home. */}
         <button onClick={onHome} className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-white/10 p-1 pr-1 hover:bg-white/20 sm:pr-2.5" aria-label="SpotCam home">
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-6 w-6 rounded-[22%]" />
             <span className="hidden text-xs font-semibold tracking-tight sm:inline">SpotCam</span>
+        </button>
+        <button onClick={onOpenSettings} className="absolute right-2 top-2 rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label="Settings">
+            <SettingsIcon className="h-5 w-5" />
         </button>
         <p>{dateTime}</p>
         {location ? (
@@ -59,7 +64,7 @@ const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress }: 
 /**
  * The main component for the camera interface.
  */
-export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView, onHome }) => {
+export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView, onHome, onOpenSettings }) => {
   // Refs for video and canvas elements
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -335,7 +340,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
       )}
 
       {/* Live data overlay */}
-      <Overlay location={location} addressStatus={addressStatus} dateTime={dateTime} onHome={onHome} onRetryAddress={retryAddress} />
+      <Overlay location={location} addressStatus={addressStatus} dateTime={dateTime} onHome={onHome} onRetryAddress={retryAddress} onOpenSettings={onOpenSettings} />
       
       {/* Location permission is required: the stamp is the whole point of the app */}
       {locationBlocked && !error && (

@@ -18,6 +18,7 @@
 
 import { get, set } from 'idb-keyval';
 import { distanceMeters } from './geo';
+import { DEFAULT_CACHE_RADIUS_M, getCacheRadiusM } from './settings';
 
 /** One successful lookup: where it was made, the address found, and when it was made and last used. */
 export interface CacheEntry {
@@ -156,7 +157,7 @@ export function createGeocoder(overrides: Partial<GeocoderOptions> = {}) {
     minIntervalMs: 1000,
     baseCooldownMs: 5000,
     maxCooldownMs: 60_000,
-    cacheRadiusM: 50,
+    cacheRadiusM: DEFAULT_CACHE_RADIUS_M,
     cacheMaxEntries: 200,
     cacheTtlMs: 30 * 24 * 60 * 60 * 1000,
     ...overrides,
@@ -177,13 +178,15 @@ export function createGeocoder(overrides: Partial<GeocoderOptions> = {}) {
     o.store?.save(entries).catch(() => undefined); // a failed save only means the next visit starts colder
   };
 
+  let radiusM = o.cacheRadiusM; // changeable at runtime from the settings view
+
   const findNearby = (lat: number, lon: number): CacheEntry | undefined => {
     let best: CacheEntry | undefined;
     let bestDistance = Infinity;
     for (const e of entries) {
       if (!isFresh(e)) continue;
       const d = distanceMeters(lat, lon, e.latitude, e.longitude);
-      if (d <= o.cacheRadiusM && d < bestDistance) {
+      if (d <= radiusM && d < bestDistance) {
         best = e;
         bestDistance = d;
       }
@@ -271,8 +274,23 @@ export function createGeocoder(overrides: Partial<GeocoderOptions> = {}) {
       breakers.clear();
       nextAllowedAt = 0;
     },
+    /** Changes the reuse radius for later lookups. Entries already saved are kept. */
+    setCacheRadius(metres: number) {
+      radiusM = metres;
+    },
+    /** How many saved addresses are still in use, and the most that can be kept. */
+    async cacheStats(): Promise<{ count: number; max: number }> {
+      await ready;
+      return { count: entries.filter(isFresh).length, max: o.cacheMaxEntries };
+    },
+    /** Deletes every saved address from memory and from this device. */
+    async clearCache(): Promise<void> {
+      await ready;
+      entries = [];
+      await o.store?.save([]).catch(() => undefined);
+    },
   };
 }
 
 /** One shared instance, so the cache and circuit breakers survive switching between views. */
-export const geocoder = createGeocoder({ store: idbAddressStore() });
+export const geocoder = createGeocoder({ store: idbAddressStore(), cacheRadiusM: getCacheRadiusM() });
