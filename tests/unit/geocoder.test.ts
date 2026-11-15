@@ -339,6 +339,74 @@ describe('geocoder', () => {
   });
 });
 
+/** A point `metres` due north of (lat, lon); one degree of latitude is about 111,195 m. */
+const north = (lat: number, lon: number, metres: number): [number, number] => [lat + metres / 111_195, lon];
+
+describe('cache rules', () => {
+  const origin: [number, number] = [48.85841, 2.29451];
+
+  it('reuses an address exactly up to the radius, and looks up again just beyond it', async () => {
+    const { geocoder, calls, advance } = setup({ a: [good('Inside'), good('Outside')] }, { minIntervalMs: 0, cacheRadiusM: 50 });
+    await geocoder.lookup(...origin);
+    advance(10_000);
+    const inside = await geocoder.lookup(...north(...origin, 49));
+    expect(inside).toMatchObject({ address: 'Inside', cached: true });
+    const outside = await geocoder.lookup(...north(...origin, 51));
+    expect(outside).toMatchObject({ address: 'Outside', cached: false });
+    expect(calls).toHaveLength(2);
+  });
+
+  it('a stored entry older than the TTL is dropped on load, so its place is looked up again', async () => {
+    const now = 1_000_000;
+    const ttl = 1000;
+    const saved: CacheEntry[] = [
+      { latitude: origin[0], longitude: origin[1], address: 'Stale St', at: now - 2 * ttl, used: now - 2 * ttl },
+    ];
+    const store: AddressStore = { load: async () => saved, save: async () => undefined };
+    const { geocoder, calls } = setup({ a: good('Fresh St') }, { minIntervalMs: 0, store, cacheTtlMs: ttl });
+    const r = await geocoder.lookup(...origin);
+    expect(r).toMatchObject({ address: 'Fresh St', cached: false });
+    expect(calls).toEqual(['a']);
+  });
+
+  it('on load, keeps only the most recently used entries up to the size limit', async () => {
+    const now = 1_000_000;
+    const saved: CacheEntry[] = [1, 2, 3, 4, 5].map(i => ({
+      latitude: 10 * i,
+      longitude: 10 * i,
+      address: `Place ${i}`,
+      at: now,
+      used: now + i,
+    }));
+    const store: AddressStore = { load: async () => saved, save: async () => undefined };
+    const { geocoder } = setup({}, { minIntervalMs: 0, store, cacheMaxEntries: 3 });
+    expect(await geocoder.cacheStats()).toEqual({ count: 3, max: 3 });
+  });
+
+  it('entries that have expired stop counting as in use, even before a new lookup', async () => {
+    const { geocoder, advance } = setup({ a: good('Old') }, { minIntervalMs: 0, cacheTtlMs: 1000 });
+    await geocoder.lookup(...origin);
+    expect(await geocoder.cacheStats()).toEqual({ count: 1, max: 200 });
+    advance(2000);
+    expect(await geocoder.cacheStats()).toEqual({ count: 0, max: 200 });
+  });
+
+  it('clearing the cache also empties the stored copy, so a reload starts cold', async () => {
+    const saved: CacheEntry[] = [];
+    const save = vi.fn(async (entries: CacheEntry[]) => {
+      saved.splice(0, saved.length, ...entries);
+    });
+    const store: AddressStore = { load: async () => [...saved], save };
+    const { geocoder } = setup({ a: good('Cleared St') }, { minIntervalMs: 0, store });
+    await geocoder.lookup(...origin);
+    expect(saved).toHaveLength(1);
+
+    await geocoder.clearCache();
+    expect(save).toHaveBeenLastCalledWith([]);
+    expect(saved).toHaveLength(0);
+  });
+});
+
 describe('distanceMeters', () => {
   it('is zero for the same point', () => {
     expect(distanceMeters(10, 20, 10, 20)).toBe(0);

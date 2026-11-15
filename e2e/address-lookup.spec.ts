@@ -45,6 +45,24 @@ test.describe('address lookup', () => {
     expect(counts.bigdata + counts.nominatim).toBe(0);
   });
 
+  test('a short walk keeps the saved address; a longer move (beyond the cache radius) looks up again', async ({ page, context }) => {
+    const counts = countRequests(page);
+    await mockGeocoder(page);
+    await openCamera(page, context);
+    await page.goto(`${SITE}/cam`);
+    await expect(page.getByText('Champ de Mars, Paris, France')).toBeVisible();
+    expect(counts.photon).toBe(1);
+
+    // About 30 m north: inside the default 50 m radius, so the saved address is reused.
+    await context.setGeolocation({ latitude: paris.latitude + 30 / 111_195, longitude: paris.longitude });
+    await page.waitForTimeout(800);
+    expect(counts.photon).toBe(1);
+
+    // About 80 m north: beyond the radius, so the address is looked up again.
+    await context.setGeolocation({ latitude: paris.latitude + 80 / 111_195, longitude: paris.longitude });
+    await expect.poll(() => counts.photon).toBe(2);
+  });
+
   test('moving a long way looks up the new place', async ({ page, context }) => {
     await page.route('**/photon.komoot.io/**', route => {
       const lat = Number(new URL(route.request().url()).searchParams.get('lat'));

@@ -3,7 +3,7 @@
  * (saved only when changed), and deletes saved photos. All services are mocked.
  */
 import { test, expect } from './fixtures';
-import { SITE, grantLocation, installMocks, mockGeocoder } from './helpers';
+import { SITE, grantLocation, installMocks, mockGeocoder, setUpGrantedCamera, takePhotos } from './helpers';
 
 async function openCamera(page: import('@playwright/test').Page, context: import('@playwright/test').BrowserContext) {
   await installMocks(page, { camera: 'granted', location: 'granted' });
@@ -71,6 +71,19 @@ test.describe('settings', () => {
     await page.getByLabel('Radius in metres').fill('5');
     await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
     await expect(page.getByText('Enter a whole number from 10 to 500.')).toBeVisible();
+  });
+
+  test('deleting all saved photos asks first, then empties the gallery', async ({ page, context }) => {
+    await mockGeocoder(page);
+    await setUpGrantedCamera(page, context);
+    await takePhotos(page, 2);
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await expect(page.getByTestId('photo-count')).toContainText('2');
+
+    await page.getByRole('button', { name: 'Delete all saved photos' }).click();
+    await expect(page.getByRole('button', { name: 'Yes, delete all photos' })).toBeVisible();
+    await page.getByRole('button', { name: 'Yes, delete all photos' }).click();
+    await expect(page.getByTestId('photo-count')).toHaveText('No photos saved.');
   });
 
   test('with no saved photos, deleting them is not offered', async ({ page, context }) => {
