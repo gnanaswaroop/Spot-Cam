@@ -170,7 +170,7 @@ Everything the browser runs (React, ReactDOM, `idb-keyval`) is **bundled into ou
 - Bundling lets the build drop unused code and keeps the app working offline later.
 - An unpinned CDN version can change or break the site without a pull request, and adds supply-chain risk.
 
-To stay current, **Dependabot** (`.github/dependabot.yml`) opens weekly pull requests for npm packages and monthly ones for GitHub Actions. The Playwright suite runs against each change before it's merged. `index.html` also preconnects to Nominatim, the one third-party request the page makes.
+To stay current, **Dependabot** (`.github/dependabot.yml`) opens weekly pull requests for npm packages and monthly ones for GitHub Actions. The Playwright suite runs against each change before it's merged. `index.html` also preconnects to Photon, the first geocoder tried and the only third-party request the page normally makes.
 
 ## 13. Testing
 
@@ -202,7 +202,7 @@ Playwright end-to-end tests live in `e2e/` and run against the **production buil
 
 ## 15. Privacy policy
 
-The policy lives in `components/PrivacyView.tsx` and is served at `/privacy`. It describes what the code really does: the camera and location are used on-device, photos stay in IndexedDB, and **the only data that leaves the device is the coordinates sent to OpenStreetMap Nominatim** for the address lookup. **Keep it in step with the code:** if you add analytics, uploads, cookies or change the geocoder, update the page text and `PRIVACY_LAST_UPDATED`. The test in `privacy.spec.ts` checks for the key statements.
+The policy lives in `components/PrivacyView.tsx` and is served at `/privacy`. It describes what the code really does: the camera and location are used on-device, photos stay in IndexedDB, and **the only data that leaves the device is the coordinates sent to the geocoder that answers (Photon, then BigDataCloud, then OpenStreetMap Nominatim)** for the address lookup. **Keep it in step with the code:** if you add analytics, uploads, cookies or change the geocoder, update the page text and `PRIVACY_LAST_UPDATED`. The test in `privacy.spec.ts` checks for the key statements.
 
 ## 16. Known limits and ideas
 
