@@ -14,10 +14,11 @@ const photonReply = (name: string) => ({
 function countRequests(page: Page) {
   const counts = { photon: 0, bigdata: 0, nominatim: 0 };
   page.on('request', req => {
-    const url = req.url();
-    if (url.includes('photon.komoot.io')) counts.photon++;
-    else if (url.includes('bigdatacloud')) counts.bigdata++;
-    else if (url.includes('nominatim')) counts.nominatim++;
+    // Compare the host exactly, not a substring of the whole URL.
+    const host = new URL(req.url()).hostname;
+    if (host === 'photon.komoot.io') counts.photon++;
+    else if (host === 'api.bigdatacloud.net') counts.bigdata++;
+    else if (host === 'nominatim.openstreetmap.org') counts.nominatim++;
   });
   return counts;
 }

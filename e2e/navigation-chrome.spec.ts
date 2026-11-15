@@ -25,7 +25,7 @@ for (const [path, title] of [
       await mockGeocoder(page);
       await page.goto(`${SITE}${path}`);
       await page.getByRole('button', { name: 'Back to camera' }).click();
-      await expect(page).toHaveURL(new RegExp(`${SITE.replace(/\//g, '\/')}/cam/?$`));
+      await expect(page).toHaveURL(url => url.pathname.replace(/\/$/, '') === `${SITE}/cam`);
       await expect(page.getByRole('button', { name: 'Capture photo' })).toBeVisible();
     });
   });
