@@ -174,6 +174,7 @@ test.describe('reflow and large text', () => {
   test('the privacy page scrolls vertically only at 320 px wide', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 568 });
     await page.goto(`${SITE}/privacy`);
+    await expect(page.getByText('Last updated:')).toBeVisible();
     expect(await page.evaluate(() => {
       const el = document.querySelector('main')!.parentElement!;
       return el.scrollWidth <= el.clientWidth + 1;
@@ -183,6 +184,7 @@ test.describe('reflow and large text', () => {
   test('headings are in order on every page', async ({ page }) => {
     for (const path of ['/', '/privacy', '/gallery']) {
       await page.goto(`${SITE}${path}`);
+      await expect(page.locator('h1').first()).toBeVisible();
       const levels = await page.evaluate(() => [...document.querySelectorAll('h1,h2,h3,h4')].map(h => Number(h.tagName[1])));
       expect(levels[0], path).toBe(1);
       expect(levels.filter(l => l === 1).length, path).toBe(1);
