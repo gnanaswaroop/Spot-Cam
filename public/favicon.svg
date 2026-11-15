@@ -16,6 +16,33 @@
   <!-- Transparent background on purpose: the white outline shows on dark tabs, the blue body on light tabs.
        The PNG icons (apple-touch-icon, icon-192/512) are rendered onto navy by tmp/render-icons.mjs. -->
 
+  <!-- Thin, soft dark line around the outer perimeter so the white edge stays defined on light tabs too -->
+  <g fill="#111827" stroke="#111827" stroke-opacity="0.45" stroke-width="32" stroke-linejoin="round" stroke-linecap="round">
+    <path d="
+      M 176 92
+      L 336 92
+      C 348 92 356 99 362 110
+      L 376 136
+      L 424 136
+      C 452.7 136 476 159.3 476 188
+      L 476 356
+      C 476 384.7 452.7 408 424 408
+      L 88 408
+      C 59.3 408 36 384.7 36 356
+      L 36 188
+      C 36 159.3 59.3 136 88 136
+      L 136 136
+      L 150 110
+      C 156 99 164 92 176 92 Z" />
+    <path d="
+      M 256 156
+      C 197.5 156 150 203.5 150 262
+      C 150 324 225 401 249.5 428.5
+      C 253 432.5 259 432.5 262.5 428.5
+      C 287 401 362 324 362 262
+      C 362 203.5 314.5 156 256 156 Z" />
+  </g>
+
   <!-- Outer White Border Silhouette (Camera Body + Bottom Pin Tip) -->
   <g stroke="#FFFFFF" stroke-width="20" stroke-linejoin="round" stroke-linecap="round">
     <!-- Camera Body Outline -->
