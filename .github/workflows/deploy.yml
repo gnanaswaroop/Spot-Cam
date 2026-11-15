@@ -38,7 +38,7 @@ jobs:
       - run: npm run build
       # A marker the verify step reads to be sure the NEW build is the one being served.
       - run: echo "$GITHUB_SHA" > dist/version.txt
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -126,7 +126,7 @@ jobs:
       - run: npm run build
       - run: echo "${{ steps.good.outputs.sha }}" > dist/version.txt
       # A different artifact name: the build job already uploaded "github-pages" in this run.
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           name: github-pages-rollback
           path: dist
