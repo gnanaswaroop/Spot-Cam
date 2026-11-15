@@ -69,3 +69,10 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Windows high-contrast / forced-colours mode: icon-only buttons need a visible edge. */
+@media (forced-colors: active) {
+  button {
+    border: 1px solid ButtonText;
+  }
+}

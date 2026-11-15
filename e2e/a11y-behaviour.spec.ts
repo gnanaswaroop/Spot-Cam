@@ -160,3 +160,33 @@ test.describe('touch targets', () => {
     }
   });
 });
+
+test.describe('reflow and large text', () => {
+  // 320 CSS px wide is what a 1280 px window looks like at 400% zoom (WCAG 1.4.10); 200% text on a phone is similar.
+  test('the landing page keeps its main actions reachable at 320x256', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 256 });
+    await page.goto(`${SITE}/`);
+    await expect(page.getByRole('button', { name: /start cam/i })).toBeInViewport();
+    await expect(page.getByRole('heading', { name: 'SpotCam' })).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+
+  test('the privacy page scrolls vertically only at 320 px wide', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto(`${SITE}/privacy`);
+    expect(await page.evaluate(() => {
+      const el = document.querySelector('main')!.parentElement!;
+      return el.scrollWidth <= el.clientWidth + 1;
+    })).toBe(true);
+  });
+
+  test('headings are in order on every page', async ({ page }) => {
+    for (const path of ['/', '/privacy', '/gallery']) {
+      await page.goto(`${SITE}${path}`);
+      const levels = await page.evaluate(() => [...document.querySelectorAll('h1,h2,h3,h4')].map(h => Number(h.tagName[1])));
+      expect(levels[0], path).toBe(1);
+      expect(levels.filter(l => l === 1).length, path).toBe(1);
+      levels.forEach((l, i) => { if (i > 0) expect(l - levels[i - 1], path).toBeLessThanOrEqual(1); });
+    }
+  });
+});

@@ -163,6 +163,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
   return (
     <div className="app-h w-full bg-gray-900 text-white flex flex-col">
       <AppHeader onBack={onSwitchView} />
+      <main className="flex min-h-0 flex-grow flex-col">
       <h1 className="px-4 pt-4 text-xl font-bold">Gallery</h1>
       {photos.length === 0 ? (
         // Display a message when the gallery is empty
@@ -183,6 +184,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
           </div>
         </div>
       )}
+      </main>
       {/* Modals are rendered conditionally based on state */}
       {selectedPhoto && <PhotoModal photo={selectedPhoto} onClose={closePhoto} onDelete={requestDelete} onShare={handleShare} />}
       {photoIdToDelete && <ConfirmationDialog onConfirm={handleConfirmDelete} onCancel={handleCancelDelete} />}
