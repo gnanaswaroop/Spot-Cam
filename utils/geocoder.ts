@@ -3,7 +3,10 @@
  *
  * Why this exists: the public Nominatim server answers HTTP 429 ("too many requests") when a client
  * looks up an address on every GPS update, and browsers hide that status behind a CORS error. So:
- *  - results are cached by rounded coordinates, and only one request is ever in flight;
+ *  - a looked-up address is kept in a persistent cache (IndexedDB on the device) and reused for any
+ *    point within a radius of where it was found, so a known place costs no request, even after a
+ *    reload; only the address text is reused, never the coordinates;
+ *  - only one request is ever in flight;
  *  - lookups are spaced out (`minIntervalMs`);
  *  - providers are tried in order, and one that fails is skipped for a cool-down that grows with
  *    each consecutive failure (jittered exponential backoff, capped) - a circuit breaker;
@@ -12,6 +15,45 @@
  * Everything with side effects (fetch, clock, randomness) is injectable so it can be unit tested
  * without touching the network.
  */
+
+import { get, set } from 'idb-keyval';
+import { distanceMeters } from './geo';
+
+/** One successful lookup: where it was made, the address found, and when it was made and last used. */
+export interface CacheEntry {
+  latitude: number;
+  longitude: number;
+  address: string;
+  at: number;
+  used: number;
+}
+
+/** Where the cache is kept between visits. Tests pass a fake; the app uses IndexedDB. */
+export interface AddressStore {
+  load(): Promise<CacheEntry[]>;
+  save(entries: CacheEntry[]): Promise<void>;
+}
+
+/** IndexedDB (via idb-keyval) on this device only. Failures are swallowed: the cache then lives in memory. */
+export function idbAddressStore(key = 'address-cache-v1'): AddressStore {
+  return {
+    async load() {
+      try {
+        const saved = await get<CacheEntry[]>(key);
+        return Array.isArray(saved) ? saved : [];
+      } catch {
+        return [];
+      }
+    },
+    async save(entries) {
+      try {
+        await set(key, entries);
+      } catch {
+        // IndexedDB unavailable (for example some private modes): keep working from memory.
+      }
+    },
+  };
+}
 
 export interface AddressProvider {
   /** Short name, also used as the key for its circuit breaker. */
@@ -41,9 +83,14 @@ export interface GeocoderOptions {
   /** First cool-down after a provider fails; doubles on each consecutive failure. */
   baseCooldownMs: number;
   maxCooldownMs: number;
-  /** Coordinates are rounded to this many decimals for the cache (4 is about 11 m). */
-  cacheDecimals: number;
-  cacheSize: number;
+  /** A cached address is reused for any point within this many metres of where it was looked up. */
+  cacheRadiusM: number;
+  /** Least recently used entries are dropped past this count (about 200 entries is roughly 40 KB). */
+  cacheMaxEntries: number;
+  /** Entries older than this are ignored, so renamed streets and new buildings are picked up eventually. */
+  cacheTtlMs: number;
+  /** Where the cache is kept between visits. Omitted: memory only. */
+  store?: AddressStore;
 }
 
 /** Joins the non-empty parts, dropping repeats (case-insensitive), e.g. a city named the same as its state. */
@@ -109,23 +156,52 @@ export function createGeocoder(overrides: Partial<GeocoderOptions> = {}) {
     minIntervalMs: 1000,
     baseCooldownMs: 5000,
     maxCooldownMs: 60_000,
-    cacheDecimals: 4,
-    cacheSize: 50,
+    cacheRadiusM: 50,
+    cacheMaxEntries: 200,
+    cacheTtlMs: 30 * 24 * 60 * 60 * 1000,
     ...overrides,
   };
 
-  const cache = new Map<string, string>();
+  // Persistent, location-aware cache: entries are kept most recently used first.
+  let entries: CacheEntry[] = [];
+  const isFresh = (e: CacheEntry) => o.now() - e.at <= o.cacheTtlMs;
+  const ready: Promise<void> = o.store
+    ? o.store
+        .load()
+        .catch((): CacheEntry[] => [])
+        .then(saved => {
+          entries = saved.filter(isFresh).sort((a, b) => b.used - a.used).slice(0, o.cacheMaxEntries);
+        })
+    : Promise.resolve();
+  const persist = () => {
+    o.store?.save(entries).catch(() => undefined); // a failed save only means the next visit starts colder
+  };
+
+  const findNearby = (lat: number, lon: number): CacheEntry | undefined => {
+    let best: CacheEntry | undefined;
+    let bestDistance = Infinity;
+    for (const e of entries) {
+      if (!isFresh(e)) continue;
+      const d = distanceMeters(lat, lon, e.latitude, e.longitude);
+      if (d <= o.cacheRadiusM && d < bestDistance) {
+        best = e;
+        bestDistance = d;
+      }
+    }
+    return best;
+  };
+
+  const remember = (lat: number, lon: number, address: string) => {
+    const t = o.now();
+    entries = [{ latitude: lat, longitude: lon, address, at: t, used: t }, ...entries.filter(isFresh)]
+      .sort((a, b) => b.used - a.used)
+      .slice(0, o.cacheMaxEntries);
+    persist();
+  };
+
   const breakers = new Map<string, { failures: number; until: number }>();
   let nextAllowedAt = 0;
   let queue: Promise<unknown> = Promise.resolve();
-
-  const keyFor = (lat: number, lon: number) => `${lat.toFixed(o.cacheDecimals)},${lon.toFixed(o.cacheDecimals)}`;
-
-  const remember = (key: string, address: string) => {
-    cache.delete(key);
-    cache.set(key, address);
-    if (cache.size > o.cacheSize) cache.delete(cache.keys().next().value as string);
-  };
 
   const cooldown = (failures: number) => {
     const base = Math.min(o.maxCooldownMs, o.baseCooldownMs * 2 ** (failures - 1));
@@ -145,9 +221,13 @@ export function createGeocoder(overrides: Partial<GeocoderOptions> = {}) {
   }
 
   async function run(lat: number, lon: number): Promise<LookupResult> {
-    const key = keyFor(lat, lon);
-    const cached = cache.get(key);
-    if (cached) return { status: 'ok', address: cached, provider: 'cache', cached: true };
+    await ready;
+    const nearby = findNearby(lat, lon);
+    if (nearby) {
+      nearby.used = o.now(); // keeps frequently visited places from being evicted
+      persist();
+      return { status: 'ok', address: nearby.address, provider: 'cache', cached: true };
+    }
 
     let t = o.now();
     if (t < nextAllowedAt) return { status: 'failed', retryAt: nextAllowedAt, reason: 'throttled' };
@@ -169,7 +249,7 @@ export function createGeocoder(overrides: Partial<GeocoderOptions> = {}) {
       t = o.now();
       if (address) {
         breakers.delete(provider.name);
-        remember(key, address);
+        remember(lat, lon, address);
         return { status: 'ok', address, provider: provider.name, cached: false };
       }
       const failures = (breakers.get(provider.name)?.failures ?? 0) + 1;
@@ -195,4 +275,4 @@ export function createGeocoder(overrides: Partial<GeocoderOptions> = {}) {
 }
 
 /** One shared instance, so the cache and circuit breakers survive switching between views. */
-export const geocoder = createGeocoder();
+export const geocoder = createGeocoder({ store: idbAddressStore() });

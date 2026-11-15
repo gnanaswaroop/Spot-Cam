@@ -5,6 +5,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   AddressProvider,
+  AddressStore,
+  CacheEntry,
   bigDataCloudProvider,
   createGeocoder,
   joinAddress,
@@ -199,12 +201,77 @@ describe('geocoder', () => {
     expect(calls).toEqual([]); // all breakers open: nothing is sent
   });
 
-  it('caches by rounded coordinates, so nearby points reuse the answer without a request', async () => {
+  it('reuses an address for a point within the cache radius, without a request', async () => {
     const { geocoder, calls, advance } = setup({ a: good('Cached St') }, { minIntervalMs: 0 });
     await geocoder.lookup(48.85841, 2.29451);
     advance(10_000);
-    const again = await geocoder.lookup(48.858412, 2.294508); // about 20 cm away, same 4-decimal cell
+    const again = await geocoder.lookup(48.858412, 2.294508); // about 20 cm away
     expect(again).toMatchObject({ status: 'ok', address: 'Cached St', cached: true });
+    expect(calls).toEqual(['a']);
+  });
+
+  it('asks again for a point outside the cache radius', async () => {
+    const { geocoder, calls, advance } = setup({ a: [good('Near St'), good('Far St')] }, { minIntervalMs: 0 });
+    await geocoder.lookup(48.85841, 2.29451);
+    advance(10_000);
+    const far = await geocoder.lookup(48.8590, 2.2950); // about 75 m away
+    expect(far).toMatchObject({ status: 'ok', address: 'Far St', cached: false });
+    expect(calls).toEqual(['a', 'a']);
+  });
+
+  it('keeps the cache between visits when a store is given, so a reload makes no request', async () => {
+    const saved: CacheEntry[] = [];
+    const store: AddressStore = {
+      load: async () => [...saved],
+      save: async entries => {
+        saved.splice(0, saved.length, ...entries);
+      },
+    };
+    const first = setup({ a: good('Saved St') }, { minIntervalMs: 0, store });
+    await first.geocoder.lookup(48.85841, 2.29451);
+
+    const second = setup({ a: good('Should not be used') }, { minIntervalMs: 0, store });
+    const r = await second.geocoder.lookup(48.85841, 2.29451);
+    expect(r).toMatchObject({ status: 'ok', address: 'Saved St', cached: true });
+    expect(second.calls).toEqual([]);
+  });
+
+  it('ignores cached entries older than the TTL', async () => {
+    const { geocoder, calls, advance } = setup({ a: [good('Old St'), good('New St')] }, { minIntervalMs: 0, cacheTtlMs: 1000 });
+    await geocoder.lookup(48.85841, 2.29451);
+    advance(2000);
+    const r = await geocoder.lookup(48.85841, 2.29451);
+    expect(r).toMatchObject({ address: 'New St', cached: false });
+    expect(calls).toEqual(['a', 'a']);
+  });
+
+  it('evicts the least recently used entry once the size limit is reached', async () => {
+    const { geocoder, calls, advance } = setup(
+      { a: [good('P1'), good('P2'), good('P3'), good('P1 again')] },
+      { minIntervalMs: 0, cacheMaxEntries: 2 },
+    );
+    await geocoder.lookup(10, 10);
+    advance(1);
+    await geocoder.lookup(20, 20);
+    advance(1);
+    await geocoder.lookup(30, 30); // evicts the oldest, (10, 10)
+    const r = await geocoder.lookup(10, 10);
+    expect(r).toMatchObject({ address: 'P1 again', cached: false });
+    expect(calls).toHaveLength(4);
+  });
+
+  it('keeps working from memory when the store fails to load or save', async () => {
+    const store: AddressStore = {
+      load: async () => {
+        throw new Error('no IndexedDB');
+      },
+      save: async () => {
+        throw new Error('no IndexedDB');
+      },
+    };
+    const { geocoder, calls } = setup({ a: good('Memory St') }, { minIntervalMs: 0, store });
+    expect(await geocoder.lookup(48.85841, 2.29451)).toMatchObject({ status: 'ok', address: 'Memory St' });
+    expect(await geocoder.lookup(48.85841, 2.29451)).toMatchObject({ status: 'ok', cached: true });
     expect(calls).toEqual(['a']);
   });
 

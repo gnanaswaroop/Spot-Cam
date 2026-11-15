@@ -123,4 +123,18 @@ test.describe('address lookup', () => {
     // The back-off is about 5 s (jittered +/-20%) for the first failure.
     await expect(page.getByText('Champ de Mars, Paris, France')).toBeVisible({ timeout: 15_000 });
   });
+
+  test('after a reload, the saved address is reused without any request', async ({ page, context }) => {
+    const counts = countRequests(page);
+    const total = () => counts.photon + counts.bigdata + counts.nominatim;
+    await mockGeocoder(page);
+    await openCamera(page, context);
+    await page.goto(`${SITE}/cam`);
+    await expect(page.getByText('Champ de Mars, Paris, France')).toBeVisible();
+    expect(total()).toBe(1);
+
+    await page.reload();
+    await expect(page.getByText('Champ de Mars, Paris, France')).toBeVisible();
+    expect(total()).toBe(1); // still one: the address came from the on-device cache
+  });
 });
