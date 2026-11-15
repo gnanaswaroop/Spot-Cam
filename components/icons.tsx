@@ -36,13 +36,13 @@ export const CloseIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-/** Flip-camera symbol: a camera body with two arrows chasing each other in a circle. */
+/** Flip-camera symbol: a camera body with a large circle of two arrows (a "refresh" loop) in the middle. */
 export const SwitchCameraIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" data-icon="switch-camera">
-        <path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
-        <path d="M9.2 12.2a3 3 0 0 1 5.2-.4"/>
-        <path d="M14.6 9.8v2.2h-2.2"/>
-        <path d="M14.8 14.8a3 3 0 0 1-5.2.4"/>
-        <path d="M9.4 17.2v-2.2h2.2"/>
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" data-icon="switch-camera">
+        <path d="M3 9a2 2 0 0 1 2-2h2.5l1-1.5h7l1 1.5H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <path d="M7.65 12.34A4.5 4.5 0 0 1 16.35 12.34"/>
+        <path d="M17.41 10.09L16.35 12.34L14.31 10.91"/>
+        <path d="M16.35 14.66A4.5 4.5 0 0 1 7.65 14.66"/>
+        <path d="M6.59 16.91L7.65 14.66L9.69 16.09"/>
     </svg>
 );
