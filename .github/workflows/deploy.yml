@@ -50,7 +50,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   # Looks at the real site like a visitor would. Fails the run if the site is broken.
   verify:
@@ -131,7 +131,7 @@ jobs:
           name: github-pages-rollback
           path: dist
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
         with:
           artifact_name: github-pages-rollback
       - name: Confirm the old version is being served again
