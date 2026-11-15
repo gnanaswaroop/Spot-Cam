@@ -8,7 +8,7 @@ import { geocoder } from '../utils/geocoder';
 import { distanceMeters } from '../utils/geo';
 
 /** Look up a new address once the user has moved this far (metres) from where the last one was found. */
-export const ADDRESS_MOVE_THRESHOLD_M = 25;
+export const ADDRESS_MOVE_THRESHOLD_M = 50; // the same as the cache radius, so both agree on "the same place"
 /** An address older than this distance is no longer shown: it would describe somewhere else. */
 export const ADDRESS_STALE_DISTANCE_M = 200;
 
