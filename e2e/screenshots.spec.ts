@@ -80,9 +80,9 @@ test('gallery and photo viewer', async ({ page, context }) => {
   await setUp(page, context);
   await takePhotos(page, 4);
   await page.getByRole('button', { name: 'Open gallery' }).click();
-  await page.getByRole('img', { name: /Captured at/ }).first().waitFor();
+  await page.getByRole('button', { name: /^Open photo taken/ }).first().waitFor();
   await shot(page, '04-gallery.png');
-  await page.getByRole('img', { name: /Captured at/ }).first().click();
+  await page.getByRole('button', { name: /^Open photo taken/ }).first().click();
   await page.getByRole('dialog', { name: 'Photo' }).waitFor();
   await page.waitForTimeout(300);
   await shot(page, '05-photo.png');

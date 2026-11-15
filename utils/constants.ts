@@ -7,3 +7,11 @@
  * System fonts only, so canvas drawing needs no font loading and works offline.
  */
 export const FONT_FAMILY_OVERLAY = '"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+/** The document title for each page (see the matching entries in index.html and the static route files). */
+export const PAGE_TITLES = {
+  landing: 'SpotCam | Spot it. Snap it. Stamp it.',
+  camera: 'Camera | SpotCam',
+  gallery: 'Gallery | SpotCam',
+  privacy: 'Privacy Policy | SpotCam',
+} as const;

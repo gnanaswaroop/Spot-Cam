@@ -5,6 +5,7 @@
 import React from 'react';
 import { CloseIcon, ShareIcon } from './icons';
 import { dataURLtoFile } from '../utils/helpers';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import { useHistoryOverlay } from '../hooks/useHistoryOverlay';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
@@ -81,7 +82,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) 
           <button
             onClick={() => openSample(true)}
             className="group relative inline-flex max-w-full"
-            aria-label="View a sample photo"
           >
             <img
               src={SAMPLE_URL}
@@ -89,7 +89,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) 
               className="max-h-[36dvh] max-w-full rounded-2xl border border-white/10 object-contain shadow-2xl shadow-blue-900/30 transition group-hover:border-blue-400/60 md:max-h-[75dvh]"
             />
             <span className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/60 px-3 py-1 text-xs text-white backdrop-blur transition group-hover:bg-blue-600">
-              Tap to view sample
+              View a sample photo
             </span>
           </button>
         </section>
@@ -100,29 +100,35 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) 
         </div>
       </main>
 
-      {showSample && (
-        <div className="app-h fixed inset-x-0 top-0 z-40 flex flex-col items-center bg-black/90 px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom))]" role="dialog" aria-modal="true" aria-label="Sample photo">
-          <button onClick={closeSample} className="absolute right-4 top-3 rounded-full bg-gray-800 p-2 text-white hover:bg-gray-700" aria-label="Close sample">
-            <CloseIcon className="h-6 w-6" />
-          </button>
-          <div className="flex min-h-0 w-full max-w-4xl flex-1 items-center justify-center">
-            <img src={SAMPLE_URL} alt="Sample SpotCam photo" className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
-          </div>
-          <div className="mt-3 max-w-xl shrink-0 text-center text-sm text-gray-300">
-            <p>14/11/2026, 18:42:10</p>
-            <div className="[@media(max-height:480px)]:hidden">
-              <p>Lat: 48.85837, Lon: 2.29448</p>
-              <p className="mt-1 text-gray-400">Champ de Mars, Paris, France (sample location)</p>
-              <p className="mt-3 text-gray-500">This is what your photos will look like. Try sharing it.</p>
-            </div>
-          </div>
-          <button onClick={shareSample} className="mt-4 flex shrink-0 flex-col items-center text-white transition-colors hover:text-blue-400" aria-label="Share sample photo">
-            <ShareIcon className="h-8 w-8" />
-            <span className="mt-1 text-xs">Share</span>
-          </button>
-        </div>
-      )}
+      {showSample && <SampleViewer onClose={closeSample} onShare={shareSample} />}
     </div>
+  );
+};
+
+/** Full-screen view of the sample photo, with focus handling so it works from the keyboard. */
+const SampleViewer = ({ onClose, onShare }: { onClose: () => void; onShare: () => void }) => {
+  const ref = useDialogFocus<HTMLDivElement>(onClose);
+  return (
+      <div ref={ref} tabIndex={-1} className="focus:outline-none app-h fixed inset-x-0 top-0 z-40 flex flex-col items-center bg-black/90 px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom))]" role="dialog" aria-modal="true" aria-label="Sample photo">
+        <button onClick={onClose} className="absolute right-4 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-gray-800 text-white hover:bg-gray-700" aria-label="Close sample">
+          <CloseIcon className="h-6 w-6" />
+        </button>
+        <div className="flex min-h-0 w-full max-w-4xl flex-1 items-center justify-center">
+          <img src={SAMPLE_URL} alt="Sample SpotCam photo" className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
+        </div>
+        <div className="mt-3 max-w-xl shrink-0 text-center text-sm text-gray-300">
+          <p>14/11/2026, 18:42:10</p>
+          <div className="[@media(max-height:480px)]:hidden">
+            <p>Lat: 48.85837, Lon: 2.29448</p>
+            <p className="mt-1 text-gray-400">Champ de Mars, Paris, France (sample location)</p>
+            <p className="mt-3 text-gray-400">This is what your photos will look like. Try sharing it.</p>
+          </div>
+        </div>
+        <button onClick={onShare} className="mt-4 flex min-h-11 min-w-11 shrink-0 flex-col items-center text-white transition-colors hover:text-blue-400" aria-label="Share sample photo">
+          <ShareIcon className="h-8 w-8" />
+          <span className="mt-1 text-xs">Share</span>
+        </button>
+      </div>
   );
 };
 

@@ -3,12 +3,13 @@
  * It manages the current view (landing, camera or gallery; chosen by the URL path) and the state of captured photos.
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CameraView } from './components/CameraView';
 import { GalleryView } from './components/GalleryView';
 import { LandingView } from './components/LandingView';
 import { PrivacyView } from './components/PrivacyView';
 import { SettingsView } from './components/SettingsView';
+import { PAGE_TITLES } from './utils/constants';
 import { CapturedPhoto } from './types';
 import { usePersistedPhotos } from './hooks/usePersistedPhotos';
 import { usePathRoute } from './hooks/usePathRoute';
@@ -29,6 +30,11 @@ const App: React.FC = () => {
   // Current view comes from the URL path (/, /cam, /gallery), so each page is bookmarkable.
   const [view, switchView] = usePathRoute();
   
+  // A meaningful <title> per page: it is what a screen reader announces when the page changes.
+  useEffect(() => {
+    document.title = PAGE_TITLES[view];
+  }, [view]);
+
   // Custom hook to manage the photos array, persisting it to IndexedDB.
   const [photos, setPhotos] = usePersistedPhotos();
 

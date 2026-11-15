@@ -95,19 +95,19 @@ test.describe('gallery layers and the Back gesture', () => {
 
   test('Back closes the photo viewer and stays in the gallery', async ({ page, context }) => {
     await openGalleryWithOnePhoto(page, context);
-    await page.getByRole('img', { name: /Captured at/ }).first().click();
+    await page.getByRole('button', { name: /^Open photo taken/ }).first().click();
     await expect(photoViewer(page)).toBeVisible();
 
     await page.goBack();
 
     await expect(photoViewer(page)).toHaveCount(0);
     await expect(page).toHaveURL(`${SITE}/gallery`);
-    await expect(page.getByRole('img', { name: /Captured at/ }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Open photo taken/ }).first()).toBeVisible();
   });
 
   test('Back closes the delete confirmation first, then the viewer', async ({ page, context }) => {
     await openGalleryWithOnePhoto(page, context);
-    await page.getByRole('img', { name: /Captured at/ }).first().click();
+    await page.getByRole('button', { name: /^Open photo taken/ }).first().click();
     await page.getByRole('button', { name: 'Delete photo' }).click();
     await expect(confirmDialog(page)).toBeVisible();
 
@@ -122,7 +122,7 @@ test.describe('gallery layers and the Back gesture', () => {
 
   test('confirming a delete closes both layers, and Back then leaves the gallery cleanly', async ({ page, context }) => {
     await openGalleryWithOnePhoto(page, context);
-    await page.getByRole('img', { name: /Captured at/ }).first().click();
+    await page.getByRole('button', { name: /^Open photo taken/ }).first().click();
     await page.getByRole('button', { name: 'Delete photo' }).click();
     await confirmDialog(page).getByRole('button', { name: 'Delete', exact: true }).click();
 

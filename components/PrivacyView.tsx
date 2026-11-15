@@ -5,7 +5,7 @@
  * or sends (new analytics, a different geocoder, uploads...), update it and the "Last updated" date.
  */
 
-import React, { useEffect } from 'react';
+import React from 'react';
 
 interface PrivacyViewProps {
   onBack: () => void;
@@ -27,14 +27,6 @@ const ExternalLink = ({ href, children }: { href: string; children: React.ReactN
 );
 
 export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
-  // A meaningful title for this page; restored when leaving.
-  useEffect(() => {
-    const previous = document.title;
-    document.title = 'Privacy Policy | SpotCam';
-    return () => {
-      document.title = previous;
-    };
-  }, []);
 
   return (
     <div className="app-h w-full overflow-y-auto bg-gray-950 text-gray-200">

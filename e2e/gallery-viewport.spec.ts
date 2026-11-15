@@ -38,7 +38,7 @@ test.describe('gallery photo viewer', () => {
       await takePhotos(page, 1);
       await page.getByRole('button', { name: 'Open gallery' }).click();
 
-      await page.getByRole('img', { name: /Captured at/ }).first().click();
+      await page.getByRole('button', { name: /^Open photo taken/ }).first().click();
       await expectControlsVisible(page);
     });
   }
@@ -48,7 +48,7 @@ test.describe('gallery photo viewer', () => {
     await setUpGrantedCamera(page, context);
     await takePhotos(page, 1);
     await page.getByRole('button', { name: 'Open gallery' }).click();
-    await page.getByRole('img', { name: /Captured at/ }).first().click();
+    await page.getByRole('button', { name: /^Open photo taken/ }).first().click();
     await expectControlsVisible(page);
 
     // Toolbar and navigation bar appear: the visible area shrinks.
@@ -65,7 +65,7 @@ test.describe('gallery photo viewer', () => {
     await setUpGrantedCamera(page, context);
     await takePhotos(page, 1);
     await page.getByRole('button', { name: 'Open gallery' }).click();
-    await page.getByRole('img', { name: /Captured at/ }).first().click();
+    await page.getByRole('button', { name: /^Open photo taken/ }).first().click();
 
     await page.getByRole('button', { name: 'Delete photo' }).click();
     const confirm = page.getByRole('dialog', { name: /Confirm Deletion|Are you sure/ }).or(page.getByRole('dialog').filter({ hasText: 'Confirm Deletion' }));

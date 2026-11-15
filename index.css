@@ -33,3 +33,39 @@ body {
   height: 100dvh;
   height: var(--app-height, 100dvh);
 }
+
+/* Keyboard focus: a clear ring on every interactive element (the default is hard to see on dark backgrounds). */
+:focus-visible {
+  outline: 3px solid #93c5fd; /* blue-300: 3:1+ against both the dark pages and the blue buttons */
+  outline-offset: 2px;
+}
+
+/* Honour "reduce motion": no animations, transitions or smooth scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Keyboard focus: a clear ring on every interactive element (the default is hard to see on dark backgrounds). */
+:focus-visible {
+  outline: 3px solid #93c5fd; /* blue-300: 3:1+ against both the dark pages and the blue buttons */
+  outline-offset: 2px;
+}
+
+/* Honour "reduce motion": no animations, transitions or smooth scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

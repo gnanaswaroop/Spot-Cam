@@ -26,13 +26,14 @@ interface CameraViewProps {
  * A component that displays real-time data (date, time, location) as an overlay on the camera view.
  */
 const AddressLine = ({ location, status, onRetry }: { location: GeolocationData; status: AddressStatus; onRetry: () => void }) => {
-    if (location.address) return <p className="px-2 break-words">{location.address}</p>;
+    // aria-live: the address is read out when it arrives ("Looking up address..." turns into the street).
+    if (location.address) return <p className="px-2 break-words" aria-live="polite">{location.address}</p>;
     if (status === 'offline') return <p className="px-2">Offline: the address will appear when you are back online</p>;
     if (status === 'failed') {
         return (
             <p className="px-2">
                 Address unavailable.{' '}
-                <button onClick={onRetry} className="underline underline-offset-2" aria-label="Retry address lookup">Retry</button>
+                <button onClick={onRetry} className="inline-block min-h-6 px-1 underline underline-offset-2" aria-label="Retry address lookup">Retry</button>
             </p>
         );
     }
@@ -94,6 +95,13 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
   const [zoomCapabilities, setZoomCapabilities] = useState<{ min: number; max: number; step: number } | null>(null);
   const [currentZoom, setCurrentZoom] = useState(1);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+
+  // Spoken status for screen readers (an aria-live region): location found, address found, photo saved.
+  const [announcement, setAnnouncement] = useState('');
+  const hasLocation = location !== null;
+  const address = location?.address;
+  useEffect(() => { if (hasLocation) setAnnouncement('Location found'); }, [hasLocation]);
+  useEffect(() => { if (address) setAnnouncement('Address found'); }, [address]);
 
   // Effect to update the date and time every second
   useEffect(() => {
@@ -265,6 +273,8 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
         };
         // Pass the captured photo data to the parent component
         onCapture(newPhoto);
+        // The trailing dot alternates so a second photo is announced again (identical text is not re-read).
+        setAnnouncement(prev => (prev === 'Photo saved to the gallery' ? 'Photo saved to the gallery.' : 'Photo saved to the gallery'));
     }
   };
 
@@ -292,8 +302,16 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
   };
 
   /** Handles changes from the zoom slider input. */
-  const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const zoomValue = parseFloat(e.target.value);
+  const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => applyZoom(parseFloat(e.target.value));
+
+  /** Zoom in or out by one slider step (for people who cannot drag the slider precisely). */
+  const nudgeZoom = (direction: 1 | -1) => {
+    if (!zoomCapabilities) return;
+    const step = zoomCapabilities.step || 0.1;
+    applyZoom(Math.min(zoomCapabilities.max, Math.max(zoomCapabilities.min, currentZoom + direction * step)));
+  };
+
+  const applyZoom = (zoomValue: number) => {
     setCurrentZoom(zoomValue);
     if (stream) {
         const track = stream.getVideoTracks()[0];
@@ -306,9 +324,12 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
 
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center bg-black">
-      {/* Flash effect overlay */}
-      {isFlashing && <div className="absolute inset-0 bg-white opacity-80 z-20"></div>}
+    <main className="relative w-full h-full flex flex-col items-center justify-center bg-black">
+      <h1 className="sr-only">SpotCam camera</h1>
+      {/* Spoken updates for screen readers */}
+      <div role="status" aria-live="polite" className="sr-only">{announcement}</div>
+      {/* Flash effect overlay (much dimmer when the user asks for reduced motion, for photosensitive users) */}
+      {isFlashing && <div className="absolute inset-0 bg-white opacity-80 motion-reduce:opacity-20 z-20" aria-hidden="true"></div>}
       {/* Hidden canvas used for capturing and processing images */}
       <canvas ref={canvasRef} className="hidden" />
       
@@ -336,7 +357,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
           onRetry={handleRetryPermissions}
         />
       ) : (
-        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover"></video>
+        <video ref={videoRef} autoPlay playsInline muted aria-label="Live camera preview" className="w-full h-full object-cover"></video>
       )}
 
       {/* Live data overlay */}
@@ -360,14 +381,16 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
       )}
 
       {/* Geolocation error message (non-permission problems, e.g. timeout) */}
-      {geoError && !locationBlocked && <p className="absolute bottom-24 text-red-500 text-xs bg-black bg-opacity-50 p-1 rounded short:bottom-2 short:left-2">{geoError}</p>}
+      {geoError && !locationBlocked && <p role="alert" className="absolute bottom-24 text-red-400 text-xs bg-black bg-opacity-60 p-1 rounded short:bottom-2 short:left-2">{geoError}</p>}
       
       {/* Zoom control slider */}
       {zoomCapabilities && (
         <div className="absolute bottom-32 left-0 right-0 px-6 z-10 short:bottom-2 short:right-24 short:px-3">
-            <div className="bg-black bg-opacity-40 backdrop-blur-sm rounded-full p-2 flex items-center space-x-3">
-                <span className="text-white text-xs font-mono pl-2">ZOOM</span>
+            <div className="bg-black bg-opacity-40 backdrop-blur-sm rounded-full p-1 flex items-center space-x-2">
+                <button type="button" onClick={() => nudgeZoom(-1)} disabled={currentZoom <= zoomCapabilities.min} className="h-11 w-11 shrink-0 rounded-full text-xl font-bold text-white hover:bg-white/20 disabled:opacity-40" aria-label="Zoom out">-</button>
+                <label htmlFor="zoom-slider" className="text-white text-xs font-mono">ZOOM</label>
                 <input 
+                    id="zoom-slider"
                     type="range" 
                     min={zoomCapabilities.min}
                     max={zoomCapabilities.max}
@@ -375,8 +398,10 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
                     value={currentZoom}
                     onChange={handleZoomChange}
                     className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer range-sm"
-                    aria-label="Zoom control"
+                    aria-valuetext={`${currentZoom.toFixed(1)}x`}
                 />
+                <span className="w-10 shrink-0 text-center text-xs font-mono text-white" aria-hidden="true">{currentZoom.toFixed(1)}x</span>
+                <button type="button" onClick={() => nudgeZoom(1)} disabled={currentZoom >= zoomCapabilities.max} className="h-11 w-11 shrink-0 rounded-full text-xl font-bold text-white hover:bg-white/20 disabled:opacity-40" aria-label="Zoom in">+</button>
             </div>
         </div>
       )}
@@ -393,6 +418,6 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
             <SwitchCameraIcon className="w-8 h-8" />
         </button>
       </div>
-    </div>
+    </main>
   );
 };

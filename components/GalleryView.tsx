@@ -6,6 +6,7 @@
 import React from 'react';
 import { CapturedPhoto } from '../types';
 import { useHistoryOverlay, hasOverlayEntry } from '../hooks/useHistoryOverlay';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import { dataURLtoFile, formatDateTime } from '../utils/helpers';
 import { ShareIcon, DeleteIcon, CloseIcon, GalleryIcon } from './icons';
 import { AppHeader } from './AppHeader';
@@ -20,21 +21,28 @@ interface GalleryViewProps {
   onSwitchView: () => void;
 }
 
+/** "14/11/2026, 18:42:10 at Champ de Mars, Paris": the text a screen reader needs, since the stamp is drawn into the pixels. */
+const photoDescription = (photo: CapturedPhoto) => {
+  const where = photo.location?.address ?? (photo.location ? `${photo.location.latitude.toFixed(5)}, ${photo.location.longitude.toFixed(5)}` : '');
+  return where ? `${formatDateTime(photo.timestamp)} at ${where}` : formatDateTime(photo.timestamp);
+};
+
 /**
  * A modal component to display a selected photo in full view with actions.
  */
 const PhotoModal = ({ photo, onClose, onDelete, onShare }: { photo: CapturedPhoto, onClose: () => void, onDelete: (id: string) => void, onShare: (photo: CapturedPhoto) => void }) => {
     // Layout is a flex column sized to the *visible* viewport: the image takes whatever space is left,
     // while the details and the Share/Delete buttons are pinned and can never be pushed off-screen.
+    const ref = useDialogFocus<HTMLDivElement>(onClose);
     return (
-        <div className="app-h fixed inset-x-0 top-0 z-40 flex flex-col items-center bg-black/90 px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in" role="dialog" aria-modal="true" aria-label="Photo">
+        <div ref={ref} tabIndex={-1} className="app-h fixed inset-x-0 top-0 z-40 flex flex-col items-center bg-black/90 px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in focus:outline-none" role="dialog" aria-modal="true" aria-label="Photo">
             {/* Close Button */}
-            <button onClick={onClose} className="absolute top-3 right-4 text-white p-2 rounded-full bg-gray-800 hover:bg-gray-700" aria-label="Close photo view">
+            <button onClick={onClose} className="absolute top-3 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-gray-800 text-white hover:bg-gray-700" aria-label="Close photo view">
                 <CloseIcon className="w-6 h-6" />
             </button>
             {/* Image Container: fills the remaining height */}
             <div className="flex min-h-0 w-full max-w-4xl flex-1 items-center justify-center">
-                <img src={photo.dataUrl} alt={`Captured at ${formatDateTime(photo.timestamp)}`} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
+                <img src={photo.dataUrl} alt={`Photo taken ${photoDescription(photo)}`} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
             </div>
             {/* Photo Metadata (location lines are hidden on very short screens, e.g. landscape phones) */}
             <div className="mt-3 max-w-xl shrink-0 text-center text-sm text-gray-300">
@@ -48,11 +56,11 @@ const PhotoModal = ({ photo, onClose, onDelete, onShare }: { photo: CapturedPhot
             </div>
             {/* Action Buttons: always visible */}
             <div className="mt-4 flex shrink-0 items-center space-x-8">
-                <button onClick={() => onShare(photo)} className="flex flex-col items-center text-white hover:text-blue-400 transition-colors" aria-label="Share photo">
+                <button onClick={() => onShare(photo)} className="flex min-h-11 min-w-11 flex-col items-center text-white hover:text-blue-400 transition-colors" aria-label="Share photo">
                     <ShareIcon className="w-8 h-8" />
                     <span className="text-xs mt-1">Share</span>
                 </button>
-                <button onClick={() => onDelete(photo.id)} className="flex flex-col items-center text-white hover:text-red-400 transition-colors" aria-label="Delete photo">
+                <button onClick={() => onDelete(photo.id)} className="flex min-h-11 min-w-11 flex-col items-center text-white hover:text-red-400 transition-colors" aria-label="Delete photo">
                     <DeleteIcon className="w-8 h-8" />
                     <span className="text-xs mt-1">Delete</span>
                 </button>
@@ -65,8 +73,9 @@ const PhotoModal = ({ photo, onClose, onDelete, onShare }: { photo: CapturedPhot
  * A modal dialog to confirm a destructive action, such as deleting a photo.
  */
 const ConfirmationDialog = ({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void; }) => {
+    const ref = useDialogFocus<HTMLDivElement>(onCancel);
     return (
-        <div className="app-h fixed inset-x-0 top-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm animate-fade-in" aria-modal="true" role="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
+        <div ref={ref} tabIndex={-1} className="focus:outline-none app-h fixed inset-x-0 top-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm animate-fade-in" aria-modal="true" role="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
             <div className="bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 shadow-2xl border border-gray-700">
                 <h3 className="text-white text-lg font-semibold mb-4" id="dialog-title">Confirm Deletion</h3>
                 <p className="text-gray-300 mb-6" id="dialog-description">Are you sure you want to delete this photo?</p>
@@ -157,7 +166,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
       <h1 className="px-4 pt-4 text-xl font-bold">Gallery</h1>
       {photos.length === 0 ? (
         // Display a message when the gallery is empty
-        <div className="flex-grow flex flex-col items-center justify-center text-gray-500">
+        <div role="status" className="flex-grow flex flex-col items-center justify-center text-gray-400">
           <GalleryIcon className="w-16 h-16 mb-4" />
           <p>No photos yet.</p>
           <p>Go back to the camera to take some!</p>
@@ -167,9 +176,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
         <div className="flex-grow overflow-y-auto p-2">
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
             {sortedPhotos.map((photo) => (
-              <div key={photo.id} className="aspect-square bg-gray-700 rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 transition-transform" onClick={() => openPhoto(photo)}>
-                <img src={photo.dataUrl} alt={`Captured at ${formatDateTime(photo.timestamp)}`} className="w-full h-full object-cover" loading="lazy" />
-              </div>
+              <button key={photo.id} type="button" className="aspect-square bg-gray-700 rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 motion-reduce:transform-none transition-transform" onClick={() => openPhoto(photo)} aria-label={`Open photo taken ${photoDescription(photo)}`}>
+                <img src={photo.dataUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+              </button>
             ))}
           </div>
         </div>
