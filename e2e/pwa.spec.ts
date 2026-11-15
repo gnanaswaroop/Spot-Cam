@@ -66,7 +66,7 @@ test.describe('service worker: what it caches', () => {
     test.skip(browserName !== 'chromium', 'Route mocks do not apply to a page a service worker controls in this engine (see the note at the top)');
     const asked: string[] = [];
     page.on('request', req => {
-      if (req.url().includes('photon.komoot.io')) asked.push(req.url());
+      if (new URL(req.url()).hostname === 'photon.komoot.io') asked.push(req.url()); // compare the host, not a substring
     });
     await mockGeocoder(page);
     await installMocks(page, { camera: 'granted', location: 'granted' });
