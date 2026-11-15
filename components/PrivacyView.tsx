@@ -78,6 +78,11 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
             on your device, together with its date, time and location. SpotCam keeps your latest 12 photos and replaces the oldest as you
             take new ones. Photos are not uploaded to us or to anyone else.
           </p>
+          <p>
+            <strong className="text-white">Working offline.</strong> So that SpotCam opens without a connection, your browser keeps a copy of
+            the app's own files (its pages, scripts and images) in its cache on this device. This copy holds no photos and no location
+            data, it is replaced when a new version is released, and clearing this site's data in your browser removes it.
+          </p>
         </Section>
 
         <Section title="Services we rely on">

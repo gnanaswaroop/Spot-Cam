@@ -6,6 +6,7 @@ import React from 'react';
 import { CloseIcon, ShareIcon } from './icons';
 import { dataURLtoFile } from '../utils/helpers';
 import { useHistoryOverlay } from '../hooks/useHistoryOverlay';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
 // Bundled sample photo (public/sample.jpg). BASE_URL keeps it working whatever path the site is served from.
 const SAMPLE_URL = `${import.meta.env.BASE_URL}sample.jpg`;
@@ -40,6 +41,7 @@ export const TAGLINE = 'Spot it. Snap it. Stamp it.';
 const FEATURES = ['Date & time', 'GPS & address', 'Stays on your device'];
 
 export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) => {
+  const installProps = useInstallPrompt();
   // The sample viewer owns a history entry, so the Back gesture closes it instead of leaving the page.
   const [sample, openSample, closeSample] = useHistoryOverlay<true>('sample');
   const showSample = sample !== null;
@@ -70,7 +72,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) 
 
           {/* Desktop call to action (mobile one sits under the sample) */}
           <div className="hidden md:mt-10 md:block md:w-72">
-            <StartButton onStart={onStart} onPrivacy={onPrivacy} />
+            <StartButton onStart={onStart} onPrivacy={onPrivacy} {...installProps} />
           </div>
         </section>
 
@@ -94,7 +96,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) 
 
         {/* Mobile call to action */}
         <div className="shrink-0 md:hidden">
-          <StartButton onStart={onStart} onPrivacy={onPrivacy} />
+          <StartButton onStart={onStart} onPrivacy={onPrivacy} {...installProps} />
         </div>
       </main>
 
@@ -124,7 +126,19 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) 
   );
 };
 
-const StartButton = ({ onStart, onPrivacy }: { onStart: () => void; onPrivacy: () => void }) => (
+const StartButton = ({
+  onStart,
+  onPrivacy,
+  canInstall,
+  install,
+  showIosSteps,
+}: {
+  onStart: () => void;
+  onPrivacy: () => void;
+  canInstall: boolean;
+  install: () => void;
+  showIosSteps: boolean;
+}) => (
   <div className="text-center">
     <button
       onClick={onStart}
@@ -146,5 +160,13 @@ const StartButton = ({ onStart, onPrivacy }: { onStart: () => void; onPrivacy: (
         Privacy
       </a>
     </p>
+    {canInstall && (
+      <button type="button" onClick={install} className="mt-2 min-h-11 rounded-full px-4 text-sm font-semibold text-blue-300 underline underline-offset-4 hover:text-blue-200">
+        Install app
+      </button>
+    )}
+    {showIosSteps && (
+      <p className="mt-1 text-xs text-gray-400">To install: tap Share, then Add to Home Screen.</p>
+    )}
   </div>
 );

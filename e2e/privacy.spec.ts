@@ -17,6 +17,9 @@ test.describe('privacy policy', () => {
       await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
     }
     await expect(page.getByText('Photos are not uploaded to us or to anyone else.')).toBeVisible();
+    // The offline copy of the app is disclosed, and it is clear that it holds no photos or location data.
+    await expect(page.getByText('Working offline.')).toBeVisible();
+    await expect(page.getByText('This copy holds no photos and no location data', { exact: false })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'What we don\'t do' })).toBeVisible();
     // No contact details are published on the page.
     await expect(page.getByRole('heading', { name: 'Contact' })).toHaveCount(0);

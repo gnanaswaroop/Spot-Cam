@@ -48,6 +48,16 @@ test.describe('deployed site', () => {
     expect(await robots.text()).toContain('Sitemap:');
   });
 
+  test('the service worker and the manifest are served', async ({ request }) => {
+    const worker = await request.get(`/sw.js?cb=${Date.now()}`);
+    expect(worker.status()).toBe(200);
+    expect(worker.headers()['content-type']).toMatch(/javascript/);
+    expect(await worker.text()).toContain('spotcam-');
+    const manifest = await request.get('/manifest.webmanifest');
+    expect(manifest.status()).toBe(200);
+    expect((await manifest.json()).name).toBe('SpotCam');
+  });
+
   test('the script and stylesheet referenced by the page exist and are not empty', async ({ request }) => {
     const html = await (await request.get('/')).text();
     const assets = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map(m => m[1]);

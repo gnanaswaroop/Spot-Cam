@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { buildRobots, buildSitemap } from './utils/sitemap';
+import { cacheVersion, listPrecacheUrls, renderServiceWorker } from './utils/precache';
 
 /**
  * GitHub Pages can't rewrite /cam to the SPA, so emit a real index.html for each route,
@@ -36,6 +37,43 @@ const seoFiles = (): Plugin => ({
   },
 });
 
+/** All files under `dir`, as paths relative to it with forward slashes. */
+const walk = (dir: string, prefix = ''): string[] =>
+  fs.readdirSync(path.join(dir, prefix), { withFileTypes: true }).flatMap(entry => {
+    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+    return entry.isDirectory() ? walk(dir, relative) : [relative];
+  });
+
+/**
+ * Writes dist/sw.js: the service worker template with the list of built files to precache and a
+ * version that changes whenever any of them does. Runs last, so every other plugin's files exist.
+ */
+const serviceWorker = (): Plugin => {
+  let base = '/';
+  return {
+    name: 'service-worker',
+    apply: 'build',
+    enforce: 'post',
+    configResolved(config) {
+      base = config.base;
+    },
+    closeBundle() {
+      const dist = path.resolve(__dirname, 'dist');
+      const urls = listPrecacheUrls(walk(dist), base);
+      const entries = urls.map(url => {
+        const relative = url.slice(base.length); // '' for the home page, 'cam/' for a page, 'assets/x.js' for a file
+        const target = relative === '' || relative.endsWith('/') ? `${relative}index.html` : relative;
+        return { url, content: fs.readFileSync(path.join(dist, target)) };
+      });
+      const template = fs.readFileSync(path.resolve(__dirname, 'sw/sw.template.js'), 'utf8');
+      fs.writeFileSync(
+        path.join(dist, 'sw.js'),
+        renderServiceWorker(template, { version: cacheVersion(entries), urls, base }),
+      );
+    },
+  };
+};
+
 export default defineConfig({
   // Served from the root of the custom domain (https://spotcam.in/).
   // For a plain GitHub project site (https://<user>.github.io/Spot-Cam/) build with BASE_PATH=/Spot-Cam/.
@@ -45,7 +83,7 @@ export default defineConfig({
     host: '0.0.0.0',
   },
   // basicSsl: self-signed HTTPS for the dev server so phones can use camera/geolocation.
-  plugins: [react(), tailwindcss(), basicSsl(), spaRoutes(['home', 'cam', 'gallery', 'privacy', 'settings']), seoFiles()],
+  plugins: [react(), tailwindcss(), basicSsl(), spaRoutes(['home', 'cam', 'gallery', 'privacy', 'settings']), seoFiles(), serviceWorker()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),

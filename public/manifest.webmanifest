@@ -1,14 +1,23 @@
 {
+  "id": "./",
   "name": "SpotCam",
   "short_name": "SpotCam",
   "description": "Spot it. Snap it. Stamp it. A camera that stamps the date, time and location onto every photo.",
+  "lang": "en",
   "start_url": "./cam",
   "scope": ".",
   "display": "standalone",
   "background_color": "#111827",
   "theme_color": "#111827",
+  "categories": ["photo", "utilities"],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "screenshots/camera.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "The camera with the date, time and address stamp" },
+    { "src": "screenshots/gallery.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Your photos, kept on your device" },
+    { "src": "screenshots/landing-desktop.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "SpotCam on a computer" }
   ]
 }

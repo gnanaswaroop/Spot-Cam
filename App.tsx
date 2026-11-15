@@ -13,6 +13,8 @@ import { CapturedPhoto } from './types';
 import { usePersistedPhotos } from './hooks/usePersistedPhotos';
 import { usePathRoute } from './hooks/usePathRoute';
 import { useViewportHeight } from './hooks/useViewportHeight';
+import { useServiceWorkerUpdate } from './hooks/useServiceWorker';
+import { UpdateToast } from './components/UpdateToast';
 
 /**
  * The main App component.
@@ -22,6 +24,8 @@ import { useViewportHeight } from './hooks/useViewportHeight';
 const App: React.FC = () => {
   // Track the visible viewport height so bottom controls are never hidden behind browser/system bars.
   useViewportHeight();
+  // Offline support: a new version waits until the person taps Reload.
+  const { updateReady, applyUpdate } = useServiceWorkerUpdate();
   // Current view comes from the URL path (/, /cam, /gallery), so each page is bookmarkable.
   const [view, switchView] = usePathRoute();
   
@@ -46,6 +50,7 @@ const App: React.FC = () => {
 
   return (
     <div className="w-full h-full bg-gray-900">
+      {updateReady && <UpdateToast onReload={applyUpdate} />}
       {view === 'landing' && <LandingView onStart={() => switchView('camera')} onPrivacy={() => switchView('privacy')} />}
       {view === 'privacy' && <PrivacyView onBack={() => switchView('landing')} />}
       {/* Conditionally render the CameraView */}

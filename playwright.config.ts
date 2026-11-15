@@ -10,6 +10,9 @@ import { defineConfig, devices } from '@playwright/test';
  * Locally on Windows you can reuse the installed Edge for the Chromium project:
  *   PW_CHANNEL=msedge npm run test:e2e
  */
+// Lets a test rewrite the service worker script request (see e2e/pwa.spec.ts, the update test).
+process.env.PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS = '1';
+
 export default defineConfig({
   testDir: './e2e',
   // screenshots: `npm run screenshots`; live: post-deploy checks against the real site (see playwright.live.config.ts)
@@ -22,6 +25,8 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4173',
     trace: 'retain-on-failure',
+    // The service worker caches pages and would hide requests from the mocks. Only e2e/pwa.spec.ts turns it on.
+    serviceWorkers: 'block',
   },
   projects: [
     {

@@ -153,7 +153,17 @@ The geocoder is built to be gentle on free public services, because the public N
 
 `public/` holds the favicon (`favicon.svg`), the Apple touch icon, 192/512 px icons and `manifest.webmanifest` (name, colours and a `start_url` of `./cam`). `index.html` links them and adds the canonical URL and share-preview (Open Graph) tags for `https://spotcam.in/`.
 
-There is **no service worker yet**, so the app isn't a full offline PWA. See the open items in the pull request and issues.
+**Offline and updates (service worker).** The build writes `dist/sw.js` from `sw/sw.template.js` (the `serviceWorker` plugin in `vite.config.ts`; helpers and tests in `utils/precache.ts` and `tests/unit/precache.test.ts`). It precaches the pages, scripts, styles, icons and the sample photo, so the app opens with no connection and photos can still be taken and saved (the stamp then shows the coordinates and says the address is unavailable). Rules:
+
+- Pages are **network first** (a deploy shows up straight away for people who are online) and fall back to the cached copy when offline or when the network takes over 3 s. Hashed scripts, styles and images are cache first.
+- It only answers requests it precached. **Other sites (the address services), `version.txt`, `sitemap.xml` and `robots.txt` always go to the network**, so the deploy check and search engines see the real thing.
+- The cache is named after a hash of the built files (`spotcam-<hash>`), so every release gets a fresh cache and the previous one is deleted when the new worker activates.
+- **A new version waits.** `hooks/useServiceWorker.ts` registers the worker (production builds only) and checks for a new one when the tab comes back and hourly. When one is ready, `UpdateToast` offers **Reload**; only then does the worker take over and the page reload once, so nobody is switched mid-photo.
+- If the site sits behind a CDN, do not cache `/sw.js` there: browsers must see a new worker quickly.
+
+Install: the landing page shows an **Install app** button when the browser offers one (`hooks/useInstallPrompt.ts`, `beforeinstallprompt`), and "tap Share, then Add to Home Screen" on iPhone and iPad. `manifest.webmanifest` has an `id`, `any` and `maskable` icons (`icon-maskable-512.png`, artwork kept inside the safe zone) and install-dialog screenshots in `public/screenshots/` (copies of the files in `docs/screenshots/`; refresh them when the screenshots change).
+
+Tests: `e2e/pwa.spec.ts` turns the worker on (every other spec blocks it, in `playwright.config.ts`) and checks what is cached, offline pages, an offline photo, the update flow, the install prompt and the manifest. Playwright's WebKit and Firefox do not apply route mocks to a page a worker controls, so that spec never loads an address-requesting page there, and an `afterEach` guard fails if any real address request is seen.
 
 ## 11. Build and deploy
 
@@ -206,7 +216,7 @@ The policy lives in `components/PrivacyView.tsx` and is served at `/privacy`. It
 
 ## 16. Known limits and ideas
 
-- No service worker, so no offline use or install prompt control yet.
+- The first visit needs a connection (the worker installs after it). Playwright's Firefox offline mode cannot be tested with the worker, so offline pages are tested in Chromium and WebKit only.
 - The address services are free public servers with no uptime guarantee and fair-use limits. For real traffic, move to a keyed provider or a small proxy (the provider list in `utils/geocoder.ts` is the one place to change).
 - All text is English only (tracked in an issue); accessibility work is tracked in another.
 - Real-device checks (camera, location, the share sheet) are still manual: the tests use mocks.

@@ -18,7 +18,7 @@ SpotCam is a web camera that stamps the date, time and location onto every photo
 - Gallery of your latest photos, kept on your device (IndexedDB)
 - Share through the phone's native share sheet
 - Clear help when camera or location access is blocked, with steps for your browser
-- Works on phones and desktops; installable to the home screen
+- Works on phones and desktops; installable to the home screen, and opens offline after the first visit
 - Direct, bookmarkable links, so the camera opens in one tap
 
 ## Screenshots
