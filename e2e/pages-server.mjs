@@ -27,6 +27,8 @@ const types = {
   '.jpg': 'image/jpeg',
   '.webmanifest': 'application/manifest+json',
   '.json': 'application/json',
+  '.xml': 'application/xml',
+  '.txt': 'text/plain; charset=utf-8',
 };
 
 const send = (res, status, file) => {

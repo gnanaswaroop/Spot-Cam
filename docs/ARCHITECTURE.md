@@ -75,6 +75,8 @@ vite.config.ts          Plugins, base path, per-route page generation
 
 **Why real pages per route:** GitHub Pages is static hosting and cannot rewrite `/cam` to the app. The `spaRoutes` plugin in `vite.config.ts` copies the built `index.html` to `dist/home/`, `dist/cam/`, `dist/gallery/`, `dist/privacy/` and `dist/404.html` (unknown paths show the landing page). A direct visit or refresh of `/cam` therefore works.
 
+**Sitemap and robots.txt:** the `seoFiles` plugin writes `dist/sitemap.xml` and `dist/robots.txt` at build time from `utils/sitemap.ts`. Only the pages worth indexing are listed (`/` and `/privacy/`; the camera and gallery are tools). The origin defaults to `https://spotcam.in` and can be changed with `SITE_URL` when building for another domain.
+
 **Base path:** `base` is `/` for the custom domain. Set `BASE_PATH=/Spot-Cam/` to build for a plain `github.io/<repo>/` site. Router and asset URLs read Vite's `BASE_URL`, so both work.
 
 ## 4. Full-screen layers and the Back gesture

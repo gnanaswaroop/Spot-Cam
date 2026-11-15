@@ -39,6 +39,15 @@ test.describe('deployed site', () => {
     expect((await request.get('/this-page-does-not-exist')).status()).toBe(404);
   });
 
+  test('sitemap.xml and robots.txt are served', async ({ request }) => {
+    const sitemap = await request.get('/sitemap.xml');
+    expect(sitemap.status()).toBe(200);
+    expect(await sitemap.text()).toContain('<urlset');
+    const robots = await request.get('/robots.txt');
+    expect(robots.status()).toBe(200);
+    expect(await robots.text()).toContain('Sitemap:');
+  });
+
   test('the script and stylesheet referenced by the page exist and are not empty', async ({ request }) => {
     const html = await (await request.get('/')).text();
     const assets = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map(m => m[1]);
