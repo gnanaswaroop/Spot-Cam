@@ -21,6 +21,23 @@ test.describe('branding', () => {
     expect(svg).not.toMatch(/<script|href="https?:|xlink:href/i);
   });
 
+  test('favicon.svg has a transparent background, so it suits light and dark browser tabs', async ({ page }) => {
+    await page.goto(`${SITE}/`);
+    const corners = await page.evaluate(async src => {
+      const img = new Image();
+      img.src = src;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = c.height = 128;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, 128, 128);
+      const alpha = (x: number, y: number) => ctx.getImageData(x, y, 1, 1).data[3];
+      return { corners: [alpha(1, 1), alpha(126, 1), alpha(1, 126), alpha(126, 126)], centre: alpha(64, 70) };
+    }, `${SITE}/favicon.svg`);
+    expect(corners.corners).toEqual([0, 0, 0, 0]); // nothing painted in the corners
+    expect(corners.centre).toBe(255); // the artwork itself is solid
+  });
+
   for (const [file, size] of [
     ['apple-touch-icon.png', 180],
     ['icon-192.png', 192],

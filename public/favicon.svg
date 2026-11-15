@@ -13,8 +13,8 @@
     </mask>
   </defs>
 
-  <!-- Optional Dark Navy Background (remove this <rect> for a transparent background) -->
-  <rect width="512" height="512" fill="#111827" />
+  <!-- Transparent background on purpose: the white outline shows on dark tabs, the blue body on light tabs.
+       The PNG icons (apple-touch-icon, icon-192/512) are rendered onto navy by tmp/render-icons.mjs. -->
 
   <!-- Outer White Border Silhouette (Camera Body + Bottom Pin Tip) -->
   <g stroke="#FFFFFF" stroke-width="20" stroke-linejoin="round" stroke-linecap="round">
