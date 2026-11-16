@@ -160,9 +160,8 @@ const StartButton = ({
     >
       Start Cam
     </a>
-    <p className="mt-2 text-xs text-gray-400">
-      Camera and location access required
-      <span aria-hidden="true"> · </span>
+    <p className="mt-2 text-xs text-gray-400">Camera and location access required</p>
+    <p className="mt-1 text-xs text-gray-400">
       <a
         href={`${import.meta.env.BASE_URL}privacy`}
         onClick={e => {
