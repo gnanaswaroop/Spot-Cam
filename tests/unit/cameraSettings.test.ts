@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { VIDEO_QUALITY, continuousModes, isFacingRefusal, openingZoom, videoRequest } from '../../utils/cameraSettings';
+import { VIDEO_QUALITY, continuousModes, openingZoom, videoRequests, worthAskingAgain } from '../../utils/cameraSettings';
 
 describe('VIDEO_QUALITY', () => {
   it('asks for a large 4:3 picture at 30 fps, as ideals so no camera is refused', () => {
@@ -49,26 +49,30 @@ describe('continuousModes', () => {
   });
 });
 
-describe('videoRequest', () => {
-  it('makes the chosen camera exact, keeping the size wishes as ideals', () => {
-    const r = videoRequest('environment', true);
-    expect(r.facingMode).toEqual({ exact: 'environment' });
-    expect(r.width.ideal).toBe(VIDEO_QUALITY.width.ideal);
+describe('videoRequests', () => {
+  it('starts with the chosen camera as exact plus the size wishes, then asks for less each time', () => {
+    const [best, ...rest] = videoRequests('environment');
+    expect(best.facingMode).toEqual({ exact: 'environment' });
+    expect(best).toMatchObject({ width: { ideal: VIDEO_QUALITY.width.ideal } });
+    expect(rest.map(r => r.facingMode)).toEqual([{ exact: 'environment' }, 'environment', 'environment']);
+    expect(Object.keys(rest[0])).toEqual(['facingMode']); // exact camera, no size wishes
+    expect(Object.keys(rest[2])).toEqual(['facingMode']); // the plain request, as before the size wishes
   });
 
-  it('can ask for the camera as a plain wish (the second try)', () => {
-    expect(videoRequest('user', false).facingMode).toBe('user');
+  it('asks for the front camera the same way', () => {
+    expect(videoRequests('user')[0].facingMode).toEqual({ exact: 'user' });
   });
 });
 
-describe('isFacingRefusal', () => {
+describe('worthAskingAgain', () => {
   const named = (name: string) => Object.assign(new Error('x'), { name });
-  it('is true when no camera faces that way', () => {
-    expect(isFacingRefusal(named('OverconstrainedError'))).toBe(true);
-    expect(isFacingRefusal(named('NotFoundError'))).toBe(true);
+  it('is true when the camera could not do the request, so a simpler one may work', () => {
+    for (const name of ['OverconstrainedError', 'NotFoundError', 'NotReadableError', 'AbortError']) {
+      expect(worthAskingAgain(named(name))).toBe(true);
+    }
   });
-  it('is false for a refused permission or anything else, which must not be asked again', () => {
-    expect(isFacingRefusal(named('NotAllowedError'))).toBe(false);
-    expect(isFacingRefusal('nope')).toBe(false);
+  it('is false for a refused permission, which asking again cannot fix', () => {
+    expect(worthAskingAgain(named('NotAllowedError'))).toBe(false);
+    expect(worthAskingAgain(named('SecurityError'))).toBe(false);
   });
 });

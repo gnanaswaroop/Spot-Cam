@@ -15,17 +15,23 @@ export const VIDEO_QUALITY = {
 } as const;
 
 /**
- * The video request for one camera. With `exact` the chosen camera (rear or front) is a hard requirement, so
- * the size and shape wishes only rank the cameras that face the right way. As a plain wish, a phone can pick
- * the front camera because it fits the size better, which is what happened before this was exact.
+ * The video requests to try, in order, for one camera. The first is the best: the chosen camera as a hard
+ * requirement ("exact"), so the size wishes only rank cameras that face the right way (as a plain wish, a phone
+ * can open the front camera because it fits the size better). Each later one asks for less, so a camera that
+ * cannot do the first (a laptop with no rear camera, a phone that fails at a large picture) still opens.
  */
-export function videoRequest(facing: 'environment' | 'user', exact: boolean) {
-  return { facingMode: exact ? { exact: facing } : facing, ...VIDEO_QUALITY };
+export function videoRequests(facing: 'environment' | 'user') {
+  return [
+    { facingMode: { exact: facing }, ...VIDEO_QUALITY },
+    { facingMode: { exact: facing } },
+    { facingMode: facing, ...VIDEO_QUALITY },
+    { facingMode: facing },
+  ];
 }
 
-/** True when a browser refused because no camera faces that way, so asking again without "exact" may work. */
-export const isFacingRefusal = (err: unknown): boolean =>
-  err instanceof Error && (err.name === 'OverconstrainedError' || err.name === 'NotFoundError');
+/** A refused permission cannot be fixed by asking for less, and asking again would only nag. */
+export const worthAskingAgain = (err: unknown): boolean =>
+  !(err instanceof Error) || (err.name !== 'NotAllowedError' && err.name !== 'SecurityError');
 
 interface ZoomRange {
   min: number;

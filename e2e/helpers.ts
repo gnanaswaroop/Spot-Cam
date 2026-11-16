@@ -19,6 +19,10 @@ export interface MockOptions {
   noFacingMode?: boolean;
   /** How many cameras the device lists (default 1). The switch button needs two. */
   cameras?: number;
+  /** The camera cannot open at a large picture size (some phones fail with "NotReadableError"): requests with a size are refused. */
+  failsAtLargeSize?: boolean;
+  /** The first time the camera opens it takes this long, so a test can leave the page while it is opening. */
+  slowFirstOpenMs?: number;
 }
 
 /** Shape of the controller the init script exposes on `window`, so tests can flip modes live. */
@@ -73,6 +77,15 @@ export async function installMocks(page: Page, options: MockOptions) {
           const err = new Error('Camera facing that way not found');
           err.name = 'OverconstrainedError';
           throw err;
+        }
+        const video = constraints?.video as MediaTrackConstraints | undefined;
+        if (o.failsAtLargeSize && video && typeof video === 'object' && video.width) {
+          const err = new Error('Could not start video source');
+          err.name = 'NotReadableError';
+          throw err;
+        }
+        if (o.slowFirstOpenMs && w.__mock.asked.filter(a => a === 'camera').length === 1) {
+          await new Promise(resolve => setTimeout(resolve, o.slowFirstOpenMs));
         }
         const canvas = document.createElement('canvas');
         canvas.width = 640;

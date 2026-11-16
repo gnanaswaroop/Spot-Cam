@@ -9,7 +9,7 @@ import { usePermissionState } from '../hooks/usePermissionState';
 import { PermissionNotice } from './PermissionNotice';
 import { GalleryIcon, SettingsIcon, SwitchCameraIcon } from './icons';
 import { FONT_FAMILY_OVERLAY } from '../utils/constants';
-import { continuousModes, isFacingRefusal, openingZoom, videoRequest } from '../utils/cameraSettings';
+import { continuousModes, openingZoom, videoRequests, worthAskingAgain } from '../utils/cameraSettings';
 
 /** Props for the CameraView component. */
 interface CameraViewProps {
@@ -66,6 +66,20 @@ const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress, on
 /**
  * The main component for the camera interface.
  */
+/** Opens the camera, asking for less each time a request fails (see videoRequests); gives the last error if none works. */
+async function openCamera(facing: 'environment' | 'user'): Promise<MediaStream> {
+  let lastError: unknown;
+  for (const video of videoRequests(facing)) {
+    try {
+      return await navigator.mediaDevices.getUserMedia({ video, audio: false });
+    } catch (err) {
+      lastError = err;
+      if (!worthAskingAgain(err)) break;
+    }
+  }
+  throw lastError;
+}
+
 export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView, onHome, onOpenSettings }) => {
   // Refs for video and canvas elements
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -117,7 +131,8 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
   // Effect to initialize and manage the camera stream
   useEffect(() => {
     let activeStream: MediaStream | null = null;
-    
+    let cancelled = false;
+
     const initializeCamera = async () => {
         try {
             // getUserMedia only exists in secure contexts (HTTPS or localhost), and in browsers that support it.
@@ -129,12 +144,14 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
             // Request camera access from the user
             // Ask for exactly the chosen camera first. Without "exact" a phone may open the front camera because it
             // fits the requested size better. A device with no camera facing that way (a laptop) is asked again.
-            let newStream: MediaStream;
-            try {
-                newStream = await navigator.mediaDevices.getUserMedia({ video: videoRequest(currentFacingMode, true), audio: false });
-            } catch (firstError) {
-                if (!isFacingRefusal(firstError)) throw firstError;
-                newStream = await navigator.mediaDevices.getUserMedia({ video: videoRequest(currentFacingMode, false), audio: false });
+            // If the camera will not open with the size wishes (or at all with "exact"), the next simpler request is tried.
+            // A refused permission is never asked again.
+            const newStream = await openCamera(currentFacingMode);
+            // The page moved on (camera switched, retry pressed, left the page) while the camera was opening:
+            // let this one go, or it would keep the camera busy and could replace the one now wanted.
+            if (cancelled) {
+                newStream.getTracks().forEach(track => track.stop());
+                return;
             }
             activeStream = newStream;
             setStream(newStream);
@@ -173,10 +190,12 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
 
             // Check if multiple cameras are available
             const devices = await navigator.mediaDevices.enumerateDevices();
+            if (cancelled) return;
             const videoDevices = devices.filter(d => d.kind === 'videoinput');
             setHasMultipleCameras(videoDevices.length > 1);
 
         } catch (err) {
+            if (cancelled) return;
             console.error(err);
             const name = (err as DOMException)?.name;
             if (name === 'NotAllowedError' || name === 'SecurityError') {
@@ -196,6 +215,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
 
     // Cleanup function: stop the stream when the component unmounts or dependencies change
     return () => {
+        cancelled = true;
         if (activeStream) {
             activeStream.getTracks().forEach(track => track.stop());
         }

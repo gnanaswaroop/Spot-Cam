@@ -5,18 +5,23 @@
  */
 import { Page } from '@playwright/test';
 import { test, expect } from './fixtures';
-import { SITE, grantLocation, installMocks, mockGeocoder, skipIfNoCameraFrames, type MockController } from './helpers';
+import { SITE, grantLocation, installMocks, mockGeocoder, skipIfNoCameraFrames, type MockController, type MockOptions } from './helpers';
 
 type Zoom = NonNullable<Parameters<typeof installMocks>[1]['zoom']>;
 
-async function openCamera(page: Page, context: Parameters<typeof grantLocation>[0], zoom?: Zoom, noFacingMode = false, cameras = 1) {
+type Extra = Pick<MockOptions, 'noFacingMode' | 'cameras' | 'failsAtLargeSize' | 'slowFirstOpenMs'>;
+
+async function openCamera(page: Page, context: Parameters<typeof grantLocation>[0], zoom?: Zoom, extra: Extra = {}, waitUntilOpen = true) {
   await skipIfNoCameraFrames(page);
-  await installMocks(page, { camera: 'granted', location: 'granted', zoom, noFacingMode, cameras });
+  await installMocks(page, { camera: 'granted', location: 'granted', zoom, ...extra });
   await grantLocation(context);
   await mockGeocoder(page);
   await page.goto(`${SITE}/cam`);
-  await expect(page.getByRole('button', { name: 'Capture photo' })).toBeEnabled();
+  if (waitUntilOpen) await expect(page.getByRole('button', { name: 'Capture photo' })).toBeEnabled();
 }
+
+const liveTracks = (page: Page) =>
+  page.evaluate(() => ((window as unknown as { __fakeTracks?: MediaStreamTrack[] }).__fakeTracks ?? []).filter(t => t.readyState === 'live').length);
 
 const mock = <K extends keyof MockController>(page: Page, key: K) =>
   page.evaluate(k => (window as unknown as { __mock: MockController }).__mock[k], key);
@@ -43,7 +48,7 @@ test.describe('camera stream', () => {
   });
 
   test('the switch button asks for the front camera exactly, and back again for the rear one', async ({ page, context }) => {
-    await openCamera(page, context, undefined, false, 2);
+    await openCamera(page, context, undefined, { cameras: 2 });
     const toggle = page.getByRole('button', { name: /switch camera/i });
     await toggle.click();
     await expect.poll(async () => ((await mock(page, 'constraints')) as unknown[]).length).toBe(2);
@@ -54,10 +59,28 @@ test.describe('camera stream', () => {
   });
 
   test('a device with no camera facing that way (a laptop) still opens, by asking again without "exact"', async ({ page, context }) => {
-    await openCamera(page, context, undefined, true);
+    await openCamera(page, context, undefined, { noFacingMode: true });
     const constraints = (await mock(page, 'constraints')) as Array<{ video: { facingMode: unknown } }>;
-    expect(constraints.map(c => c.video.facingMode)).toEqual([{ exact: 'environment' }, 'environment']);
+    expect(constraints.map(c => c.video.facingMode)).toEqual([{ exact: 'environment' }, { exact: 'environment' }, 'environment']);
     await expect(page.getByRole('button', { name: 'Capture photo' })).toBeEnabled();
+  });
+
+  test('a phone that cannot open at the large size still opens, with the same camera and a simpler request', async ({ page, context }) => {
+    await openCamera(page, context, undefined, { failsAtLargeSize: true });
+    const constraints = (await mock(page, 'constraints')) as Array<{ video: Record<string, unknown> }>;
+    expect(constraints).toHaveLength(2);
+    expect(constraints[1].video).toEqual({ facingMode: { exact: 'environment' } });
+    await expect(page.getByRole('button', { name: 'Capture photo' })).toBeEnabled();
+  });
+
+  test('leaving the page while the camera is still opening does not leave the camera running', async ({ page, context }) => {
+    await openCamera(page, context, undefined, { slowFirstOpenMs: 1500 }, false);
+    await expect.poll(async () => ((await mock(page, 'constraints')) as unknown[]).length).toBe(1);
+    await page.getByRole('button', { name: 'Gallery' }).click();
+    await expect(page).toHaveURL(/gallery/);
+    // The late stream arrives after we left: it must be stopped, not kept.
+    await page.waitForTimeout(2200);
+    expect(await liveTracks(page)).toBe(0);
   });
 
   test('turns on automatic focus, exposure and white balance when the camera supports them', async ({ page, context }) => {
