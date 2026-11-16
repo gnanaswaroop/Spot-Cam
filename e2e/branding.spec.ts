@@ -68,6 +68,33 @@ test.describe('branding', () => {
     expect(manifest.background_color.toLowerCase()).toBe('#fb923c');
   });
 
+  test('the camera stays inside the safe zone of the maskable icon (the central 80% circle that Android keeps)', async ({ page }) => {
+    await page.goto(`${SITE}/`);
+    const reach = await page.evaluate(async url => {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      const { data } = ctx.getImageData(0, 0, c.width, c.height);
+      let farthest = 0;
+      for (let y = 0; y < c.height; y++) {
+        for (let x = 0; x < c.width; x++) {
+          const i = (y * c.width + x) * 4;
+          // Anything that is not the coral background (the blue camera or its white outline).
+          const isBackground = data[i] > 235 && data[i + 1] > 125 && data[i + 1] < 205 && data[i + 2] < 140;
+          if (!isBackground) farthest = Math.max(farthest, Math.hypot(x - c.width / 2, y - c.height / 2));
+        }
+      }
+      return { farthest, size: c.width };
+    }, `${SITE}/icon-maskable-512.png`);
+    expect(reach.farthest).toBeGreaterThan(reach.size * 0.25); // something is drawn
+    expect(reach.farthest).toBeLessThanOrEqual(reach.size * 0.4);
+  });
+
   for (const [file, size] of [
     ['apple-touch-icon.png', 180],
     ['icon-192.png', 192],
