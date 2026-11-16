@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { geocoder } from '../utils/geocoder';
+import { forgetLastAddress } from '../utils/lastAddress';
 import {
   CACHE_RADIUS_MAX_M,
   CACHE_RADIUS_MIN_M,
@@ -149,6 +150,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, onDelete
             confirmLabel="Yes, clear the cache"
             onConfirm={() => {
               geocoder.clearCache().then(() => {
+                forgetLastAddress();
                 refreshCache();
                 setStatus('Address cache cleared.');
               });

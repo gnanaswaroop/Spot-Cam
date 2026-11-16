@@ -35,6 +35,8 @@ export interface MockController {
   constraints: unknown[];
   /** The constraints applied to the fake camera track afterwards (zoom, focus...). */
   applied: unknown[];
+  /** The options each position watch was started with. */
+  watchOptions: unknown[];
 }
 
 /**
@@ -55,6 +57,7 @@ export async function installMocks(page: Page, options: MockOptions) {
       asked: [],
       constraints: [],
       applied: [],
+      watchOptions: [],
     };
 
     const override = (target: object, name: string, value: unknown) =>
@@ -126,6 +129,7 @@ export async function installMocks(page: Page, options: MockOptions) {
       const realWatch = geoTarget.watchPosition;
       Object.defineProperty(geoTarget, 'watchPosition', { configurable: true, writable: true, value: function (this: Geolocation, ok: PositionCallback, err?: PositionErrorCallback | null, opts?: PositionOptions) {
         w.__mock.asked.push('geolocation');
+        w.__mock.watchOptions.push(opts ? JSON.parse(JSON.stringify(opts)) : null);
         if (w.__mock.location === 'denied') {
           setTimeout(
             () =>

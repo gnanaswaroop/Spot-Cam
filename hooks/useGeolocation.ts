@@ -7,6 +7,7 @@ import { GeolocationData } from '../types';
 import { geocoder } from '../utils/geocoder';
 import { distanceMeters } from '../utils/geo';
 import { getCacheRadiusM } from '../utils/settings';
+import { loadLastAddress, saveLastAddress } from '../utils/lastAddress';
 
 /** An address older than this distance is no longer shown: it would describe somewhere else. */
 export const ADDRESS_STALE_DISTANCE_M = 200;
@@ -37,7 +38,8 @@ export function useGeolocation() {
 
   // Latest GPS fix, and the place the current address was found for.
   const position = useRef<{ latitude: number; longitude: number } | null>(null);
-  const resolved = useRef<{ latitude: number; longitude: number; address: string } | null>(null);
+  // Starts from the last address found (this visit or an earlier one), so a fix close to it shows it at once.
+  const resolved = useRef<{ latitude: number; longitude: number; address: string } | null>(loadLastAddress());
   const inFlight = useRef(false);
   const notBefore = useRef(0); // earliest time the next automatic attempt may start
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,6 +75,7 @@ export function useGeolocation() {
       if (!mounted.current) return;
       if (result.status === 'ok') {
         resolved.current = { latitude: pos.latitude, longitude: pos.longitude, address: result.address };
+        saveLastAddress(resolved.current);
         notBefore.current = 0;
         setLocation(prev => (prev ? { ...prev, address: result.address } : prev));
         setAddressStatus('ok');
@@ -100,6 +103,7 @@ export function useGeolocation() {
       const keep = known && distanceMeters(latitude, longitude, known.latitude, known.longitude) <= ADDRESS_STALE_DISTANCE_M;
       setLocation({ latitude, longitude, address: keep ? known.address : undefined });
       if (known && !keep) setAddressStatus(s => (s === 'ok' ? 'loading' : s));
+      else if (keep) setAddressStatus(s => (s === 'loading' ? 'ok' : s)); // the remembered address already fits
       setError(null);
       setPermissionDenied(false);
 
@@ -130,7 +134,9 @@ export function useGeolocation() {
       watchId = navigator.geolocation.watchPosition(handlePositionSuccess, handlePositionError, {
         enableHighAccuracy: true, // Request the most accurate position possible.
         timeout: 10000, // Time (in ms) before the error callback is invoked.
-        maximumAge: 0, // Don't use a cached position.
+        // A fix up to 30 s old may answer first (a camera opened from another page gets its position at once);
+        // every update after it is fresh.
+        maximumAge: 30000,
       });
     }
 
