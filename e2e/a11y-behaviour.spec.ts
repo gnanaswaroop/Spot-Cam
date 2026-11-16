@@ -4,7 +4,7 @@ import { SITE, setUpGrantedCamera, skipIfNoCameraFrames, takePhotos } from './he
 
 test.describe('page titles', () => {
   for (const [path, title] of [
-    ['/', /Spot it\. Snap it\. Stamp it\./],
+    ['/', 'SpotCam: Free Timestamp Camera with GPS Location'],
     ['/cam', 'Camera | SpotCam'],
     ['/gallery', 'Gallery | SpotCam'],
     ['/privacy', 'Privacy Policy | SpotCam'],

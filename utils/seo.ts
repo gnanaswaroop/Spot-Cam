@@ -26,13 +26,16 @@ export interface SeoPage {
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const DESCRIPTION = 'Free online timestamp camera. Stamps the date, time, GPS location and address onto every photo. Private: photos never leave your device.';
+const LANDING_TITLE = 'SpotCam: Free Timestamp Camera with GPS Location';
+const LANDING_DESCRIPTION =
+  'Free timestamp camera in your browser. Photos with the date, time, GPS location and address stamped on. No app, no sign-up, and photos stay on your device.';
 
 const nav = (base: string) =>
   `<nav aria-label="Pages"><a href="${base}cam">Start Cam</a> \u00b7 <a href="${base}how-it-works/">How it works</a> \u00b7 <a href="${base}privacy/">Privacy</a></nav>`;
 
 const landingBody = (base: string) =>
   `<main><h1>SpotCam</h1><p>${TAGLINE}</p>` +
-  `<p>A camera that stamps the date, time and location onto every photo.</p>` +
+  `<p>A free timestamp camera that stamps the date, time and GPS location onto every photo.</p>` +
   `<ul><li>Date &amp; time</li><li>GPS &amp; address</li><li>Stays on your device</li></ul>${nav(base)}</main>`;
 
 const howBody = (base: string) =>
@@ -49,9 +52,9 @@ const toolBody = (title: string, base: string) => `<main><h1>${esc(title)}</h1><
 
 /** All pages. `base` is Vite's base path ('/' on the custom domain). */
 export const seoPages = (base = '/'): SeoPage[] => [
-  { dir: '', title: `SpotCam | ${TAGLINE}`, description: DESCRIPTION, index: true, canonical: '/', body: landingBody(base) },
+  { dir: '', title: LANDING_TITLE, description: LANDING_DESCRIPTION, index: true, canonical: '/', body: landingBody(base) },
   // /home is the landing page under another name; its canonical points at /.
-  { dir: 'home', title: `SpotCam | ${TAGLINE}`, description: DESCRIPTION, index: true, canonical: '/', body: landingBody(base) },
+  { dir: 'home', title: LANDING_TITLE, description: LANDING_DESCRIPTION, index: true, canonical: '/', body: landingBody(base) },
   {
     dir: 'how-it-works',
     title: 'How SpotCam works: timestamp and GPS camera | SpotCam',
@@ -83,7 +86,8 @@ const jsonLd = (page: SeoPage, origin: string | undefined): object[] => {
       '@context': 'https://schema.org',
       '@type': 'WebApplication',
       name: 'SpotCam',
-      description: DESCRIPTION,
+      description: LANDING_DESCRIPTION,
+      featureList: ['Date and time on every photo', 'GPS coordinates and street address', 'Works offline', 'Photos stay on your device', 'Share with a map link'],
       applicationCategory: 'PhotographyApplication',
       operatingSystem: 'Any (runs in the browser)',
       browserRequirements: 'Requires a camera and JavaScript',

@@ -62,7 +62,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy, on
           </div>
           <p className="mt-2 text-sm font-semibold tracking-wide text-blue-400 md:mt-4 md:text-lg">{TAGLINE}</p>
           <p className="mt-2 max-w-sm text-balance text-base text-gray-300 md:mt-4 md:text-xl">
-            A camera that stamps the <span className="text-white">date, time and location</span> onto every photo.
+            A free timestamp camera that stamps the <span className="text-white">date, time and GPS location</span> onto every photo.
           </p>
           <ul className="mt-3 flex flex-wrap justify-center gap-2 md:mt-6 md:justify-start">
             {FEATURES.map(f => (
