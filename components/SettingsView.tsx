@@ -1,5 +1,5 @@
 /**
- * @file Settings: the address cache (size and clearing), saved photos (delete all), and the cache radius.
+ * @file Settings: the address cache (size and clearing), saved photos (delete all), the cache radius, and the map service used for the link in shared text.
  * Everything here is stored on this device only.
  */
 
@@ -10,9 +10,12 @@ import {
   CACHE_RADIUS_MIN_M,
   DEFAULT_CACHE_RADIUS_M,
   getCacheRadiusM,
+  getMapService,
   isCacheRadiusCustomised,
   setCacheRadiusM,
+  setMapService,
 } from '../utils/settings';
+import { MAP_SERVICES, type MapService } from '../utils/maps';
 import { AppHeader } from './AppHeader';
 
 interface SettingsViewProps {
@@ -109,6 +112,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, onDelete
     setCustomised(isCacheRadiusCustomised());
   };
 
+  // Map service for the link added when a photo is shared; saved as soon as one is chosen.
+  const [mapService, setMapServiceState] = useState<MapService>(getMapService);
+  const chooseMapService = (service: MapService) => {
+    setMapService(service);
+    setMapServiceState(service);
+    setStatus(`Shared photos will link to ${MAP_SERVICES.find(s => s.id === service)!.label}.`);
+  };
+
   return (
     <div className="app-h w-full bg-gray-900 text-white flex flex-col">
       <AppHeader onBack={onBack} />
@@ -199,6 +210,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, onDelete
               ? `Whole number from ${CACHE_RADIUS_MIN_M} to ${CACHE_RADIUS_MAX_M} m.`
               : `Enter a whole number from ${CACHE_RADIUS_MIN_M} to ${CACHE_RADIUS_MAX_M}.`}
           </p>
+        </Section>
+
+        <Section id="maps-heading" title="Map link when sharing">
+          <p className="text-sm text-gray-300">
+            Shared photos include a link to the spot where they were taken. Choose which map opens when someone taps it.
+          </p>
+          <fieldset className="space-y-2">
+            <legend className="sr-only">Map service</legend>
+            {MAP_SERVICES.map(service => (
+              <label key={service.id} className="flex min-h-11 items-center gap-3 text-base">
+                <input
+                  type="radio"
+                  name="map-service"
+                  value={service.id}
+                  checked={mapService === service.id}
+                  onChange={() => chooseMapService(service.id)}
+                  className="h-5 w-5 accent-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <span>
+                  {service.label}
+                  {service.id === 'google' && <span className="text-gray-400"> (default)</span>}
+                </span>
+              </label>
+            ))}
+          </fieldset>
         </Section>
 
         <Section id="photos-heading" title="Saved photos">

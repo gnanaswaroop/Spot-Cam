@@ -72,3 +72,55 @@ test.describe('sharing a photo', () => {
     expect(share.text).toMatch(/at an unknown location\.\nhttps:\/\/www\.google\.com\/maps\/search\/\?api=1&query=48\.8583\d+,2\.2944\d+$/);
   });
 });
+
+test.describe('choosing the map service for the shared link', () => {
+  const expectedStart = {
+    Google: 'https://www.google.com/maps/search/?api=1&query=48.8583',
+    Apple: 'https://maps.apple.com/?ll=48.8583',
+    OpenStreetMap: 'https://www.openstreetmap.org/?mlat=48.8583',
+  } as const;
+
+  test('Google Maps is the default, and each choice is saved and used for the link', async ({ page, context }) => {
+    await recordShares(page);
+    await mockGeocoder(page);
+    await installMocks(page, { camera: 'granted', location: 'granted' });
+    await grantLocation(context);
+    await takePhotos(page, 1);
+    await page.waitForTimeout(300);
+
+    await page.getByRole('button', { name: 'Settings' }).click();
+    const group = page.getByRole('group', { name: 'Map service' });
+    await expect(group.getByRole('radio', { name: 'Google Maps (default)' })).toBeChecked();
+
+    for (const name of ['Apple', 'OpenStreetMap', 'Google'] as const) {
+      await group.getByRole('radio', { name: new RegExp(`^${name}`) }).check();
+      await expect(page.getByRole('status').filter({ hasText: 'Shared photos will link to' })).toContainText(name);
+
+      await page.getByRole('button', { name: 'Back to camera' }).click();
+      await sharePhoto(page);
+      const expectedCount = ['Apple', 'OpenStreetMap', 'Google'].indexOf(name) + 1;
+      await expect.poll(async () => (await shared(page)).length).toBe(expectedCount);
+      const last = (await shared(page))[expectedCount - 1];
+      expect(last.text!.split('\n')[1].startsWith(expectedStart[name]), name).toBe(true);
+      await page.getByRole('button', { name: 'Close photo view' }).click();
+      await page.getByRole('button', { name: 'Back to camera' }).click();
+      await page.getByRole('button', { name: 'Settings' }).click();
+    }
+  });
+
+  test('the choice survives a reload', async ({ page }) => {
+    await page.goto(`${SITE}/settings`);
+    const group = page.getByRole('group', { name: 'Map service' });
+    await group.getByRole('radio', { name: /^Apple/ }).check();
+    await page.reload();
+    await expect(page.getByRole('group', { name: 'Map service' }).getByRole('radio', { name: /^Apple/ })).toBeChecked();
+  });
+
+  test('can be changed with the keyboard', async ({ page }) => {
+    await page.goto(`${SITE}/settings`);
+    const google = page.getByRole('radio', { name: /^Google Maps/ });
+    await google.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('radio', { name: /^Apple/ })).toBeChecked();
+  });
+});

@@ -151,7 +151,7 @@ The geocoder is built to be gentle on free public services, because the public N
 
 ## 9. Sharing
 
-`GalleryView` and the landing page's sample viewer convert the image to a `File` (`dataURLtoFile`) and call the **Web Share API**. Where file sharing isn't supported, the sample falls back to a download.
+`GalleryView` and the landing page's sample viewer convert the image to a `File` (`dataURLtoFile`) and call the **Web Share API**. Where file sharing isn't supported, the sample falls back to a download. The text shared with a gallery photo ends with a link to the spot it was taken (`utils/maps.ts`, `shareText`). The map service for that link (Google Maps by default, or Apple Maps or OpenStreetMap) is chosen on the Settings page and kept in `localStorage` with the other settings; the link is only text, so nothing is sent anywhere by SpotCam.
 
 ## 10. Branding, icons and installability
 

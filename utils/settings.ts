@@ -1,7 +1,9 @@
 /**
- * @file User settings kept on this device (browser localStorage). Only the cache radius is customisable.
+ * @file User settings kept on this device (browser localStorage). The cache radius and the map service are customisable.
  * Nothing here is sent anywhere. Reads and writes never throw: if storage is blocked, the defaults apply.
  */
+
+import { DEFAULT_MAP_SERVICE, isMapService, type MapService } from './maps';
 
 const STORAGE_KEY = 'spotcam-settings';
 
@@ -12,6 +14,7 @@ export const CACHE_RADIUS_MAX_M = 500;
 
 interface StoredSettings {
   cacheRadiusM?: number;
+  mapService?: MapService;
 }
 
 const isValidRadius = (m: unknown): m is number =>
@@ -57,6 +60,24 @@ export function setCacheRadiusM(metres: number | null) {
     settings.cacheRadiusM = metres;
   } else {
     return;
+  }
+  writeStored(settings);
+}
+
+/** The map service used for the link in shared text: the saved choice, otherwise the default (Google Maps). */
+export function getMapService(): MapService {
+  const saved = readStored().mapService;
+  return isMapService(saved) ? saved : DEFAULT_MAP_SERVICE;
+}
+
+/** Saves the map service. Choosing the default removes the stored value, so the default keeps applying. */
+export function setMapService(service: MapService) {
+  if (!isMapService(service)) return;
+  const settings = readStored();
+  if (service === DEFAULT_MAP_SERVICE) {
+    delete settings.mapService;
+  } else {
+    settings.mapService = service;
   }
   writeStored(settings);
 }
