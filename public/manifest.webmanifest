@@ -7,7 +7,7 @@
   "start_url": "./cam",
   "scope": ".",
   "display": "standalone",
-  "background_color": "#111827",
+  "background_color": "#FACC15",
   "theme_color": "#111827",
   "categories": ["photo", "utilities"],
   "icons": [
