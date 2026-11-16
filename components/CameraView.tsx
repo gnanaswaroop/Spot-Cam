@@ -9,6 +9,7 @@ import { usePermissionState } from '../hooks/usePermissionState';
 import { PermissionNotice } from './PermissionNotice';
 import { GalleryIcon, SettingsIcon, SwitchCameraIcon } from './icons';
 import { FONT_FAMILY_OVERLAY } from '../utils/constants';
+import { VIDEO_QUALITY, continuousModes, openingZoom } from '../utils/cameraSettings';
 
 /** Props for the CameraView component. */
 interface CameraViewProps {
@@ -125,7 +126,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
             }
             // Request camera access from the user
             const newStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: currentFacingMode },
+                video: { facingMode: currentFacingMode, ...VIDEO_QUALITY },
                 audio: false,
             });
             activeStream = newStream;
@@ -139,7 +140,10 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
             // Check for zoom capabilities on the video track
             const track = newStream.getVideoTracks()[0];
             if (track) {
-                const capabilities = track.getCapabilities?.() ?? {}; // not available in every browser
+                const capabilities = (track.getCapabilities?.() ?? {}) as MediaTrackCapabilities & Record<string, unknown>; // not available in every browser
+                // Let the camera keep adjusting focus, exposure and white balance by itself, as a camera app does.
+                const automatic = continuousModes(capabilities);
+                if (automatic.length > 0) track.applyConstraints({ advanced: automatic as MediaTrackConstraintSet[] }).catch(() => undefined);
                 // 'zoom' is a non-standard capability, so check for its existence
                 if ('zoom' in capabilities && capabilities.zoom) {
                     const zoomCapability = capabilities.zoom as { min: number; max: number; step: number; };
@@ -148,8 +152,10 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
                         max: zoomCapability.max,
                         step: zoomCapability.step,
                     });
-                    setCurrentZoom(1);
-                    track.applyConstraints({ advanced: [{ zoom: 1 } as any] });
+                    // Always open at 1x (or the closest the camera allows), whatever zoom it started at.
+                    const start = openingZoom(zoomCapability);
+                    setCurrentZoom(start);
+                    track.applyConstraints({ advanced: [{ zoom: start } as any] }).catch(() => undefined);
                 } else {
                     setZoomCapabilities(null);
                 }
@@ -298,6 +304,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
   /** Toggles between 'user' and 'environment' (front/back) cameras. */
   const handleSwitchCamera = () => {
     setZoomCapabilities(null); // Reset zoom when switching cameras
+    setCurrentZoom(1);
     setCurrentFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
   };
 

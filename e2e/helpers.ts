@@ -13,6 +13,8 @@ export interface MockOptions {
   location?: LocationMode;
   /** What navigator.permissions.query() reports. Undefined keeps the browser's real answer. */
   permissionStates?: { camera?: PermState; geolocation?: PermState };
+  /** Make the fake camera report a zoom range, and the zoom it starts at (like a real phone camera). */
+  zoom?: { min: number; max: number; step: number; initial: number };
 }
 
 /** Shape of the controller the init script exposes on `window`, so tests can flip modes live. */
@@ -21,6 +23,10 @@ export interface MockController {
   location: LocationMode;
   permissionStates: { camera?: PermState; geolocation?: PermState };
   asked: string[];
+  /** The constraints each getUserMedia call asked for. */
+  constraints: unknown[];
+  /** The constraints applied to the fake camera track afterwards (zoom, focus...). */
+  applied: unknown[];
 }
 
 /**
@@ -39,6 +45,8 @@ export async function installMocks(page: Page, options: MockOptions) {
       location: o.location ?? 'granted',
       permissionStates: o.permissionStates ?? {},
       asked: [],
+      constraints: [],
+      applied: [],
     };
 
     const override = (target: object, name: string, value: unknown) =>
@@ -51,8 +59,9 @@ export async function installMocks(page: Page, options: MockOptions) {
       // Patch the prototype, not the instance: in WebKit the instance can be re-wrapped (we saw our
       // override vanish on a cold start), while the prototype keeps the override for good.
       const mediaDevicesTarget: object = (window as any).MediaDevices?.prototype ?? navigator.mediaDevices;
-      override(mediaDevicesTarget, 'getUserMedia', async () => {
+      override(mediaDevicesTarget, 'getUserMedia', async (constraints?: MediaStreamConstraints) => {
         w.__mock.asked.push('camera');
+        w.__mock.constraints.push(JSON.parse(JSON.stringify(constraints ?? null)));
         if (w.__mock.camera === 'denied') throw new DOMException('Permission denied', 'NotAllowedError');
         if (w.__mock.camera === 'notfound') throw new DOMException('Requested device not found', 'NotFoundError');
         const canvas = document.createElement('canvas');
@@ -68,7 +77,22 @@ export async function installMocks(page: Page, options: MockOptions) {
         setInterval(draw, 100);
         // Some engines (e.g. Playwright's WebKit on Windows) have no canvas.captureStream: fall back to
         // an empty stream, which is enough for the permission screens (but not for real photo frames).
-        return typeof canvas.captureStream === 'function' ? canvas.captureStream(10) : new MediaStream();
+        const stream = typeof canvas.captureStream === 'function' ? canvas.captureStream(10) : new MediaStream();
+        const track = stream.getVideoTracks()[0];
+        if (track) {
+          // Report what a phone camera reports, and record what the page asks of it.
+          const realSettings = track.getSettings?.bind(track);
+          override(track, 'getCapabilities', () =>
+            o.zoom
+              ? { zoom: { min: o.zoom.min, max: o.zoom.max, step: o.zoom.step }, focusMode: ['manual', 'continuous'], exposureMode: ['manual', 'continuous'], whiteBalanceMode: ['manual', 'continuous'] }
+              : {},
+          );
+          override(track, 'getSettings', () => ({ ...(realSettings?.() ?? {}), ...(o.zoom ? { zoom: o.zoom.initial } : {}) }));
+          override(track, 'applyConstraints', async (c?: MediaTrackConstraints) => {
+            w.__mock.applied.push(JSON.parse(JSON.stringify(c ?? null)));
+          });
+        }
+        return stream;
       });
       override(mediaDevicesTarget, 'enumerateDevices', async () => [{ kind: 'videoinput' } as MediaDeviceInfo]);
     }
