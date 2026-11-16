@@ -1,6 +1,7 @@
 /**
  * @file Contains miscellaneous helper functions used across the application.
  */
+import type { CapturedPhoto } from '../types';
 
 /**
  * Formats a Unix timestamp into a human-readable, locale-specific date and time string.
@@ -9,6 +10,26 @@
  */
 export const formatDateTime = (timestamp: number): string => {
   return new Date(timestamp).toLocaleString();
+};
+
+/**
+ * A Google Maps link that opens the given point (the documented "search" URL form, which opens the
+ * Maps app on phones and the website elsewhere).
+ * @param latitude - Degrees north.
+ * @param longitude - Degrees east.
+ */
+export const mapsUrl = (latitude: number, longitude: number): string =>
+  `https://www.google.com/maps/search/?api=1&query=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+
+/**
+ * The text shared with a photo: when and where it was taken, plus a Google Maps link to the exact
+ * spot when the position is known.
+ */
+export const shareText = (photo: Pick<CapturedPhoto, 'timestamp' | 'location'>): string => {
+  const { location } = photo;
+  const line = `Captured on ${formatDateTime(photo.timestamp)} at ${location?.address || 'an unknown location'}.`;
+  return location ? `${line}
+${mapsUrl(location.latitude, location.longitude)}` : line;
 };
 
 /**

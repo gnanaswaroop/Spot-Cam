@@ -7,7 +7,7 @@ import React from 'react';
 import { CapturedPhoto } from '../types';
 import { useHistoryOverlay, hasOverlayEntry } from '../hooks/useHistoryOverlay';
 import { useDialogFocus } from '../hooks/useDialogFocus';
-import { dataURLtoFile, formatDateTime } from '../utils/helpers';
+import { dataURLtoFile, formatDateTime, shareText } from '../utils/helpers';
 import { ShareIcon, DeleteIcon, CloseIcon, GalleryIcon } from './icons';
 import { AppHeader } from './AppHeader';
 
@@ -120,7 +120,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
         await navigator.share({
           files: [file],
           title: `Photo from SpotCam`,
-          text: `Captured on ${formatDateTime(photo.timestamp)} at ${photo.location?.address || 'an unknown location'}.`,
+          text: shareText(photo),
         });
       } catch (error) {
         // Handle cases where the user cancels the share dialog or an error occurs.
