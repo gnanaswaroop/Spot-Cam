@@ -38,7 +38,7 @@ test.describe('branding', () => {
     expect(corners.centre).toBe(255); // the artwork itself is solid
   });
 
-  test('the app icons are full-bleed sunny yellow, the centre is the blue camera, and the splash colour matches', async ({ page, request }) => {
+  test('the app icons are full-bleed soft coral, the centre is the blue camera, and the splash colour matches', async ({ page, request }) => {
     await page.goto(`${SITE}/`);
     for (const file of ['icon-maskable-512.png', 'icon-512.png', 'icon-192.png', 'apple-touch-icon.png']) {
       const px = await page.evaluate(async url => {
@@ -53,18 +53,19 @@ test.describe('branding', () => {
         const at = (x: number, y: number) => [...ctx.getImageData(Math.floor(x * c.width), Math.floor(y * c.height), 1, 1).data];
         return { corner: at(0.02, 0.02), edge: at(0.5, 0.97), body: at(0.3, 0.55) };
       }, `${SITE}/${file}`);
-      // Yellow: strong red and green, little blue; fully opaque (the OS crops it into a circle or rounded square).
+      // Coral: strong red, medium green, little blue; fully opaque (the OS crops it into a circle or rounded square).
       for (const p of [px.corner, px.edge]) {
-        expect(p[0], file).toBeGreaterThan(220);
-        expect(p[1], file).toBeGreaterThan(170);
-        expect(p[2], file).toBeLessThan(120);
+        expect(p[0], file).toBeGreaterThan(235);
+        expect(p[1], file).toBeGreaterThan(125);
+        expect(p[1], file).toBeLessThan(205);
+        expect(p[2], file).toBeLessThan(140);
         expect(p[3], file).toBe(255);
       }
       // The camera body is blue.
       expect(px.body[2], file).toBeGreaterThan(px.body[0] + 60);
     }
     const manifest = await (await request.get(`${SITE}/manifest.webmanifest`)).json();
-    expect(manifest.background_color.toLowerCase()).toBe('#facc15');
+    expect(manifest.background_color.toLowerCase()).toBe('#fb923c');
   });
 
   for (const [file, size] of [
