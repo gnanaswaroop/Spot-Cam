@@ -14,6 +14,19 @@ export const VIDEO_QUALITY = {
   frameRate: { ideal: 30 },
 } as const;
 
+/**
+ * The video request for one camera. With `exact` the chosen camera (rear or front) is a hard requirement, so
+ * the size and shape wishes only rank the cameras that face the right way. As a plain wish, a phone can pick
+ * the front camera because it fits the size better, which is what happened before this was exact.
+ */
+export function videoRequest(facing: 'environment' | 'user', exact: boolean) {
+  return { facingMode: exact ? { exact: facing } : facing, ...VIDEO_QUALITY };
+}
+
+/** True when a browser refused because no camera faces that way, so asking again without "exact" may work. */
+export const isFacingRefusal = (err: unknown): boolean =>
+  err instanceof Error && (err.name === 'OverconstrainedError' || err.name === 'NotFoundError');
+
 interface ZoomRange {
   min: number;
   max: number;

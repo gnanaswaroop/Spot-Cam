@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { VIDEO_QUALITY, continuousModes, openingZoom } from '../../utils/cameraSettings';
+import { VIDEO_QUALITY, continuousModes, isFacingRefusal, openingZoom, videoRequest } from '../../utils/cameraSettings';
 
 describe('VIDEO_QUALITY', () => {
   it('asks for a large 4:3 picture at 30 fps, as ideals so no camera is refused', () => {
@@ -46,5 +46,29 @@ describe('continuousModes', () => {
   it('asks for nothing when the camera reports nothing (Firefox, Safari)', () => {
     expect(continuousModes({})).toEqual([]);
     expect(continuousModes({ focusMode: 'continuous' })).toEqual([]);
+  });
+});
+
+describe('videoRequest', () => {
+  it('makes the chosen camera exact, keeping the size wishes as ideals', () => {
+    const r = videoRequest('environment', true);
+    expect(r.facingMode).toEqual({ exact: 'environment' });
+    expect(r.width.ideal).toBe(VIDEO_QUALITY.width.ideal);
+  });
+
+  it('can ask for the camera as a plain wish (the second try)', () => {
+    expect(videoRequest('user', false).facingMode).toBe('user');
+  });
+});
+
+describe('isFacingRefusal', () => {
+  const named = (name: string) => Object.assign(new Error('x'), { name });
+  it('is true when no camera faces that way', () => {
+    expect(isFacingRefusal(named('OverconstrainedError'))).toBe(true);
+    expect(isFacingRefusal(named('NotFoundError'))).toBe(true);
+  });
+  it('is false for a refused permission or anything else, which must not be asked again', () => {
+    expect(isFacingRefusal(named('NotAllowedError'))).toBe(false);
+    expect(isFacingRefusal('nope')).toBe(false);
   });
 });

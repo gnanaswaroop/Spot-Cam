@@ -15,6 +15,10 @@ export interface MockOptions {
   permissionStates?: { camera?: PermState; geolocation?: PermState };
   /** Make the fake camera report a zoom range, and the zoom it starts at (like a real phone camera). */
   zoom?: { min: number; max: number; step: number; initial: number };
+  /** The device has no camera that can be asked for by facing (a laptop webcam): an "exact" facing is refused. */
+  noFacingMode?: boolean;
+  /** How many cameras the device lists (default 1). The switch button needs two. */
+  cameras?: number;
 }
 
 /** Shape of the controller the init script exposes on `window`, so tests can flip modes live. */
@@ -64,6 +68,12 @@ export async function installMocks(page: Page, options: MockOptions) {
         w.__mock.constraints.push(JSON.parse(JSON.stringify(constraints ?? null)));
         if (w.__mock.camera === 'denied') throw new DOMException('Permission denied', 'NotAllowedError');
         if (w.__mock.camera === 'notfound') throw new DOMException('Requested device not found', 'NotFoundError');
+        const wanted = (constraints?.video as MediaTrackConstraints | undefined)?.facingMode as { exact?: string } | string | undefined;
+        if (o.noFacingMode && wanted && typeof wanted === 'object' && wanted.exact) {
+          const err = new Error('Camera facing that way not found');
+          err.name = 'OverconstrainedError';
+          throw err;
+        }
         const canvas = document.createElement('canvas');
         canvas.width = 640;
         canvas.height = 480;
@@ -95,7 +105,7 @@ export async function installMocks(page: Page, options: MockOptions) {
         }
         return stream;
       });
-      override(mediaDevicesTarget, 'enumerateDevices', async () => [{ kind: 'videoinput' } as MediaDeviceInfo]);
+      override(mediaDevicesTarget, 'enumerateDevices', async () => Array.from({ length: o.cameras ?? 1 }, () => ({ kind: 'videoinput' }) as MediaDeviceInfo));
     }
 
     if (o.location) {

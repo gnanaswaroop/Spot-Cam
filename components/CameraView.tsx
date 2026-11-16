@@ -9,7 +9,7 @@ import { usePermissionState } from '../hooks/usePermissionState';
 import { PermissionNotice } from './PermissionNotice';
 import { GalleryIcon, SettingsIcon, SwitchCameraIcon } from './icons';
 import { FONT_FAMILY_OVERLAY } from '../utils/constants';
-import { VIDEO_QUALITY, continuousModes, openingZoom } from '../utils/cameraSettings';
+import { continuousModes, isFacingRefusal, openingZoom, videoRequest } from '../utils/cameraSettings';
 
 /** Props for the CameraView component. */
 interface CameraViewProps {
@@ -127,10 +127,15 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
                 return;
             }
             // Request camera access from the user
-            const newStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: currentFacingMode, ...VIDEO_QUALITY },
-                audio: false,
-            });
+            // Ask for exactly the chosen camera first. Without "exact" a phone may open the front camera because it
+            // fits the requested size better. A device with no camera facing that way (a laptop) is asked again.
+            let newStream: MediaStream;
+            try {
+                newStream = await navigator.mediaDevices.getUserMedia({ video: videoRequest(currentFacingMode, true), audio: false });
+            } catch (firstError) {
+                if (!isFacingRefusal(firstError)) throw firstError;
+                newStream = await navigator.mediaDevices.getUserMedia({ video: videoRequest(currentFacingMode, false), audio: false });
+            }
             activeStream = newStream;
             setStream(newStream);
             if (videoRef.current) {

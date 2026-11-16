@@ -9,9 +9,9 @@ import { SITE, grantLocation, installMocks, mockGeocoder, skipIfNoCameraFrames, 
 
 type Zoom = NonNullable<Parameters<typeof installMocks>[1]['zoom']>;
 
-async function openCamera(page: Page, context: Parameters<typeof grantLocation>[0], zoom?: Zoom) {
+async function openCamera(page: Page, context: Parameters<typeof grantLocation>[0], zoom?: Zoom, noFacingMode = false, cameras = 1) {
   await skipIfNoCameraFrames(page);
-  await installMocks(page, { camera: 'granted', location: 'granted', zoom });
+  await installMocks(page, { camera: 'granted', location: 'granted', zoom, noFacingMode, cameras });
   await grantLocation(context);
   await mockGeocoder(page);
   await page.goto(`${SITE}/cam`);
@@ -26,13 +26,38 @@ test.describe('camera stream', () => {
     await openCamera(page, context);
     const [first] = (await mock(page, 'constraints')) as Array<{ video: Record<string, any>; audio: boolean }>;
     expect(first.audio).toBe(false);
-    expect(first.video.facingMode).toBe('environment');
+    expect(first.video.facingMode).toEqual({ exact: 'environment' });
     expect(first.video.width.ideal).toBeGreaterThanOrEqual(1920);
     expect(first.video.height.ideal).toBeGreaterThanOrEqual(1440);
     expect(first.video.aspectRatio.ideal).toBeCloseTo(4 / 3, 3);
     expect(first.video.frameRate.ideal).toBe(30);
-    // Ideals only: an "exact" size would make cameras that cannot do it fail to open.
-    expect(JSON.stringify(first.video)).not.toMatch(/exact/);
+    // The size and shape are ideals only: an "exact" size would make cameras that cannot do it fail to open.
+    expect(JSON.stringify({ ...first.video, facingMode: undefined })).not.toMatch(/exact/);
+  });
+
+  test('asks for the rear camera exactly, so the front camera is never picked for fitting the size better', async ({ page, context }) => {
+    await openCamera(page, context);
+    const constraints = (await mock(page, 'constraints')) as Array<{ video: Record<string, any> }>;
+    expect(constraints).toHaveLength(1);
+    expect(constraints[0].video.facingMode).toEqual({ exact: 'environment' });
+  });
+
+  test('the switch button asks for the front camera exactly, and back again for the rear one', async ({ page, context }) => {
+    await openCamera(page, context, undefined, false, 2);
+    const toggle = page.getByRole('button', { name: /switch camera/i });
+    await toggle.click();
+    await expect.poll(async () => ((await mock(page, 'constraints')) as unknown[]).length).toBe(2);
+    await toggle.click();
+    await expect.poll(async () => ((await mock(page, 'constraints')) as unknown[]).length).toBe(3);
+    const facings = ((await mock(page, 'constraints')) as Array<{ video: { facingMode: unknown } }>).map(c => c.video.facingMode);
+    expect(facings).toEqual([{ exact: 'environment' }, { exact: 'user' }, { exact: 'environment' }]);
+  });
+
+  test('a device with no camera facing that way (a laptop) still opens, by asking again without "exact"', async ({ page, context }) => {
+    await openCamera(page, context, undefined, true);
+    const constraints = (await mock(page, 'constraints')) as Array<{ video: { facingMode: unknown } }>;
+    expect(constraints.map(c => c.video.facingMode)).toEqual([{ exact: 'environment' }, 'environment']);
+    await expect(page.getByRole('button', { name: 'Capture photo' })).toBeEnabled();
   });
 
   test('turns on automatic focus, exposure and white balance when the camera supports them', async ({ page, context }) => {
