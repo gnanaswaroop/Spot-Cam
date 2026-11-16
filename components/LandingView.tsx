@@ -9,6 +9,7 @@ import { TAGLINE } from '../utils/constants';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 import { useHistoryOverlay } from '../hooks/useHistoryOverlay';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
+import { shareWebsite, type ShareSiteResult } from '../utils/shareSite';
 
 // Bundled sample photo (public/sample.jpg). BASE_URL keeps it working whatever path the site is served from.
 const SAMPLE_URL = `${import.meta.env.BASE_URL}sample.jpg`;
@@ -133,6 +134,13 @@ const SampleViewer = ({ onClose, onShare }: { onClose: () => void; onShare: () =
   );
 };
 
+const SHARE_SITE_MESSAGE: Record<ShareSiteResult, string> = {
+  shared: '',
+  cancelled: '',
+  copied: 'Link copied',
+  failed: 'Could not share the link',
+};
+
 const StartButton = ({
   onStart,
   onPrivacy,
@@ -147,7 +155,15 @@ const StartButton = ({
   canInstall: boolean;
   install: () => void;
   showIosSteps: boolean;
-}) => (
+}) => {
+  const [shareMessage, setShareMessage] = React.useState('');
+  const shareSite = async () => {
+    // The site's own address, whatever host and path it is served from.
+    const url = new URL(import.meta.env.BASE_URL, window.location.origin).href;
+    const result = await shareWebsite({ share: navigator.share?.bind(navigator), clipboard: navigator.clipboard }, url);
+    setShareMessage(SHARE_SITE_MESSAGE[result]);
+  };
+  return (
   <div className="text-center">
     {/* A real link, so search engines can find the camera page; it still opens in place. */}
     <a
@@ -183,7 +199,12 @@ const StartButton = ({
       >
         How it works
       </a>
+      <span aria-hidden="true"> · </span>
+      <button type="button" onClick={shareSite} className="underline hover:text-gray-200">
+        Share this website
+      </button>
     </p>
+    <p role="status" className="text-xs text-gray-300">{shareMessage}</p>
     {canInstall && (
       <button type="button" onClick={install} className="mt-2 min-h-11 rounded-full px-4 text-sm font-semibold text-blue-300 underline underline-offset-4 hover:text-blue-200">
         Install app
@@ -193,4 +214,5 @@ const StartButton = ({
       <p className="mt-1 text-xs text-gray-400">To install: tap Share, then Add to Home Screen.</p>
     )}
   </div>
-);
+  );
+};
