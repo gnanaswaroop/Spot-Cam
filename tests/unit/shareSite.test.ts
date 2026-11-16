@@ -8,7 +8,9 @@ describe('shareWebsite', () => {
     const share = vi.fn().mockResolvedValue(undefined);
     expect(await shareWebsite({ share }, url)).toBe('shared');
     expect(share).toHaveBeenCalledWith({ title: 'SpotCam', text: SHARE_TEXT, url });
-    expect(SHARE_TEXT.length).toBeLessThanOrEqual(100);
+    expect(SHARE_TEXT.length).toBeLessThanOrEqual(200); // short enough for a chat message
+    expect(SHARE_TEXT).toMatch(/GPS location/);
+    expect(SHARE_TEXT).toMatch(/Nothing to install/);
   });
 
   it('is not an error when the share window is closed', async () => {

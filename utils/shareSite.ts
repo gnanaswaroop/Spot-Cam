@@ -5,7 +5,8 @@
  */
 
 export const SHARE_TITLE = 'SpotCam';
-export const SHARE_TEXT = 'SpotCam: a free camera that stamps the date, time and place on your photos.';
+export const SHARE_TEXT =
+  "SpotCam: a free camera that stamps the date, time and GPS location on your photos. Nothing to install: open the link in your phone's browser and use it right away.";
 
 export type ShareSiteResult = 'shared' | 'copied' | 'cancelled' | 'failed';
 

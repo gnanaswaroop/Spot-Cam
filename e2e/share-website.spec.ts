@@ -54,8 +54,9 @@ test.describe('share this website', () => {
     await page.getByRole('button', { name: 'Share this website' }).locator('visible=true').click();
     const [data] = (await recorded(page, '__shared')) as Shared[];
     expect(data.title).toBe('SpotCam');
-    expect(data.text!.length).toBeLessThanOrEqual(100);
+    expect(data.text!.length).toBeLessThanOrEqual(200);
     expect(data.text).toMatch(/SpotCam/);
+    expect(data.text).toMatch(/Nothing to install/); // it works straight from the link, as a website
     expect(data.url).toBe(new URL('/', page.url()).href);
     expect(data.files).toBeUndefined();
     await expect(page.getByRole('status')).toHaveText('');
