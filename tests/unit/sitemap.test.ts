@@ -5,7 +5,11 @@ const locs = (xml: string) => [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m =>
 
 describe('sitemap', () => {
   it('lists the indexable pages as absolute URLs', () => {
-    expect(locs(buildSitemap('https://example.com'))).toEqual(['https://example.com/', 'https://example.com/privacy/']);
+    expect(locs(buildSitemap('https://example.com'))).toEqual([
+      'https://example.com/',
+      'https://example.com/how-it-works/',
+      'https://example.com/privacy/',
+    ]);
   });
 
   it('does not list the camera or gallery tools', () => {
@@ -35,7 +39,7 @@ describe('sitemap', () => {
   });
 
   it('only lists pages that really exist as routes', () => {
-    expect(INDEXABLE_PATHS).toEqual(['/', '/privacy/']);
+    expect(INDEXABLE_PATHS).toEqual(['/', '/how-it-works/', '/privacy/']);
   });
 });
 
@@ -45,5 +49,9 @@ describe('robots.txt', () => {
     expect(robots).toContain('User-agent: *');
     expect(robots).toContain('Allow: /');
     expect(robots).toContain('Sitemap: https://example.com/sitemap.xml');
+  });
+
+  it('names no sitemap when there is no site address', () => {
+    expect(buildRobots()).toBe('User-agent: *\nAllow: /\n');
   });
 });

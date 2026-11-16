@@ -27,13 +27,13 @@ test.describe('sample viewer and the Back gesture', () => {
 
     await expect(sampleViewer(page)).toHaveCount(0);
     await expect(page).toHaveURL(`${SITE}/`);
-    await expect(page.getByRole('button', { name: 'Start Cam' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Start Cam' })).toBeVisible();
   });
 
   test('after visiting the camera, Back closes the viewer instead of jumping to the camera', async ({ page, context }) => {
     await setUpGrantedCamera(page, context);
     await visitLanding(page);
-    await page.getByRole('button', { name: 'Start Cam' }).click();
+    await page.getByRole('link', { name: 'Start Cam' }).click();
     await page.getByRole('button', { name: 'SpotCam home' }).click();
     await openSample(page);
 
@@ -54,7 +54,7 @@ test.describe('sample viewer and the Back gesture', () => {
     await page.goForward(); // returns to the landing page
 
     await expect(page).toHaveURL(`${SITE}/`);
-    await expect(page.getByRole('button', { name: 'Start Cam' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Start Cam' })).toBeVisible();
     await expect(sampleViewer(page)).toHaveCount(0);
   });
 

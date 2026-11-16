@@ -17,7 +17,7 @@ async function expectNoSeriousViolations(page: Page, label: string) {
 test.describe('axe accessibility checks', () => {
   test('landing page and the sample photo viewer', async ({ page }) => {
     await page.goto(`${SITE}/`);
-    await expect(page.getByRole('button', { name: /start cam/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /start cam/i })).toBeVisible();
     await expectNoSeriousViolations(page, 'landing');
     await page.getByRole('button', { name: /sample photo/i }).first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -28,6 +28,12 @@ test.describe('axe accessibility checks', () => {
     await page.goto(`${SITE}/privacy`);
     await expect(page.getByText('Last updated:')).toBeVisible();
     await expectNoSeriousViolations(page, 'privacy');
+  });
+
+  test('how-it-works page', async ({ page }) => {
+    await page.goto(`${SITE}/how-it-works/`);
+    await expect(page.getByRole('heading', { name: 'How SpotCam works', level: 1 })).toBeVisible();
+    await expectNoSeriousViolations(page, 'how it works');
   });
 
   test('settings page', async ({ page }) => {

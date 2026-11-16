@@ -34,7 +34,7 @@ test.describe('privacy policy', () => {
 
     await page.getByRole('link', { name: 'Back to SpotCam' }).click();
     await expect(page).toHaveURL(new RegExp(`${SITE}/$`));
-    await expect(page.getByRole('button', { name: 'Start Cam' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Start Cam' })).toBeVisible();
     await expect(page).toHaveTitle(/SpotCam/);
   });
 
@@ -43,7 +43,7 @@ test.describe('privacy policy', () => {
     await page.getByRole('link', { name: 'Privacy' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeVisible();
     await page.goBack();
-    await expect(page.getByRole('button', { name: 'Start Cam' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Start Cam' })).toBeVisible();
   });
 
   test('the whole policy is reachable by scrolling (the app shell never scrolls, the page does)', async ({ page }) => {

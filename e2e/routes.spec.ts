@@ -6,7 +6,7 @@ test.describe('routing', () => {
     test(`${url} shows the landing page`, async ({ page }) => {
       await page.goto(url);
       await expect(page.getByRole('heading', { name: 'SpotCam' })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Start Cam' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Start Cam' })).toBeVisible();
     });
   }
 
@@ -14,7 +14,7 @@ test.describe('routing', () => {
     await setUpGrantedCamera(page, context);
     await page.goto(`${SITE}/cam`);
     await expect(page.getByRole('button', { name: 'Capture photo' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Start Cam' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Start Cam' })).toHaveCount(0);
   });
 
   test('/gallery opens the gallery directly', async ({ page }) => {
@@ -25,13 +25,13 @@ test.describe('routing', () => {
   test('Start Cam navigates to /cam and the back button returns to the landing page', async ({ page, context }) => {
     await setUpGrantedCamera(page, context);
     await page.goto(`${SITE}/`);
-    await page.getByRole('button', { name: 'Start Cam' }).click();
+    await page.getByRole('link', { name: 'Start Cam' }).click();
     await expect(page).toHaveURL(`${SITE}/cam`);
     await expect(page.getByRole('button', { name: 'Capture photo' })).toBeVisible();
 
     await page.goBack();
     await expect(page).toHaveURL(`${SITE}/`);
-    await expect(page.getByRole('button', { name: 'Start Cam' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Start Cam' })).toBeVisible();
   });
 
   test('the SpotCam badge on the camera page goes home', async ({ page, context }) => {
@@ -39,7 +39,7 @@ test.describe('routing', () => {
     await page.goto(`${SITE}/cam`);
     await page.getByRole('button', { name: 'SpotCam home' }).click();
     await expect(page).toHaveURL(`${SITE}/`);
-    await expect(page.getByRole('button', { name: 'Start Cam' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Start Cam' })).toBeVisible();
   });
 });
 
@@ -56,7 +56,7 @@ test.describe('landing page', () => {
   test('still fits without scrolling on a small 360x640 phone', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 640 });
     await page.goto(`${SITE}/`);
-    await expect(page.getByRole('button', { name: 'Start Cam' })).toBeInViewport();
+    await expect(page.getByRole('link', { name: 'Start Cam' })).toBeInViewport();
     const { scrollHeight, innerHeight } = await page.evaluate(() => ({
       scrollHeight: document.documentElement.scrollHeight,
       innerHeight: window.innerHeight,

@@ -5,6 +5,7 @@
 import React from 'react';
 import { CloseIcon, ShareIcon } from './icons';
 import { dataURLtoFile } from '../utils/helpers';
+import { TAGLINE } from '../utils/constants';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 import { useHistoryOverlay } from '../hooks/useHistoryOverlay';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
@@ -35,13 +36,13 @@ const shareSample = async () => {
 interface LandingViewProps {
   onStart: () => void;
   onPrivacy: () => void;
+  onHowItWorks: () => void;
 }
 
-export const TAGLINE = 'Spot it. Snap it. Stamp it.';
 
 const FEATURES = ['Date & time', 'GPS & address', 'Stays on your device'];
 
-export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) => {
+export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy, onHowItWorks }) => {
   const installProps = useInstallPrompt();
   // The sample viewer owns a history entry, so the Back gesture closes it instead of leaving the page.
   const [sample, openSample, closeSample] = useHistoryOverlay<true>('sample');
@@ -73,7 +74,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) 
 
           {/* Desktop call to action (mobile one sits under the sample) */}
           <div className="hidden md:mt-10 md:block md:w-72">
-            <StartButton onStart={onStart} onPrivacy={onPrivacy} {...installProps} />
+            <StartButton onStart={onStart} onPrivacy={onPrivacy} onHowItWorks={onHowItWorks} {...installProps} />
           </div>
         </section>
 
@@ -96,7 +97,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) 
 
         {/* Mobile call to action */}
         <div className="shrink-0 md:hidden">
-          <StartButton onStart={onStart} onPrivacy={onPrivacy} {...installProps} />
+          <StartButton onStart={onStart} onPrivacy={onPrivacy} onHowItWorks={onHowItWorks} {...installProps} />
         </div>
       </main>
 
@@ -135,23 +136,30 @@ const SampleViewer = ({ onClose, onShare }: { onClose: () => void; onShare: () =
 const StartButton = ({
   onStart,
   onPrivacy,
+  onHowItWorks,
   canInstall,
   install,
   showIosSteps,
 }: {
   onStart: () => void;
   onPrivacy: () => void;
+  onHowItWorks: () => void;
   canInstall: boolean;
   install: () => void;
   showIosSteps: boolean;
 }) => (
   <div className="text-center">
-    <button
-      onClick={onStart}
-      className="w-full rounded-full bg-blue-600 py-3.5 text-lg font-semibold shadow-lg shadow-blue-600/30 transition hover:bg-blue-500 active:scale-[0.98]"
+    {/* A real link, so search engines can find the camera page; it still opens in place. */}
+    <a
+      href={`${import.meta.env.BASE_URL}cam`}
+      onClick={e => {
+        e.preventDefault();
+        onStart();
+      }}
+      className="block w-full rounded-full bg-blue-600 py-3.5 text-lg font-semibold shadow-lg shadow-blue-600/30 transition hover:bg-blue-500 active:scale-[0.98]"
     >
       Start Cam
-    </button>
+    </a>
     <p className="mt-2 text-xs text-gray-400">
       Camera and location access required
       <span aria-hidden="true"> · </span>
@@ -164,6 +172,17 @@ const StartButton = ({
         className="underline hover:text-gray-200"
       >
         Privacy
+      </a>
+      <span aria-hidden="true"> · </span>
+      <a
+        href={`${import.meta.env.BASE_URL}how-it-works/`}
+        onClick={e => {
+          e.preventDefault();
+          onHowItWorks();
+        }}
+        className="underline hover:text-gray-200"
+      >
+        How it works
       </a>
     </p>
     {canInstall && (

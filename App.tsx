@@ -8,6 +8,7 @@ import { CameraView } from './components/CameraView';
 import { GalleryView } from './components/GalleryView';
 import { LandingView } from './components/LandingView';
 import { PrivacyView } from './components/PrivacyView';
+import { HowItWorksView } from './components/HowItWorksView';
 import { SettingsView } from './components/SettingsView';
 import { PAGE_TITLES } from './utils/constants';
 import { CapturedPhoto } from './types';
@@ -57,7 +58,8 @@ const App: React.FC = () => {
   return (
     <div className="w-full h-full bg-gray-900">
       {updateReady && <UpdateToast onReload={applyUpdate} />}
-      {view === 'landing' && <LandingView onStart={() => switchView('camera')} onPrivacy={() => switchView('privacy')} />}
+      {view === 'landing' && <LandingView onStart={() => switchView('camera')} onPrivacy={() => switchView('privacy')} onHowItWorks={() => switchView('howItWorks')} />}
+      {view === 'howItWorks' && <HowItWorksView onBack={() => switchView('landing')} onStart={() => switchView('camera')} />}
       {view === 'privacy' && <PrivacyView onBack={() => switchView('landing')} />}
       {/* Conditionally render the CameraView */}
       {view === 'camera' && (

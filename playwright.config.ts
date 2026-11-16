@@ -45,6 +45,8 @@ export default defineConfig({
   webServer: {
     command: 'npm run build && node e2e/pages-server.mjs',
     url: `http://localhost:4173${(process.env.BASE_PATH ?? '').replace(/\/$/, '')}/`,
+    // SITE_URL is only needed for the absolute addresses in the SEO tags; any placeholder will do for tests.
+    env: { SITE_URL: 'https://example.test' },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

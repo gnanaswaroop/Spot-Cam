@@ -202,7 +202,7 @@ test.describe('install', () => {
   test('Chrome-style install prompt: the button appears, asks once, then goes away', async ({ page }) => {
     await page.goto(`${SITE}/`);
     // Wait for the app to be running: its install listener is attached once it has rendered.
-    await expect(page.getByRole('button', { name: 'Start Cam' }).locator('visible=true')).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'Start Cam' }).locator('visible=true')).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Install app' })).toHaveCount(0);
 
     await page.evaluate(() => {

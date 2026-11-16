@@ -70,12 +70,15 @@ vite.config.ts          Plugins, base path, per-route page generation
 | `/cam` | Camera |
 | `/gallery` | Gallery |
 | `/privacy` | Privacy policy (a scrollable document page) |
+| `/how-it-works` | What SpotCam does, use cases and a short FAQ (text in `content/howItWorks.ts`) |
 
 `App.tsx` renders exactly one view. Navigation calls `history.pushState`, so the browser's Back and Forward work.
 
-**Why real pages per route:** GitHub Pages is static hosting and cannot rewrite `/cam` to the app. The `spaRoutes` plugin in `vite.config.ts` copies the built `index.html` to `dist/home/`, `dist/cam/`, `dist/gallery/`, `dist/privacy/` and `dist/404.html` (unknown paths show the landing page). A direct visit or refresh of `/cam` therefore works.
+**Why real pages per route:** GitHub Pages is static hosting and cannot rewrite `/cam` to the app. The `spaRoutes` plugin in `vite.config.ts` writes a real `index.html` for `home`, `cam`, `gallery`, `privacy`, `settings` and `how-it-works`, plus `dist/404.html` (unknown paths show the landing page). A direct visit or refresh of `/cam` therefore works.
 
-**Sitemap and robots.txt:** the `seoFiles` plugin writes `dist/sitemap.xml` and `dist/robots.txt` at build time from `utils/sitemap.ts`. Only the pages worth indexing are listed (`/` and `/privacy/`; the camera and gallery are tools). The origin defaults to `https://spotcam.in` and can be changed with `SITE_URL` when building for another domain.
+**Per-page head and static content (SEO):** `utils/seo.ts` holds each page's title, description, canonical address, indexing choice and a short block of static HTML. At build time `spaRoutes` fills the `<!--seo:start-->` markers in `index.html` with that page's tags (canonical, Open Graph, `robots`, JSON-LD) and puts the static HTML inside `<div id="root">`, so crawlers and link previews get distinct content without running JavaScript. React replaces the static block when it starts. `/` and `/how-it-works/` and `/privacy/` are indexable; the camera, gallery, settings and the 404 page are `noindex`. `/home` names `/` as its canonical.
+
+**Sitemap, robots.txt and the site address:** the repository names no domain. The build reads `SITE_URL` (the deploy workflow sets it; the e2e tests use a placeholder). With it, the `seoFiles` plugin writes `dist/sitemap.xml` and a `robots.txt` that names it, and the pages get absolute canonical and `og:image` addresses (the 1200x630 `public/social-card.png`). Without it the build still works but has no sitemap, canonical or absolute card URLs. Only the indexable pages are listed in the sitemap.
 
 **Base path:** `base` is `/` for the custom domain. Set `BASE_PATH=/Spot-Cam/` to build for a plain `github.io/<repo>/` site. Router and asset URLs read Vite's `BASE_URL`, so both work.
 

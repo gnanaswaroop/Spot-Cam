@@ -5,34 +5,48 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { buildRobots, buildSitemap } from './utils/sitemap';
+import { renderPage, seoPages } from './utils/seo';
 import { cacheVersion, listPrecacheUrls, renderServiceWorker } from './utils/precache';
 
 /**
- * GitHub Pages can't rewrite /cam to the SPA, so emit a real index.html for each route,
- * plus a 404.html (unknown paths fall back to the landing page).
+ * GitHub Pages can't rewrite /cam to the SPA, so emit a real index.html for each route (with its own
+ * title, description, canonical and static content, see utils/seo.ts), plus a 404.html (unknown paths
+ * fall back to the landing page).
  */
-const spaRoutes = (routes: string[]): Plugin => ({
+const spaRoutes = (): Plugin => ({
   name: 'spa-routes',
   apply: 'build',
   closeBundle() {
     const dist = path.resolve(__dirname, 'dist');
-    const html = fs.readFileSync(path.join(dist, 'index.html'));
-    for (const route of routes) {
-      fs.mkdirSync(path.join(dist, route), { recursive: true });
-      fs.writeFileSync(path.join(dist, route, 'index.html'), html);
+    const template = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
+    const origin = process.env.SITE_URL;
+    const base = process.env.BASE_PATH ?? '/';
+    const pages = seoPages(base);
+    for (const page of pages) {
+      const html = renderPage(template, page, origin);
+      if (page.dir === '') {
+        fs.writeFileSync(path.join(dist, 'index.html'), html);
+      } else {
+        fs.mkdirSync(path.join(dist, page.dir), { recursive: true });
+        fs.writeFileSync(path.join(dist, page.dir, 'index.html'), html);
+      }
     }
-    fs.writeFileSync(path.join(dist, '404.html'), html);
+    // Unknown addresses show the landing page, but must not be indexed as copies of it.
+    fs.writeFileSync(path.join(dist, '404.html'), renderPage(template, { ...pages[0], index: false }, origin));
   },
 });
 
-/** Writes sitemap.xml and robots.txt for the site origin (override with SITE_URL when building for another domain). */
+/**
+ * Writes sitemap.xml and robots.txt. They need the site's address, which comes from the SITE_URL build
+ * variable (the repository itself names no domain): without it only a plain robots.txt is written.
+ */
 const seoFiles = (): Plugin => ({
   name: 'seo-files',
   apply: 'build',
   closeBundle() {
     const dist = path.resolve(__dirname, 'dist');
-    const origin = process.env.SITE_URL ?? 'https://spotcam.in';
-    fs.writeFileSync(path.join(dist, 'sitemap.xml'), buildSitemap(origin));
+    const origin = process.env.SITE_URL;
+    if (origin) fs.writeFileSync(path.join(dist, 'sitemap.xml'), buildSitemap(origin));
     fs.writeFileSync(path.join(dist, 'robots.txt'), buildRobots(origin));
   },
 });
@@ -83,7 +97,7 @@ export default defineConfig({
     host: '0.0.0.0',
   },
   // basicSsl: self-signed HTTPS for the dev server so phones can use camera/geolocation.
-  plugins: [react(), tailwindcss(), basicSsl(), spaRoutes(['home', 'cam', 'gallery', 'privacy', 'settings']), seoFiles(), serviceWorker()],
+  plugins: [react(), tailwindcss(), basicSsl(), spaRoutes(), seoFiles(), serviceWorker()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),

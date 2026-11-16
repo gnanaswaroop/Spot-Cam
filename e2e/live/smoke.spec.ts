@@ -74,7 +74,7 @@ test.describe('deployed site', () => {
     const problems = watchForProblems(page, new URL(baseURL!).origin);
     await page.goto('/');
     await expect(page.getByText('Spot it. Snap it. Stamp it.')).toBeVisible();
-    await expect(page.getByRole('button', { name: /start cam/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /start cam/i })).toBeVisible();
     await page.waitForLoadState('networkidle');
     expect(problems).toEqual([]);
   });

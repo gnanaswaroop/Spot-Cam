@@ -57,7 +57,7 @@ const shot = (page: Page, name: string) => page.screenshot({ path: path.join(OUT
 
 test('landing', async ({ page }) => {
   await page.goto(`${SITE}/`);
-  await page.getByRole('button', { name: 'Start Cam' }).waitFor();
+  await page.getByRole('link', { name: 'Start Cam' }).waitFor();
   await shot(page, '01-landing.png');
 });
 
@@ -101,7 +101,7 @@ test.describe('desktop', () => {
   test.use({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   test('landing on desktop', async ({ page }) => {
     await page.goto(`${SITE}/`);
-    await page.getByRole('button', { name: 'Start Cam' }).waitFor();
+    await page.getByRole('link', { name: 'Start Cam' }).waitFor();
     await shot(page, '07-landing-desktop.png');
   });
 });

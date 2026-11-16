@@ -9,6 +9,7 @@ test.describe('page titles', () => {
     ['/gallery', 'Gallery | SpotCam'],
     ['/privacy', 'Privacy Policy | SpotCam'],
     ['/settings', 'Settings | SpotCam'],
+    ['/how-it-works', /How SpotCam works/],
   ] as const) {
     test(`${path} has its own title`, async ({ page }) => {
       await page.goto(`${SITE}${path}`);
@@ -168,7 +169,7 @@ test.describe('reflow and large text', () => {
     await page.setViewportSize({ width: 320, height: 256 });
     await page.goto(`${SITE}/`);
     // The page may scroll vertically at this size (nothing may be clipped out of reach), never sideways.
-    for (const target of [page.getByRole('heading', { name: 'SpotCam' }), page.getByRole('button', { name: /start cam/i })]) {
+    for (const target of [page.getByRole('heading', { name: 'SpotCam' }), page.getByRole('link', { name: /start cam/i })]) {
       await target.scrollIntoViewIfNeeded();
       await expect(target).toBeInViewport();
     }
@@ -186,7 +187,7 @@ test.describe('reflow and large text', () => {
   });
 
   test('headings are in order on every page', async ({ page }) => {
-    for (const path of ['/', '/privacy', '/gallery']) {
+    for (const path of ['/', '/privacy', '/gallery', '/how-it-works']) {
       await page.goto(`${SITE}${path}`);
       await expect(page.locator('h1').first()).toBeVisible();
       const levels = await page.evaluate(() => [...document.querySelectorAll('h1,h2,h3,h4')].map(h => Number(h.tagName[1])));
