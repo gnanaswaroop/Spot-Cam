@@ -2,13 +2,14 @@
  * @file This component handles the camera functionality, including the live view,
  * data overlay, and photo capture.
  */
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useCallback, useRef, useEffect, useState } from 'react';
 import { CapturedPhoto, GeolocationData } from '../types';
 import { useGeolocation, AddressStatus } from '../hooks/useGeolocation';
 import { usePermissionState } from '../hooks/usePermissionState';
 import { PermissionNotice } from './PermissionNotice';
 import { GalleryIcon, SettingsIcon, SwitchCameraIcon } from './icons';
 import { FONT_FAMILY_OVERLAY } from '../utils/constants';
+import { useCameraRecovery } from '../hooks/useCameraRecovery';
 import { continuousModes, openingZoom, videoRequests, worthAskingAgain } from '../utils/cameraSettings';
 
 /** Props for the CameraView component. */
@@ -221,6 +222,10 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
         }
     };
   }, [currentFacingMode, retryTrigger]); // Re-initialize if facing mode or retry trigger changes
+
+  // After the phone suspended the camera in the background, open it again instead of leaving a frozen picture.
+  const restartCamera = useCallback(() => setRetryTrigger(c => c + 1), []);
+  useCameraRecovery(stream, videoRef, restartCamera);
 
   /**
    * Handles the photo capture process.
