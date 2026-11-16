@@ -80,6 +80,7 @@ export async function installMocks(page: Page, options: MockOptions) {
         const stream = typeof canvas.captureStream === 'function' ? canvas.captureStream(10) : new MediaStream();
         const track = stream.getVideoTracks()[0];
         if (track) {
+          (w as any).__fakeTracks = [...((w as any).__fakeTracks ?? []), track]; // keep the wrapper (and its overrides) alive
           // Report what a phone camera reports, and record what the page asks of it.
           const realSettings = track.getSettings?.bind(track);
           override(track, 'getCapabilities', () =>

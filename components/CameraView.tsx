@@ -73,6 +73,8 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
 
   // State for camera stream and errors
   const [stream, setStream] = useState<MediaStream | null>(null);
+  // The camera's video track, held directly so zoom changes always reach the same track that was opened.
+  const videoTrack = useRef<MediaStreamTrack | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Why the camera failed: lets us show a specific, actionable message.
   const [cameraIssue, setCameraIssue] = useState<'denied' | 'insecure' | 'unsupported' | 'notfound' | 'other' | null>(null);
@@ -139,6 +141,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
 
             // Check for zoom capabilities on the video track
             const track = newStream.getVideoTracks()[0];
+            videoTrack.current = track ?? null;
             if (track) {
                 const capabilities = (track.getCapabilities?.() ?? {}) as MediaTrackCapabilities & Record<string, unknown>; // not available in every browser
                 // Let the camera keep adjusting focus, exposure and white balance by itself, as a camera app does.
@@ -320,12 +323,10 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
 
   const applyZoom = (zoomValue: number) => {
     setCurrentZoom(zoomValue);
-    if (stream) {
-        const track = stream.getVideoTracks()[0];
-        if (track && zoomCapabilities) {
-            // Apply zoom constraints to the video track
-            track.applyConstraints({ advanced: [{ zoom: zoomValue } as any] }).catch(err => console.error('Zoom not applied:', err));
-        }
+    const track = videoTrack.current;
+    if (track && zoomCapabilities) {
+        // Apply zoom constraints to the video track
+        track.applyConstraints({ advanced: [{ zoom: zoomValue } as any] }).catch(err => console.error('Zoom not applied:', err));
     }
   };
 
