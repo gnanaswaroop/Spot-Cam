@@ -9,10 +9,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const HOUR_MS = 60 * 60 * 1000;
+/** How long Reload waits for the new version to take over before it reloads regardless. */
+const RELOAD_FALLBACK_MS = 4000;
 
 export function useServiceWorkerUpdate() {
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const reloading = useRef(false);
+  const registrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined);
 
   useEffect(() => {
     // Dev server: no sw.js is built, and a worker would only get in the way of hot reloading.
@@ -44,6 +47,7 @@ export function useServiceWorkerUpdate() {
       .register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL })
       .then(reg => {
         registration = reg;
+        registrationRef.current = reg;
         if (reg.waiting && controlledAtStart) setWaiting(reg.waiting);
         if (reg.installing && controlledAtStart) watch(reg.installing);
         reg.addEventListener('updatefound', () => {
@@ -68,8 +72,26 @@ export function useServiceWorkerUpdate() {
 
   const applyUpdate = useCallback(() => {
     reloading.current = true;
-    if (waiting) waiting.postMessage({ type: 'SKIP_WAITING' });
-    else window.location.reload();
+    // Never leave the button doing nothing: if the new version has not taken over shortly, reload anyway
+    // (the pages are fetched from the network first, so this still shows the newest version).
+    window.setTimeout(() => window.location.reload(), RELOAD_FALLBACK_MS);
+
+    // Act on the version that is waiting *now*: another release may have replaced the one the notice was
+    // first shown for, and a replaced worker ignores the message.
+    const registration = registrationRef.current;
+    const activate = (worker: ServiceWorker) => worker.postMessage({ type: 'SKIP_WAITING' });
+    const current = registration?.waiting ?? waiting;
+    const installing = registration?.installing;
+    if (registration?.waiting) {
+      activate(registration.waiting);
+    } else if (installing) {
+      // A newer release is still being downloaded: take it over as soon as it is ready.
+      installing.addEventListener('statechange', () => installing.state === 'installed' && activate(installing));
+    } else if (current) {
+      activate(current);
+    } else {
+      window.location.reload();
+    }
   }, [waiting]);
 
   return { updateReady: waiting !== null, applyUpdate };

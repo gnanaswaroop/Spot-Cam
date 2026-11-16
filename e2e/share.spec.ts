@@ -5,7 +5,7 @@
  */
 import { Page } from '@playwright/test';
 import { test, expect } from './fixtures';
-import { SITE, installMocks, mockGeocoder, grantLocation, paris, takePhotos } from './helpers';
+import { SITE, installMocks, mockGeocoder, grantLocation, paris, skipIfNoCameraFrames, takePhotos } from './helpers';
 
 type Shared = { title?: string; text?: string; files: number };
 
@@ -37,7 +37,10 @@ test.describe('sharing a photo', () => {
     await mockGeocoder(page);
     await installMocks(page, { camera: 'granted', location: 'granted' });
     await grantLocation(context);
-    await takePhotos(page, 1);
+    await skipIfNoCameraFrames(page);
+    await page.goto(`${SITE}/cam`);
+    await expect(page.getByText('Champ de Mars, Paris, France')).toBeVisible(); // the photo is taken once the address is known
+    await page.getByRole('button', { name: 'Capture photo' }).click();
     await page.waitForTimeout(300);
 
     await sharePhoto(page);

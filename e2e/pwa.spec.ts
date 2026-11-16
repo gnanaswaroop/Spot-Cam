@@ -163,6 +163,33 @@ test.describe('service worker: updates', () => {
     await expect(notice).toHaveCount(0);
   });
 
+  test('Reload always reloads, even if the new version never reports taking over', async ({ page, context, browserName }) => {
+    test.skip(browserName !== 'chromium', 'Only Chromium lets a test rewrite the worker script request');
+    // The first visit gets an "old" worker, so the real script plays a new release and the notice appears.
+    let firstVisit = true;
+    await context.route('**/sw.js', async route => {
+      const response = await route.fetch();
+      let script = await response.text();
+      if (firstVisit) script = script.replace(/const VERSION = '[^']+'/, "const VERSION = 'oldrelease'");
+      firstVisit = false;
+      await route.fulfill({ response, body: script });
+    });
+    await loadWithWorker(page);
+    await page.evaluate(() => navigator.serviceWorker.getRegistration().then(reg => reg!.update()));
+    await expect(page.getByRole('status').filter({ hasText: 'A new version of SpotCam is available.' })).toBeVisible();
+
+    // A worker that ignores the "take over" message (or a notice for a version that is already running):
+    // nothing changes hands, so the page must reload on its own after a short wait instead of doing nothing.
+    await page.evaluate(() => {
+      ServiceWorker.prototype.postMessage = () => undefined;
+      (window as unknown as { __beforeReload: boolean }).__beforeReload = true;
+    });
+    await page.getByRole('button', { name: 'Reload' }).click();
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __beforeReload?: boolean }).__beforeReload ?? false).catch(() => true), { timeout: 15_000 })
+      .toBe(false);
+  });
+
   test('no notice is shown when nothing has changed', async ({ page }) => {
     await loadWithWorker(page);
     await page.evaluate(() => navigator.serviceWorker.getRegistration().then(reg => reg!.update()));
