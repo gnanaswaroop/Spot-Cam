@@ -5,11 +5,14 @@
  * it looks soft and noisy once it is stretched across a phone screen, and it is a different shape from
  * the 4:3 view a camera app shows. So we ask for a large 4:3 picture. The values are "ideal", not exact:
  * a camera that cannot do it gives the closest it has instead of failing.
+ *
+ * Not larger than 1920x1440: every frame of the live preview is decoded and drawn, and bigger frames add delay
+ * between the real scene and the screen (the preview lags behind a camera app's, which uses a small viewfinder).
  */
 
 export const VIDEO_QUALITY = {
-  width: { ideal: 2560 },
-  height: { ideal: 1920 },
+  width: { ideal: 1920 },
+  height: { ideal: 1440 },
   aspectRatio: { ideal: 4 / 3 },
   frameRate: { ideal: 30 },
 } as const;

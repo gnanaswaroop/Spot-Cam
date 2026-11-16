@@ -42,7 +42,7 @@ const AddressLine = ({ location, status, onRetry }: { location: GeolocationData;
 };
 
 const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress, onOpenSettings }: { location: GeolocationData | null; addressStatus: AddressStatus; dateTime: string; onHome: () => void; onRetryAddress: () => void; onOpenSettings: () => void }) => (
-    <div data-testid="stamp-overlay" className="absolute top-0 left-0 right-0 px-3 py-2 text-white text-center text-sm font-semibold bg-black bg-opacity-55 backdrop-blur-sm short:right-24 short:py-1 short:pl-12 short:text-xs short:leading-tight" style={{ fontFamily: FONT_FAMILY_OVERLAY, textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
+    <div data-testid="stamp-overlay" className="absolute top-0 left-0 right-0 px-3 py-2 text-white text-center text-sm font-semibold bg-black/70 short:right-24 short:py-1 short:pl-12 short:text-xs short:leading-tight" style={{ fontFamily: FONT_FAMILY_OVERLAY, textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
         {/* Brand badge: lives inside the existing band so it costs no vertical space. Tap to go home. */}
         <button onClick={onHome} className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-white/10 p-1 pr-1 hover:bg-white/20 sm:pr-2.5" aria-label="SpotCam home">
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-6 w-6 rounded-[22%]" />
@@ -419,7 +419,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
       {/* Zoom control slider */}
       {zoomCapabilities && (
         <div className="absolute bottom-32 left-0 right-0 px-6 z-10 short:bottom-2 short:right-24 short:px-3">
-            <div className="bg-black bg-opacity-40 backdrop-blur-sm rounded-full p-1 flex items-center space-x-2">
+            <div className="bg-black/60 rounded-full p-1 flex items-center space-x-2">
                 <button type="button" onClick={() => nudgeZoom(-1)} disabled={currentZoom <= zoomCapabilities.min} className="h-11 w-11 shrink-0 rounded-full text-xl font-bold text-white hover:bg-white/20 disabled:opacity-40" aria-label="Zoom out">-</button>
                 <label htmlFor="zoom-slider" className="text-white text-xs font-mono">ZOOM</label>
                 <input 
@@ -440,7 +440,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
       )}
       
       {/* Bottom control bar */}
-      <div data-testid="control-bar" className="absolute bottom-0 left-0 right-0 h-28 bg-gray-950/70 border-t border-white/10 backdrop-blur-md flex items-center justify-around short:top-0 short:left-auto short:h-auto short:w-24 short:flex-col short:border-t-0 short:border-l">
+      <div data-testid="control-bar" className="absolute bottom-0 left-0 right-0 h-28 bg-gray-950/85 border-t border-white/10 flex items-center justify-around short:top-0 short:left-auto short:h-auto short:w-24 short:flex-col short:border-t-0 short:border-l">
         <button onClick={onSwitchView} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors" aria-label="Open gallery">
           <GalleryIcon className="w-8 h-8" />
         </button>
