@@ -8,6 +8,7 @@ test.describe('page titles', () => {
     ['/cam', 'Camera | SpotCam'],
     ['/gallery', 'Gallery | SpotCam'],
     ['/privacy', 'Privacy Policy | SpotCam'],
+    ['/settings', 'Settings | SpotCam'],
   ] as const) {
     test(`${path} has its own title`, async ({ page }) => {
       await page.goto(`${SITE}${path}`);
@@ -151,7 +152,7 @@ test.describe('touch targets', () => {
     await setUpGrantedCamera(page, context);
     await takePhotos(page, 1);
     await page.getByRole('button', { name: 'Open gallery' }).click();
-    const back = (await page.getByRole('button', { name: 'Go to camera view' }).boundingBox())!;
+    const back = (await page.getByRole('button', { name: 'Back to camera' }).boundingBox())!;
     expect(Math.min(back.width, back.height)).toBeGreaterThanOrEqual(44);
     await page.getByRole('button', { name: /^Open photo taken/ }).click();
     for (const name of ['Close photo view', 'Share photo', 'Delete photo']) {
@@ -166,8 +167,11 @@ test.describe('reflow and large text', () => {
   test('the landing page keeps its main actions reachable at 320x256', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 256 });
     await page.goto(`${SITE}/`);
-    await expect(page.getByRole('button', { name: /start cam/i })).toBeInViewport();
-    await expect(page.getByRole('heading', { name: 'SpotCam' })).toBeInViewport();
+    // The page may scroll vertically at this size (nothing may be clipped out of reach), never sideways.
+    for (const target of [page.getByRole('heading', { name: 'SpotCam' }), page.getByRole('button', { name: /start cam/i })]) {
+      await target.scrollIntoViewIfNeeded();
+      await expect(target).toBeInViewport();
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 

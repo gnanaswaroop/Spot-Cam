@@ -30,6 +30,12 @@ test.describe('axe accessibility checks', () => {
     await expectNoSeriousViolations(page, 'privacy');
   });
 
+  test('settings page', async ({ page }) => {
+    await page.goto(`${SITE}/settings`);
+    await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+    await expectNoSeriousViolations(page, 'settings');
+  });
+
   test('camera page, everything allowed', async ({ page, context }) => {
     await installMocks(page, { camera: 'granted', location: 'granted' });
     await grantLocation(context);

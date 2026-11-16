@@ -14,4 +14,5 @@ export const PAGE_TITLES = {
   camera: 'Camera | SpotCam',
   gallery: 'Gallery | SpotCam',
   privacy: 'Privacy Policy | SpotCam',
+  settings: 'Settings | SpotCam',
 } as const;

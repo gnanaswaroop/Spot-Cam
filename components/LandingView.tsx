@@ -52,7 +52,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy }) 
       <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-blue-600/25 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-24 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl" />
 
-      <main className="relative mx-auto flex h-full max-w-5xl flex-col justify-center gap-5 px-6 py-5 md:flex-row md:items-center md:gap-14 md:py-10">
+      <main className="relative mx-auto flex h-full max-w-5xl flex-col justify-center-safe overflow-y-auto gap-5 px-6 py-5 md:flex-row md:items-center md:gap-14 md:py-10">
         {/* Intro */}
         <section className="flex flex-col items-center text-center md:flex-1 md:items-start md:text-left">
           <div className="flex items-center gap-3">

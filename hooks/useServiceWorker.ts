@@ -28,6 +28,12 @@ export function useServiceWorkerUpdate() {
       if (reloading.current) window.location.reload(); // only after the user asked for the update
     };
 
+    // On a first visit the page has no worker yet, and the one that installs now is the app itself, not an
+    // update (some browsers report it as "installed" only after it has taken control, so the controller
+    // check below cannot tell the two apart).
+    const controlledAtStart = navigator.serviceWorker.controller !== null;
+    let firstInstallPending = !controlledAtStart;
+
     // A worker that finished installing while an older one still controls the page is an update.
     const watch = (worker: ServiceWorker) =>
       worker.addEventListener('statechange', () => {
@@ -38,9 +44,15 @@ export function useServiceWorkerUpdate() {
       .register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL })
       .then(reg => {
         registration = reg;
-        if (reg.waiting && navigator.serviceWorker.controller) setWaiting(reg.waiting);
-        if (reg.installing) watch(reg.installing);
-        reg.addEventListener('updatefound', () => reg.installing && watch(reg.installing));
+        if (reg.waiting && controlledAtStart) setWaiting(reg.waiting);
+        if (reg.installing && controlledAtStart) watch(reg.installing);
+        reg.addEventListener('updatefound', () => {
+          if (firstInstallPending) {
+            firstInstallPending = false; // that was the first install, not an update
+            return;
+          }
+          if (reg.installing) watch(reg.installing);
+        });
         timer = window.setInterval(check, HOUR_MS);
       })
       .catch(() => undefined); // the app works without a service worker, just not offline
