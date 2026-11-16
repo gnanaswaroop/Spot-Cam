@@ -64,6 +64,23 @@ test.describe('landing page', () => {
     expect(scrollHeight).toBeLessThanOrEqual(innerHeight);
   });
 
+  test('the Privacy and How it works links sit on their own line, under the access note', async ({ page }) => {
+    for (const size of [{ width: 360, height: 640 }, { width: 320, height: 568 }, { width: 1280, height: 720 }]) {
+      await page.setViewportSize(size);
+      await page.goto(`${SITE}/`);
+      const note = page.getByText('Camera and location access required').locator('visible=true');
+      const privacy = page.getByRole('link', { name: 'Privacy' }).locator('visible=true');
+      const how = page.getByRole('link', { name: 'How it works' }).locator('visible=true');
+      await expect(note).toHaveCount(1);
+      const [n, p, h] = await Promise.all([note.boundingBox(), privacy.boundingBox(), how.boundingBox()]);
+      const label = `${size.width}x${size.height}`;
+      expect(p!.y, label).toBeGreaterThanOrEqual(n!.y + n!.height - 1); // below the note, not beside it
+      expect(Math.abs(p!.y - h!.y), `${label}: both links on one line`).toBeLessThan(4);
+      expect(h!.x, label).toBeGreaterThan(p!.x);
+      for (const box of [n, p, h]) expect(box!.x + box!.width, label).toBeLessThanOrEqual(size.width);
+    }
+  });
+
   test('shows the tagline', async ({ page }) => {
     await page.goto(`${SITE}/`);
     await expect(page.getByText('Spot it. Snap it. Stamp it.')).toBeVisible();
