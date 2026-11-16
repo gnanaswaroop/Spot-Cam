@@ -96,6 +96,18 @@ One-time setup: repo **Settings > Pages > Source: GitHub Actions**. GitHub Pages
 
 The site is served from the root of its domain, so the build uses `base: '/'`. To build for a plain project site (`https://<user>.github.io/Spot-Cam/`), set `BASE_PATH=/Spot-Cam/`.
 
+### Optional analytics
+
+The repository contains no analytics account or tracking ID. A deploy can switch on Google Analytics (GA4) by setting a repository **variable** (Settings > Secrets and variables > Actions > Variables):
+
+| Variable | Value |
+|---|---|
+| `ANALYTICS_ID` | A GA4 measurement ID, like `G-XXXXXXXXXX` |
+
+When it is set, the deploy workflow writes `analytics.config.json` into the built site (it is never committed). With no variable, or in a fork, a pull request or a local build, analytics is off: no banner, no script and no request. To turn it off again, delete the variable and redeploy.
+
+Visitors are asked first; nothing is sent before they accept, or at all if their browser sends Do Not Track or Global Privacy Control. Only page views and five plain events are sent, never a photo, coordinates or an address. The privacy page and Settings describe it when it is on. See `docs/ARCHITECTURE.md`.
+
 ## Project layout
 
 ```

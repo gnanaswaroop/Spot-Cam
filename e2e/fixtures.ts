@@ -9,10 +9,14 @@ import { test as base, expect } from '@playwright/test';
 
 export const GEOCODER_HOSTS = /(photon\.komoot\.io|api\.bigdatacloud\.net|nominatim\.openstreetmap\.org)/;
 
+/** Google's analytics hosts: tests never talk to the real ones (a test that wants a script registers its own route). */
+export const ANALYTICS_HOSTS = /(googletagmanager\.com|google-analytics\.com|analytics\.google\.com)/;
+
 export const test = base.extend<{ blockRealGeocoders: void }>({
   blockRealGeocoders: [
     async ({ context }, use) => {
       await context.route(GEOCODER_HOSTS, route => route.abort('failed'));
+      await context.route(ANALYTICS_HOSTS, route => route.abort('failed'));
       await use();
     },
     { auto: true },

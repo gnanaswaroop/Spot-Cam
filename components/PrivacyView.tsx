@@ -6,12 +6,13 @@
  */
 
 import React from 'react';
+import { useAnalytics } from '../hooks/useAnalytics';
 
 interface PrivacyViewProps {
   onBack: () => void;
 }
 
-export const PRIVACY_LAST_UPDATED = '15 November 2026';
+export const PRIVACY_LAST_UPDATED = '16 November 2026';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="mt-8">
@@ -27,6 +28,8 @@ const ExternalLink = ({ href, children }: { href: string; children: React.ReactN
 );
 
 export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
+  // The visit-counting section is shown only on a site that has analytics switched on.
+  const { available: analyticsOn } = useAnalytics();
 
   return (
     <div className="app-h w-full overflow-y-auto bg-gray-950 text-gray-200">
@@ -105,10 +108,35 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
           </p>
         </Section>
 
+        {analyticsOn && (
+          <Section title="Visit statistics (Google Analytics)">
+            <p>
+              If you agree when asked, SpotCam uses <strong className="text-white">Google Analytics</strong> to count visits, so we can see
+              which pages are used and improve the site. Nothing is sent to Google before you agree, and nothing is sent at all if your
+              browser asks not to be tracked (Do Not Track or Global Privacy Control).
+            </p>
+            <p>
+              <strong className="text-white">What is collected:</strong> which page was opened, a few plain events (Start Cam was tapped, a
+              photo was taken, a photo was shared, the app was installed, or camera or location was blocked, with only which of the two), and
+              what Google's tag normally records about a visit, such as your browser, device type, approximate region from your IP address,
+              and a random ID in a cookie. <strong className="text-white">Never sent:</strong> your photos, coordinates, address or anything
+              from the stamp. Ad personalisation and advertising features are switched off.
+            </p>
+            <p>
+              <strong className="text-white">Your choice:</strong> change it any time in Settings. Choosing "No thanks" there stops counting
+              and removes Google's cookies for this site. Read Google's own{' '}
+              <ExternalLink href="https://policies.google.com/technologies/partner-sites">explanation of how it uses data</ExternalLink>.
+            </p>
+          </Section>
+        )}
+
         <Section title="What we don't do">
           <ul className="list-disc space-y-1.5 pl-6">
             <li>We don't have accounts or ask for your name or email.</li>
-            <li>SpotCam itself doesn't set cookies. It uses your browser's storage only to keep your photos.</li>
+            <li>
+              SpotCam itself doesn't set cookies. It uses your browser's storage only to keep your photos and settings.
+              {analyticsOn && ' Only if you agree to visit counting (see below) does Google Analytics set its own cookies.'}
+            </li>
             <li>We don't upload, sell or share your photos or location history.</li>
           </ul>
         </Section>

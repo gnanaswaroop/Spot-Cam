@@ -10,6 +10,8 @@ interface InstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+import { track } from '../utils/analytics';
+
 /** True when the page is already running as an installed app. */
 const isStandalone = () =>
   window.matchMedia?.('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
@@ -28,6 +30,7 @@ export function useInstallPrompt() {
       setEvent(e as InstallPromptEvent);
     };
     const onInstalled = () => {
+      track('pwa_installed');
       setInstalled(true);
       setEvent(null);
     };

@@ -18,6 +18,7 @@ import {
 } from '../utils/settings';
 import { MAP_SERVICES, type MapService } from '../utils/maps';
 import { AppHeader } from './AppHeader';
+import { useAnalytics } from '../hooks/useAnalytics';
 
 interface SettingsViewProps {
   /** How many photos are saved in the gallery. */
@@ -88,6 +89,7 @@ const ConfirmAction = ({
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, onDeleteAllPhotos, onBack }) => {
   const [status, setStatus] = useState('');
+  const analytics = useAnalytics();
 
   // Address cache: how many saved addresses are in use, out of how many can be kept.
   const [cache, setCache] = useState<{ count: number; max: number } | null>(null);
@@ -238,6 +240,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, onDelete
             ))}
           </fieldset>
         </Section>
+
+        {analytics.available && (
+          <Section id="stats-heading" title="Usage statistics">
+            <p className="text-sm text-gray-300">
+              SpotCam can count visits to improve the site. It never includes your photos, location or address. Your choice is kept on this device.
+            </p>
+            <fieldset className="space-y-2">
+              <legend className="sr-only">Count my visits</legend>
+              {([['granted', 'Yes, count my visits'], ['denied', 'No thanks']] as const).map(([value, label]) => (
+                <label key={value} className="flex min-h-11 items-center gap-3 text-base">
+                  <input
+                    type="radio"
+                    name="usage-statistics"
+                    checked={analytics.consent === value}
+                    onChange={() => {
+                      if (value === 'granted') analytics.accept();
+                      else analytics.decline();
+                      setStatus(value === 'granted' ? 'Visit counting is on.' : 'Visit counting is off.');
+                    }}
+                    className="h-5 w-5 accent-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </fieldset>
+          </Section>
+        )}
 
         <Section id="photos-heading" title="Saved photos">
           <p className="text-sm text-gray-300" data-testid="photo-count">

@@ -17,6 +17,9 @@ import { usePathRoute } from './hooks/usePathRoute';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import { useServiceWorkerUpdate } from './hooks/useServiceWorker';
 import { UpdateToast } from './components/UpdateToast';
+import { ConsentBanner } from './components/ConsentBanner';
+import { useAnalytics } from './hooks/useAnalytics';
+import { pageView, track } from './utils/analytics';
 
 /**
  * The main App component.
@@ -36,6 +39,12 @@ const App: React.FC = () => {
     document.title = PAGE_TITLES[view];
   }, [view]);
 
+  // Analytics (only when the site is configured for it and the visitor agreed): one page view per route.
+  const { consent } = useAnalytics();
+  useEffect(() => {
+    if (consent === 'granted') pageView(window.location.pathname);
+  }, [view, consent]);
+
   // Custom hook to manage the photos array, persisting it to IndexedDB.
   const [photos, setPhotos] = usePersistedPhotos();
 
@@ -45,6 +54,7 @@ const App: React.FC = () => {
    */
   const handleCapture = (photo: CapturedPhoto) => {
     setPhotos(prevPhotos => [photo, ...prevPhotos]);
+    track('photo_captured');
   };
 
   /**
@@ -58,7 +68,8 @@ const App: React.FC = () => {
   return (
     <div className="w-full h-full bg-gray-900">
       {updateReady && <UpdateToast onReload={applyUpdate} />}
-      {view === 'landing' && <LandingView onStart={() => switchView('camera')} onPrivacy={() => switchView('privacy')} onHowItWorks={() => switchView('howItWorks')} />}
+      {view !== 'camera' && view !== 'gallery' && <ConsentBanner onPrivacy={() => switchView('privacy')} />}
+      {view === 'landing' && <LandingView onStart={() => { track('start_cam'); switchView('camera'); }} onPrivacy={() => switchView('privacy')} onHowItWorks={() => switchView('howItWorks')} />}
       {view === 'howItWorks' && <HowItWorksView onBack={() => switchView('landing')} onStart={() => switchView('camera')} />}
       {view === 'privacy' && <PrivacyView onBack={() => switchView('landing')} />}
       {/* Conditionally render the CameraView */}

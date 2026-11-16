@@ -6,8 +6,9 @@
  * a Reload button. Otherwise we can still ask again, so the primary button re-requests it.
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { PermissionName, getEnableSteps } from '../utils/permissionHelp';
+import { track } from '../utils/analytics';
 
 interface PermissionNoticeProps {
   title: string;
@@ -23,7 +24,13 @@ interface PermissionNoticeProps {
 const primaryButton =
   'px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-full shadow-lg shadow-blue-600/30 hover:bg-blue-500';
 
-export const PermissionNotice: React.FC<PermissionNoticeProps> = ({ title, message, what, hardBlocked, onRetry }) => (
+export const PermissionNotice: React.FC<PermissionNoticeProps> = ({ title, message, what, hardBlocked, onRetry }) => {
+  // Which kind of permission was blocked, and nothing else.
+  useEffect(() => {
+    if (what === 'Camera') track('permission_blocked', 'camera');
+    if (what === 'Location') track('permission_blocked', 'location');
+  }, [what]);
+  return (
   <div className="max-w-sm max-h-full overflow-y-auto p-6 text-center text-white short:p-3 short:max-w-md" role="alert">
     <h2 className="mb-3 text-xl font-semibold text-red-400">
       {/* A symbol as well as the red colour, so the problem is not signalled by colour alone. */}
@@ -60,4 +67,5 @@ export const PermissionNotice: React.FC<PermissionNoticeProps> = ({ title, messa
       </details>
     )}
   </div>
-);
+  );
+};

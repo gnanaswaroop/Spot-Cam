@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 
 /** Files that must never be cached by the service worker. */
 /** social-card.png is only for link previews and crawlers; the app itself never shows it. */
-const NEVER_PRECACHE = new Set(['sw.js', 'version.txt', 'sitemap.xml', 'robots.txt', '404.html', 'social-card.png']);
+const NEVER_PRECACHE = new Set(['sw.js', 'version.txt', 'sitemap.xml', 'robots.txt', '404.html', 'social-card.png', 'analytics.config.json']);
 
 /** Folders that are not needed to run the app offline (for example install-dialog screenshots). */
 const SKIPPED_FOLDERS = ['screenshots/'];

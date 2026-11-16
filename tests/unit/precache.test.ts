@@ -17,6 +17,7 @@ const built = [
   'version.txt',
   'sw.js',
   'screenshots/camera.png',
+  'analytics.config.json',
 ];
 
 describe('listPrecacheUrls', () => {
@@ -35,7 +36,7 @@ describe('listPrecacheUrls', () => {
 
   it('never caches the version marker, the SEO files, the 404 page, the worker itself or the screenshots', () => {
     const urls = listPrecacheUrls(built).join(' ');
-    for (const excluded of ['version.txt', 'sitemap.xml', 'robots.txt', '404.html', 'sw.js', 'screenshots']) {
+    for (const excluded of ['version.txt', 'sitemap.xml', 'robots.txt', '404.html', 'sw.js', 'screenshots', 'analytics.config.json']) {
       expect(urls).not.toContain(excluded);
     }
   });

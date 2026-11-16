@@ -10,6 +10,7 @@ import { useDialogFocus } from '../hooks/useDialogFocus';
 import { dataURLtoFile, formatDateTime } from '../utils/helpers';
 import { shareText } from '../utils/maps';
 import { getMapService } from '../utils/settings';
+import { track } from '../utils/analytics';
 import { ShareIcon, DeleteIcon, CloseIcon, GalleryIcon } from './icons';
 import { AppHeader } from './AppHeader';
 
@@ -124,6 +125,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
           title: `Photo from SpotCam`,
           text: shareText(photo, getMapService()),
         });
+        track('share_used');
       } catch (error) {
         // Handle cases where the user cancels the share dialog or an error occurs.
         console.error('Error sharing:', error);
