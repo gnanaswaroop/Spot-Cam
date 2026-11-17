@@ -169,8 +169,9 @@ test.describe('with a config', () => {
     await expect(page.getByRole('heading', { name: 'Visit statistics (Google Analytics)' })).toBeVisible();
     await expect(page.getByText('Never sent:')).toBeVisible();
 
-    await page.goto(`${SITE}/settings`);
+    await page.goto(`${SITE}/`);
     await banner(page).getByRole('button', { name: 'No thanks' }).click();
+    await page.goto(`${SITE}/settings`);
     const yes = page.getByRole('radio', { name: 'Yes, count my visits' });
     await expect(yes).not.toBeChecked();
     await yes.check();
@@ -230,6 +231,20 @@ test.describe('with a config', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await banner(page).getByRole('button', { name: 'No thanks' }).click();
     await expect(page.getByRole('link', { name: 'Start Cam' })).toBeInViewport();
+  });
+
+  test('Details opens the privacy page without the banner covering its heading, and the banner is back on the landing page', async ({ page }) => {
+    await setUpAnalytics(page, { provider: 'ga4', id: TEST_ID });
+    await page.setViewportSize({ width: 360, height: 640 });
+    await page.goto(`${SITE}/`);
+    await banner(page).getByRole('link', { name: 'Details' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(banner(page)).toHaveCount(0);
+    await page.goto(`${SITE}/how-it-works`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(banner(page)).toHaveCount(0);
+    await page.goto(`${SITE}/`);
+    await expect(banner(page)).toBeVisible(); // no choice was made, so it asks again here
   });
 
   test('the banner has no serious accessibility violations', async ({ page }) => {

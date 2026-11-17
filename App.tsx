@@ -68,7 +68,8 @@ const App: React.FC = () => {
   return (
     <div className="w-full h-full bg-gray-900">
       {updateReady && <UpdateToast onReload={applyUpdate} />}
-      {view !== 'camera' && view !== 'gallery' && <ConsentBanner onPrivacy={() => switchView('privacy')} />}
+      {/* Only on the landing page: on the other pages the fixed banner would sit on top of their headings. */}
+      {view === 'landing' && <ConsentBanner onPrivacy={() => switchView('privacy')} />}
       {view === 'landing' && <LandingView onStart={() => { track('start_cam'); switchView('camera'); }} onPrivacy={() => switchView('privacy')} onHowItWorks={() => switchView('howItWorks')} />}
       {view === 'howItWorks' && <HowItWorksView onBack={() => switchView('landing')} onStart={() => switchView('camera')} />}
       {view === 'privacy' && <PrivacyView onBack={() => switchView('landing')} />}

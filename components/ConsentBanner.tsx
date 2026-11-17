@@ -17,7 +17,8 @@ export const ConsentBanner: React.FC<{ onPrivacy: () => void }> = ({ onPrivacy }
       className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-gray-900/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow-lg backdrop-blur"
     >
       <p className="mx-auto max-w-2xl text-sm text-gray-200">
-        May SpotCam count visits to improve the site? It never includes your photos or location.{' '}
+        Can we count visits to SpotCam? It only tells us how many people use the app, so we can make it better. Your photos and
+        location are never shared.{' '}
         <a
           href={`${import.meta.env.BASE_URL}privacy`}
           onClick={e => {
