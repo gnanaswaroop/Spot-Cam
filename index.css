@@ -11,6 +11,8 @@
   height: 100%;
   height: 100dvh;
   height: var(--app-height, 100dvh);
+  /* Room taken by the consent banner above the page (0 when it is not shown): the page gets shorter instead of being covered. */
+  height: calc(var(--app-height, 100dvh) - var(--banner-height, 0px));
 }
 
 html,

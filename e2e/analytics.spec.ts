@@ -233,6 +233,22 @@ test.describe('with a config', () => {
     await expect(page.getByRole('link', { name: 'Start Cam' })).toBeInViewport();
   });
 
+  test('the banner sits above the page and pushes it down: it never covers the heading or the bottom links', async ({ page }) => {
+    await setUpAnalytics(page, { provider: 'ga4', id: TEST_ID });
+    for (const size of [{ width: 360, height: 640 }, { width: 412, height: 915 }]) {
+      await page.setViewportSize(size);
+      await page.goto(`${SITE}/`);
+      await expect(banner(page)).toBeVisible();
+      const bannerBottom = await banner(page).evaluate(el => el.getBoundingClientRect().bottom);
+      const headingTop = await page.getByRole('heading', { name: 'SpotCam', level: 1 }).evaluate(el => el.getBoundingClientRect().top);
+      expect(headingTop).toBeGreaterThanOrEqual(bannerBottom);
+      await expect(page.getByRole('link', { name: 'Start Cam' })).toBeVisible();
+    }
+    await banner(page).getByRole('button', { name: 'No thanks' }).click();
+    // With the banner gone the page gets all of its height back.
+    expect(await page.evaluate(() => document.documentElement.style.getPropertyValue('--banner-height'))).toBe('');
+  });
+
   test('Details opens the privacy page without the banner covering its heading, and the banner is back on the landing page', async ({ page }) => {
     await setUpAnalytics(page, { provider: 'ga4', id: TEST_ID });
     await page.setViewportSize({ width: 360, height: 640 });

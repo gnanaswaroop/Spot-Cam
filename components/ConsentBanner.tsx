@@ -3,22 +3,40 @@
  * the browser has not opted out of tracking and no choice has been made. Declining is exactly as easy
  * as accepting, and nothing is sent before a choice.
  */
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAnalytics } from '../hooks/useAnalytics';
 
 const button = 'min-h-11 flex-1 rounded-full px-4 text-sm font-semibold transition-colors';
 
 export const ConsentBanner: React.FC<{ onPrivacy: () => void }> = ({ onPrivacy }) => {
   const { needsChoice, accept, decline } = useAnalytics();
+  const ref = useRef<HTMLElement>(null);
+
+  // Tell the page how tall the banner is (--banner-height), so the page below is made shorter by that much instead of
+  // being covered. It is back to 0 when the banner goes away.
+  useEffect(() => {
+    const el = ref.current;
+    if (!needsChoice || !el) return;
+    const root = document.documentElement;
+    const update = () => root.style.setProperty('--banner-height', `${el.offsetHeight}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--banner-height');
+    };
+  }, [needsChoice]);
+
   if (!needsChoice) return null;
   return (
     <section
+      ref={ref}
       aria-label="Usage statistics"
-      className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-gray-900/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow-lg backdrop-blur"
+      className="relative z-50 border-b border-white/10 bg-gray-900 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow-lg"
     >
       <p className="mx-auto max-w-2xl text-sm text-gray-200">
-        Can we count visits to SpotCam? It only tells us how many people use the app, so we can make it better. Your photos and
-        location are never shared.{' '}
+        Help us improve SpotCam by allowing basic usage statistics. Your photos and location are never shared.{' '}
         <a
           href={`${import.meta.env.BASE_URL}privacy`}
           onClick={e => {
