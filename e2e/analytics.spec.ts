@@ -75,7 +75,7 @@ test.describe('with a config', () => {
   test('Accept loads the tag once, with privacy settings, and counts the page', async ({ page }) => {
     const tagRequests = await setUpAnalytics(page, { provider: 'ga4', id: TEST_ID });
     await page.goto(`${SITE}/`);
-    await banner(page).getByRole('button', { name: 'Yes, count my visits' }).click();
+    await banner(page).getByRole('button', { name: 'Yes, allow' }).click();
     await expect(banner(page)).toHaveCount(0);
     await expect.poll(() => tagRequests.length).toBe(1);
     expect(tagRequests[0]).toContain(`id=${TEST_ID}`);
@@ -94,7 +94,7 @@ test.describe('with a config', () => {
   test('the choice is remembered: Accept starts the tag on the next visit with no banner', async ({ page }) => {
     const tagRequests = await setUpAnalytics(page, { provider: 'ga4', id: TEST_ID });
     await page.goto(`${SITE}/`);
-    await banner(page).getByRole('button', { name: 'Yes, count my visits' }).click();
+    await banner(page).getByRole('button', { name: 'Yes, allow' }).click();
     await expect.poll(() => tagRequests.length).toBe(1);
     await page.reload();
     await expect.poll(() => tagRequests.length).toBe(2);
@@ -152,7 +152,7 @@ test.describe('with a config', () => {
   test('each route change is one page view, with the path only', async ({ page }) => {
     await setUpAnalytics(page, { provider: 'ga4', id: TEST_ID });
     await page.goto(`${SITE}/`);
-    await banner(page).getByRole('button', { name: 'Yes, count my visits' }).click();
+    await banner(page).getByRole('button', { name: 'Yes, allow' }).click();
     await page.getByRole('link', { name: 'Privacy' }).click();
     await expect(page).toHaveURL(`${SITE}/privacy`);
     await page.getByRole('link', { name: 'Back to SpotCam' }).click();
@@ -172,7 +172,7 @@ test.describe('with a config', () => {
     await page.goto(`${SITE}/`);
     await banner(page).getByRole('button', { name: 'No thanks' }).click();
     await page.goto(`${SITE}/settings`);
-    const yes = page.getByRole('radio', { name: 'Yes, count my visits' });
+    const yes = page.getByRole('radio', { name: 'Yes, allow' });
     await expect(yes).not.toBeChecked();
     await yes.check();
     await expect(page.getByRole('status')).toHaveText('Visit counting is on.');
@@ -187,7 +187,7 @@ test.describe('with a config', () => {
     await setUpAnalytics(page, { provider: 'ga4', id: TEST_ID });
     await setUpGrantedCamera(page, context);
     await page.goto(`${SITE}/`);
-    await banner(page).getByRole('button', { name: 'Yes, count my visits' }).click();
+    await banner(page).getByRole('button', { name: 'Yes, allow' }).click();
     await page.getByRole('link', { name: 'Start Cam' }).click();
     await expect(page.getByText('Champ de Mars, Paris, France')).toBeVisible();
     await page.getByRole('button', { name: 'Capture photo' }).click();
@@ -225,7 +225,7 @@ test.describe('with a config', () => {
     await page.setViewportSize({ width: 360, height: 640 });
     await page.goto(`${SITE}/`);
     await expect(banner(page)).toBeVisible();
-    for (const button of ['No thanks', 'Yes, count my visits']) {
+    for (const button of ['No thanks', 'Yes, allow']) {
       await expect(banner(page).getByRole('button', { name: button })).toBeInViewport({ ratio: 1 });
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

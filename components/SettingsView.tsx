@@ -248,7 +248,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, onDelete
             </p>
             <fieldset className="space-y-2">
               <legend className="sr-only">Count my visits</legend>
-              {([['granted', 'Yes, count my visits'], ['denied', 'No thanks']] as const).map(([value, label]) => (
+              {([['granted', 'Yes, allow'], ['denied', 'No thanks']] as const).map(([value, label]) => (
                 <label key={value} className="flex min-h-11 items-center gap-3 text-base">
                   <input
                     type="radio"

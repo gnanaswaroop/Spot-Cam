@@ -53,7 +53,7 @@ export const ConsentBanner: React.FC<{ onPrivacy: () => void }> = ({ onPrivacy }
           No thanks
         </button>
         <button type="button" onClick={accept} className={`${button} border border-white/30 text-white hover:bg-white/10`}>
-          Yes, count my visits
+          Yes, allow
         </button>
       </div>
     </section>
