@@ -50,7 +50,7 @@ test('deleting a photo removes it for good', async ({ page, context }) => {
 /** Makes the browser report this much storage use and quota (or fail to report). */
 const reportStorage = (page: import('@playwright/test').Page, usage: number, quota: number | 'unavailable') =>
   page.addInitScript(([u, q]) => {
-    Object.defineProperty(navigator.storage, 'estimate', {
+    Object.defineProperty(StorageManager.prototype, 'estimate', {
       configurable: true,
       value: () => (q === 'unavailable' ? Promise.reject(new Error('no estimate')) : Promise.resolve({ usage: u, quota: q })),
     });
@@ -131,7 +131,7 @@ test.describe('when storage cannot be written', () => {
 test('taking a photo asks the browser to keep the photos', async ({ page, context }) => {
   await page.addInitScript(() => {
     (window as unknown as { __persist: number }).__persist = 0;
-    Object.defineProperty(navigator.storage, 'persist', {
+    Object.defineProperty(StorageManager.prototype, 'persist', {
       configurable: true,
       value: () => {
         (window as unknown as { __persist: number }).__persist++;
