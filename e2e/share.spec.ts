@@ -49,8 +49,10 @@ test.describe('sharing a photo', () => {
     expect(share.files).toBe(1);
     expect(share.title).toBe('Photo from SpotCam');
     const lines = share.text!.split('\n');
-    expect(lines[0]).toMatch(/^Taken on .+ at .*Paris, France\.$/);
-    const link = new URL(lines[1]);
+    expect(lines[0]).toMatch(/^When: .+/);
+    expect(lines[1]).toMatch(/^Where: .*Paris, France$/);
+    expect(lines[2]).toMatch(/^Map: https:/);
+    const link = new URL(lines[2].replace('Map: ', ''));
     expect(link.origin + link.pathname).toBe('https://www.google.com/maps/search/');
     expect(link.searchParams.get('api')).toBe('1');
     const [lat, lon] = link.searchParams.get('query')!.split(',').map(Number);
@@ -69,7 +71,7 @@ test.describe('sharing a photo', () => {
     await sharePhoto(page);
     await expect.poll(async () => (await shared(page)).length).toBe(1);
     const [share] = await shared(page);
-    expect(share.text).toMatch(/at an unknown location\.\nhttps:\/\/www\.google\.com\/maps\/search\/\?api=1&query=48\.8583\d+,2\.2944\d+(\n\nStamp the date, time and location [^\n]+)?$/); // the last line is the optional line about SpotCam
+    expect(share.text).toMatch(/^When: .+\nWhere: 48\.8583\d, 2\.2944\d\nMap: https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=48\.8583\d+,2\.2944\d+(\n\nStamp the date, time and location [^\n]+\nFree, [^\n]+)?$/); // the end is the optional lines about SpotCam
   });
 });
 
@@ -101,7 +103,7 @@ test.describe('choosing the map service for the shared link', () => {
       const expectedCount = ['Apple', 'OpenStreetMap', 'Google'].indexOf(name) + 1;
       await expect.poll(async () => (await shared(page)).length).toBe(expectedCount);
       const last = (await shared(page))[expectedCount - 1];
-      expect(last.text!.split('\n')[1].startsWith(expectedStart[name]), name).toBe(true);
+      expect(last.text!.split('\n')[2].startsWith(`Map: ${expectedStart[name]}`), name).toBe(true);
       await page.getByRole('button', { name: 'Close photo view' }).click();
       await page.getByRole('button', { name: 'Back to camera' }).click();
       await page.getByRole('button', { name: 'Settings' }).click();

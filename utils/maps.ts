@@ -39,8 +39,13 @@ export const mapsUrl = (latitude: number, longitude: number, service: MapService
 };
 
 /**
- * The text shared with a photo: when and where it was taken, plus a map link to the exact spot when
- * the position is known. `signature`, when given, is added as a last line of its own (see shareSignature).
+ * The text shared with a photo, one fact per labelled line so it is easy to scan:
+ *
+ *   When: 17/11/2026, 18:42:10
+ *   Where: Champ de Mars, Paris, France      (the coordinates when no address was found)
+ *   Map: https://...                         (only when the position is known)
+ *
+ * `signature`, when given, follows after a blank line (see shareSignature).
  */
 export const shareText = (
   photo: Pick<CapturedPhoto, 'timestamp' | 'location'>,
@@ -48,14 +53,16 @@ export const shareText = (
   signature?: string | null,
 ): string => {
   const { location } = photo;
-  const line = `Taken on ${formatDateTime(photo.timestamp)} at ${location?.address || 'an unknown location'}.`;
-  const message = location ? `${line}
-${mapsUrl(location.latitude, location.longitude, service)}` : line;
+  const where = location ? location.address || `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}` : 'Unknown location';
+  const lines = [`When: ${formatDateTime(photo.timestamp)}`, `Where: ${where}`];
+  if (location) lines.push(`Map: ${mapsUrl(location.latitude, location.longitude, service)}`);
+  const message = lines.join('\n');
   return signature ? `${message}\n\n${signature}` : message;
 };
 
 /**
- * The last line of a shared photo's message: what SpotCam is and how to use it, with the link. `origin` is the address the app
+ * The end of a shared photo's message, two short lines: what SpotCam does, and how to use it with the link. `origin` is the address the app
  * is opened from ("https://spotcam.in"), so the link is right on any domain and a tap opens it.
  */
-export const shareSignature = (origin: string): string => `Stamp the date, time and location on your own photos. Free, nothing to install: ${origin}`;
+export const shareSignature = (origin: string): string =>
+  `Stamp the date, time and location on your own photos.\nFree, nothing to install: ${origin}`;

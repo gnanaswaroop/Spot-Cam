@@ -19,23 +19,24 @@ describe('mapsUrl', () => {
 });
 
 describe('shareText', () => {
-  it('names the time and the address, then the map link on its own line', () => {
+  it('has one labelled line each for when, where and the map link', () => {
     const text = shareText({ timestamp: when, location: { latitude: 48.85837, longitude: 2.29448, address: 'Champ de Mars, Paris, France' } });
-    const [first, second, ...rest] = text.split('\n');
-    expect(first).toBe(`Taken on ${new Date(when).toLocaleString()} at Champ de Mars, Paris, France.`);
-    expect(second).toBe('https://www.google.com/maps/search/?api=1&query=48.858370,2.294480');
-    expect(rest).toEqual([]);
+    expect(text.split('\n')).toEqual([
+      `When: ${new Date(when).toLocaleString()}`,
+      'Where: Champ de Mars, Paris, France',
+      'Map: https://www.google.com/maps/search/?api=1&query=48.858370,2.294480',
+    ]);
   });
 
-  it('still shares the link when the address could not be found', () => {
-    const text = shareText({ timestamp: when, location: { latitude: 10, longitude: 20 } });
-    expect(text).toContain('at an unknown location.');
-    expect(text).toContain('query=10.000000,20.000000');
+  it('still shares the link when the address could not be found, and gives the coordinates instead', () => {
+    const lines = shareText({ timestamp: when, location: { latitude: 10, longitude: 20 } }).split('\n');
+    expect(lines[1]).toBe('Where: 10.00000, 20.00000');
+    expect(lines[2]).toContain('query=10.000000,20.000000');
   });
 
   it('has no link when the position is unknown', () => {
     const text = shareText({ timestamp: when, location: null });
-    expect(text).toBe(`Taken on ${new Date(when).toLocaleString()} at an unknown location.`);
+    expect(text).toBe(`When: ${new Date(when).toLocaleString()}\nWhere: Unknown location`);
     expect(text).not.toContain('http');
   });
 });
@@ -59,9 +60,9 @@ describe('other map services', () => {
 
   it('share text uses the chosen service, and defaults to Google Maps', () => {
     const photo = { timestamp: when, location: { latitude: 1, longitude: 2, address: 'Somewhere' } };
-    expect(shareText(photo, 'apple').split('\n')[1]).toBe(mapsUrl(1, 2, 'apple'));
-    expect(shareText(photo, 'osm').split('\n')[1]).toBe(mapsUrl(1, 2, 'osm'));
-    expect(shareText(photo).split('\n')[1]).toBe(mapsUrl(1, 2, 'google'));
+    expect(shareText(photo, 'apple').split('\n')[2]).toBe(`Map: ${mapsUrl(1, 2, 'apple')}`);
+    expect(shareText(photo, 'osm').split('\n')[2]).toBe(`Map: ${mapsUrl(1, 2, 'osm')}`);
+    expect(shareText(photo).split('\n')[2]).toBe(`Map: ${mapsUrl(1, 2, 'google')}`);
   });
 
   it('no service adds a link without a position', () => {

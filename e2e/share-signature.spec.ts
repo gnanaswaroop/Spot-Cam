@@ -24,7 +24,7 @@ const recordShares = (page: Page) =>
 const shared = (page: Page) => page.evaluate(() => (window as unknown as { __shared: Shared[] }).__shared);
 const toggle = (page: Page) => page.getByRole('checkbox', { name: /line about SpotCam/ });
 const originOf = (page: Page) => page.evaluate(() => window.location.origin);
-const sentence = (origin: string) => `Stamp the date, time and location on your own photos. Free, nothing to install: ${origin}`;
+const sentenceLines = (origin: string) => ['Stamp the date, time and location on your own photos.', `Free, nothing to install: ${origin}`];
 
 async function sharePhoto(page: Page) {
   await page.getByRole('button', { name: 'Open gallery' }).click();
@@ -44,16 +44,15 @@ test.describe('the line about SpotCam when sharing', () => {
     await expect.poll(async () => (await shared(page)).length).toBe(1);
     const [share] = await shared(page);
     const lines = share.text!.split('\n');
-    expect(lines.at(-1)).toBe(sentence(await originOf(page)));
-    expect(lines.at(-2)).toBe(''); // a blank line sets it apart
-    expect(lines[0]).toMatch(/^Taken on /); // the usual message is still first
+    expect(lines.slice(-3)).toEqual(['', ...sentenceLines(await originOf(page))]); // a blank line sets it apart, then two short lines
+    expect(lines[0]).toMatch(/^When: /); // the usual message is still first
     expect(share.text!.toLowerCase().match(/captur/g) ?? []).toHaveLength(0); // no repeated wording
   });
 
   test('can be switched off in Settings, and then is not in the message', async ({ page }) => {
     await page.goto(`${SITE}/settings`);
     await expect(toggle(page)).toBeChecked();
-    await expect(page.getByText(sentence(await originOf(page)))).toBeVisible(); // Settings shows what will be added
+    await expect(page.getByText(sentenceLines(await originOf(page)).join(' '))).toBeVisible(); // Settings shows what will be added
     await toggle(page).uncheck();
     await expect(page.getByRole('status').first()).toHaveText('Shared photos will no longer mention SpotCam.');
 
