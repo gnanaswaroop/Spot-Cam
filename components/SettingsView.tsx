@@ -309,7 +309,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
             <span>
               Add a line about SpotCam to the message of a shared photo
               <span className="block text-sm text-gray-400">
-                It reads: &ldquo;{shareSignature(window.location.origin).replace('\n', ' ')}&rdquo;. It is text in the message, not drawn on the photo. On by default.
+                It reads: &ldquo;{shareSignature(window.location.origin).replace(/\n/g, ' ')}&rdquo;. It is text in the message, not drawn on the photo. On by default.
               </span>
             </span>
           </label>
