@@ -186,7 +186,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
         await navigator.share({
           files: [file],
           title: `Photo from SpotCam`,
-          text: shareText(photo, getMapService(), getShareSignature() ? shareSignature(window.location.host) : null),
+          text: shareText(photo, getMapService(), getShareSignature() ? shareSignature(window.location.origin) : null),
         });
         track('share_used');
       } catch (error) {

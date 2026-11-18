@@ -18,7 +18,7 @@ interface StoredSettings {
   mapService?: MapService;
   /** How long photos stay in the gallery (ms). Missing means until they are deleted by hand. */
   photoTtlMs?: number;
-  /** false when the person turned off the "Captured with ..." line in shared messages. Missing means on. */
+  /** false when the person turned off the line about SpotCam at the end of shared messages. Missing means on. */
   shareSignature?: boolean;
 }
 
@@ -110,7 +110,7 @@ export function setPhotoTtlMs(ms: number | null) {
   }
 }
 
-/** Whether the line "Captured with spotcam.in" is added to the message when a photo is shared. On by default. */
+/** Whether the line about SpotCam (what it is and the link) is added to the message when a photo is shared. On by default. */
 export function getShareSignature(): boolean {
   return readStored().shareSignature !== false;
 }

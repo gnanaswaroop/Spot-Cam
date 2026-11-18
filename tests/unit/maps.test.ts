@@ -22,7 +22,7 @@ describe('shareText', () => {
   it('names the time and the address, then the map link on its own line', () => {
     const text = shareText({ timestamp: when, location: { latitude: 48.85837, longitude: 2.29448, address: 'Champ de Mars, Paris, France' } });
     const [first, second, ...rest] = text.split('\n');
-    expect(first).toBe(`Captured on ${new Date(when).toLocaleString()} at Champ de Mars, Paris, France.`);
+    expect(first).toBe(`Taken on ${new Date(when).toLocaleString()} at Champ de Mars, Paris, France.`);
     expect(second).toBe('https://www.google.com/maps/search/?api=1&query=48.858370,2.294480');
     expect(rest).toEqual([]);
   });
@@ -35,7 +35,7 @@ describe('shareText', () => {
 
   it('has no link when the position is unknown', () => {
     const text = shareText({ timestamp: when, location: null });
-    expect(text).toBe(`Captured on ${new Date(when).toLocaleString()} at an unknown location.`);
+    expect(text).toBe(`Taken on ${new Date(when).toLocaleString()} at an unknown location.`);
     expect(text).not.toContain('http');
   });
 });

@@ -48,11 +48,14 @@ export const shareText = (
   signature?: string | null,
 ): string => {
   const { location } = photo;
-  const line = `Captured on ${formatDateTime(photo.timestamp)} at ${location?.address || 'an unknown location'}.`;
+  const line = `Taken on ${formatDateTime(photo.timestamp)} at ${location?.address || 'an unknown location'}.`;
   const message = location ? `${line}
 ${mapsUrl(location.latitude, location.longitude, service)}` : line;
   return signature ? `${message}\n\n${signature}` : message;
 };
 
-/** The line that says where a shared photo came from: "Captured with spotcam.in", using the address the app is opened from. */
-export const shareSignature = (host: string): string => `Captured with ${host}`;
+/**
+ * The last line of a shared photo's message: what SpotCam is and how to use it, with the link. `origin` is the address the app
+ * is opened from ("https://spotcam.in"), so the link is right on any domain and a tap opens it.
+ */
+export const shareSignature = (origin: string): string => `Stamp the date, time and location on your own photos. Free, nothing to install: ${origin}`;

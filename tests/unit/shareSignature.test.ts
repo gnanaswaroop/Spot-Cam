@@ -6,23 +6,34 @@ const photo = {
   timestamp: new Date(2026, 10, 17, 18, 42, 10).getTime(),
   location: { latitude: 48.85837, longitude: 2.29448, address: 'Champ de Mars, Paris, France' },
 };
+const SENTENCE = 'Stamp the date, time and location on your own photos. Free, nothing to install: https://spotcam.in';
 
 describe('shareSignature', () => {
-  it('names the address the app is opened from, so it is right on any domain', () => {
-    expect(shareSignature('spotcam.in')).toBe('Captured with spotcam.in');
-    expect(shareSignature('localhost:4173')).toBe('Captured with localhost:4173');
+  it('says what SpotCam does and how to use it, with the link', () => {
+    expect(shareSignature('https://spotcam.in')).toBe(SENTENCE);
+  });
+
+  it('uses the address the app is opened from, so it is right on any domain', () => {
+    expect(shareSignature('http://localhost:4173')).toBe(
+      'Stamp the date, time and location on your own photos. Free, nothing to install: http://localhost:4173',
+    );
+  });
+
+  it('does not repeat the word "captured" from the first line of the message', () => {
+    expect(shareSignature('https://spotcam.in').toLowerCase()).not.toContain('captur');
+    expect(shareText(photo, 'google', shareSignature('https://spotcam.in')).toLowerCase()).not.toContain('captur');
   });
 });
 
 describe('shareText with a signature', () => {
   it('adds it as a last line of its own, after a blank line, below the map link', () => {
-    const lines = shareText(photo, 'google', 'Captured with spotcam.in').split('\n');
+    const lines = shareText(photo, 'google', SENTENCE).split('\n');
     expect(lines[1]).toBe(mapsUrl(48.85837, 2.29448, 'google'));
-    expect(lines.slice(2)).toEqual(['', 'Captured with spotcam.in']);
+    expect(lines.slice(2)).toEqual(['', SENTENCE]);
   });
 
   it('adds it to a photo with no position too', () => {
-    expect(shareText({ ...photo, location: null }, 'google', 'Captured with spotcam.in').split('\n').slice(1)).toEqual(['', 'Captured with spotcam.in']);
+    expect(shareText({ ...photo, location: null }, 'google', SENTENCE).split('\n').slice(1)).toEqual(['', SENTENCE]);
   });
 
   it('leaves the message as it was when there is no signature', () => {

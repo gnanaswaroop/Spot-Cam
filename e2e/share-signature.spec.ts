@@ -1,5 +1,5 @@
 /**
- * The line "Captured with <this site>" at the end of a shared photo's message: on by default, and switched off in
+ * The last line of a shared photo's message (what SpotCam is, and the link): on by default, and switched off in
  * Settings. It is text in the message, not drawn on the photo.
  */
 import { Page } from '@playwright/test';
@@ -22,8 +22,9 @@ const recordShares = (page: Page) =>
   });
 
 const shared = (page: Page) => page.evaluate(() => (window as unknown as { __shared: Shared[] }).__shared);
-const toggle = (page: Page) => page.getByRole('checkbox', { name: /to the message of a shared photo/ });
-const hostOf = (page: Page) => page.evaluate(() => window.location.host);
+const toggle = (page: Page) => page.getByRole('checkbox', { name: /line about SpotCam/ });
+const originOf = (page: Page) => page.evaluate(() => window.location.origin);
+const sentence = (origin: string) => `Stamp the date, time and location on your own photos. Free, nothing to install: ${origin}`;
 
 async function sharePhoto(page: Page) {
   await page.getByRole('button', { name: 'Open gallery' }).click();
@@ -31,7 +32,7 @@ async function sharePhoto(page: Page) {
   await page.getByRole('dialog', { name: 'Photo' }).getByRole('button', { name: 'Share photo' }).click();
 }
 
-test.describe('"Captured with" line when sharing', () => {
+test.describe('the line about SpotCam when sharing', () => {
   test.beforeEach(async ({ page, context }) => {
     await recordShares(page);
     await setUpGrantedCamera(page, context);
@@ -43,15 +44,16 @@ test.describe('"Captured with" line when sharing', () => {
     await expect.poll(async () => (await shared(page)).length).toBe(1);
     const [share] = await shared(page);
     const lines = share.text!.split('\n');
-    expect(lines.at(-1)).toBe(`Captured with ${await hostOf(page)}`);
+    expect(lines.at(-1)).toBe(sentence(await originOf(page)));
     expect(lines.at(-2)).toBe(''); // a blank line sets it apart
-    expect(lines[0]).toMatch(/^Captured on /); // the usual message is still first
+    expect(lines[0]).toMatch(/^Taken on /); // the usual message is still first
+    expect(share.text!.toLowerCase().match(/captur/g) ?? []).toHaveLength(0); // no repeated wording
   });
 
   test('can be switched off in Settings, and then is not in the message', async ({ page }) => {
     await page.goto(`${SITE}/settings`);
     await expect(toggle(page)).toBeChecked();
-    await expect(page.getByText(`Captured with ${await hostOf(page)}`)).toBeVisible(); // Settings shows what will be added
+    await expect(page.getByText(sentence(await originOf(page)))).toBeVisible(); // Settings shows what will be added
     await toggle(page).uncheck();
     await expect(page.getByRole('status').first()).toHaveText('Shared photos will no longer mention SpotCam.');
 
@@ -59,8 +61,8 @@ test.describe('"Captured with" line when sharing', () => {
     await sharePhoto(page);
     await expect.poll(async () => (await shared(page)).length).toBe(1);
     const [share] = await shared(page);
-    expect(share.text).not.toContain('Captured with');
-    expect(share.text).not.toContain(await hostOf(page));
+    expect(share.text).not.toContain('Stamp the date');
+    expect(share.text).not.toContain(await originOf(page));
   });
 
   test('the choice is remembered, and can be switched back on', async ({ page }) => {
@@ -69,7 +71,7 @@ test.describe('"Captured with" line when sharing', () => {
     await page.reload();
     await expect(toggle(page)).not.toBeChecked();
     await toggle(page).check();
-    await expect(page.getByRole('status').first()).toHaveText('Shared photos will say where they were captured with.');
+    await expect(page.getByRole('status').first()).toHaveText('Shared photos will include a line about SpotCam.');
     await page.reload();
     await expect(toggle(page)).toBeChecked();
   });

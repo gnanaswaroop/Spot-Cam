@@ -130,12 +130,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
     setStatus(`Shared photos will link to ${MAP_SERVICES.find(s => s.id === service)!.label}.`);
   };
 
-  // The "Captured with spotcam.in" line at the end of a shared photo's message; saved as soon as it is switched.
+  // The line about SpotCam (what it is and the link) at the end of a shared photo's message; saved as soon as it is switched.
   const [signature, setSignatureState] = useState(getShareSignature);
   const chooseSignature = (on: boolean) => {
     setShareSignature(on);
     setSignatureState(on);
-    setStatus(on ? 'Shared photos will say where they were captured with.' : 'Shared photos will no longer mention SpotCam.');
+    setStatus(on ? 'Shared photos will include a line about SpotCam.' : 'Shared photos will no longer mention SpotCam.');
   };
 
   // How long photos are kept. A choice that would remove photos that are already saved asks first.
@@ -307,8 +307,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
               className="mt-0.5 h-5 w-5 shrink-0 accent-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
             <span>
-              Add <q>{shareSignature(window.location.host)}</q> to the message of a shared photo
-              <span className="block text-sm text-gray-400">It is a line of text in the message, not drawn on the photo. On by default.</span>
+              Add a line about SpotCam to the message of a shared photo
+              <span className="block text-sm text-gray-400">
+                It reads: &ldquo;{shareSignature(window.location.origin)}&rdquo;. It is text in the message, not drawn on the photo. On by default.
+              </span>
             </span>
           </label>
         </Section>

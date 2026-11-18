@@ -49,7 +49,7 @@ test.describe('sharing a photo', () => {
     expect(share.files).toBe(1);
     expect(share.title).toBe('Photo from SpotCam');
     const lines = share.text!.split('\n');
-    expect(lines[0]).toMatch(/^Captured on .+ at .*Paris, France\.$/);
+    expect(lines[0]).toMatch(/^Taken on .+ at .*Paris, France\.$/);
     const link = new URL(lines[1]);
     expect(link.origin + link.pathname).toBe('https://www.google.com/maps/search/');
     expect(link.searchParams.get('api')).toBe('1');
@@ -69,7 +69,7 @@ test.describe('sharing a photo', () => {
     await sharePhoto(page);
     await expect.poll(async () => (await shared(page)).length).toBe(1);
     const [share] = await shared(page);
-    expect(share.text).toMatch(/at an unknown location\.\nhttps:\/\/www\.google\.com\/maps\/search\/\?api=1&query=48\.8583\d+,2\.2944\d+(\n\nCaptured with [^\n]+)?$/); // the last line is the optional "Captured with ..."
+    expect(share.text).toMatch(/at an unknown location\.\nhttps:\/\/www\.google\.com\/maps\/search\/\?api=1&query=48\.8583\d+,2\.2944\d+(\n\nStamp the date, time and location [^\n]+)?$/); // the last line is the optional line about SpotCam
   });
 });
 
