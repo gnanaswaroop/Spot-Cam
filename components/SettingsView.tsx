@@ -13,13 +13,15 @@ import {
   getCacheRadiusM,
   getMapService,
   getPhotoTtlMs,
+  getShareSignature,
   isCacheRadiusCustomised,
   setCacheRadiusM,
   setMapService,
   setPhotoTtlMs,
+  setShareSignature,
 } from '../utils/settings';
 import { PHOTO_TTL_OPTIONS, expiredCount, ttlLabel } from '../utils/photoExpiry';
-import { MAP_SERVICES, type MapService } from '../utils/maps';
+import { MAP_SERVICES, shareSignature, type MapService } from '../utils/maps';
 import { AppHeader } from './AppHeader';
 import { useAnalytics } from '../hooks/useAnalytics';
 
@@ -126,6 +128,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
     setMapService(service);
     setMapServiceState(service);
     setStatus(`Shared photos will link to ${MAP_SERVICES.find(s => s.id === service)!.label}.`);
+  };
+
+  // The "Captured with spotcam.in" line at the end of a shared photo's message; saved as soon as it is switched.
+  const [signature, setSignatureState] = useState(getShareSignature);
+  const chooseSignature = (on: boolean) => {
+    setShareSignature(on);
+    setSignatureState(on);
+    setStatus(on ? 'Shared photos will say where they were captured with.' : 'Shared photos will no longer mention SpotCam.');
   };
 
   // How long photos are kept. A choice that would remove photos that are already saved asks first.
@@ -287,6 +297,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
             </fieldset>
           </Section>
         )}
+
+        <Section id="signature-heading" title="Mention SpotCam when sharing">
+          <label className="flex min-h-11 items-start gap-3 text-base">
+            <input
+              type="checkbox"
+              checked={signature}
+              onChange={e => chooseSignature(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <span>
+              Add <q>{shareSignature(window.location.host)}</q> to the message of a shared photo
+              <span className="block text-sm text-gray-400">It is a line of text in the message, not drawn on the photo. On by default.</span>
+            </span>
+          </label>
+        </Section>
 
         <Section id="keep-heading" title="Keep photos for">
           <p className="text-sm text-gray-300">

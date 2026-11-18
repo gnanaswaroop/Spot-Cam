@@ -40,11 +40,19 @@ export const mapsUrl = (latitude: number, longitude: number, service: MapService
 
 /**
  * The text shared with a photo: when and where it was taken, plus a map link to the exact spot when
- * the position is known.
+ * the position is known. `signature`, when given, is added as a last line of its own (see shareSignature).
  */
-export const shareText = (photo: Pick<CapturedPhoto, 'timestamp' | 'location'>, service: MapService = DEFAULT_MAP_SERVICE): string => {
+export const shareText = (
+  photo: Pick<CapturedPhoto, 'timestamp' | 'location'>,
+  service: MapService = DEFAULT_MAP_SERVICE,
+  signature?: string | null,
+): string => {
   const { location } = photo;
   const line = `Captured on ${formatDateTime(photo.timestamp)} at ${location?.address || 'an unknown location'}.`;
-  return location ? `${line}
+  const message = location ? `${line}
 ${mapsUrl(location.latitude, location.longitude, service)}` : line;
+  return signature ? `${message}\n\n${signature}` : message;
 };
+
+/** The line that says where a shared photo came from: "Captured with spotcam.in", using the address the app is opened from. */
+export const shareSignature = (host: string): string => `Captured with ${host}`;

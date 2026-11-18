@@ -69,7 +69,7 @@ test.describe('sharing a photo', () => {
     await sharePhoto(page);
     await expect.poll(async () => (await shared(page)).length).toBe(1);
     const [share] = await shared(page);
-    expect(share.text).toMatch(/at an unknown location\.\nhttps:\/\/www\.google\.com\/maps\/search\/\?api=1&query=48\.8583\d+,2\.2944\d+$/);
+    expect(share.text).toMatch(/at an unknown location\.\nhttps:\/\/www\.google\.com\/maps\/search\/\?api=1&query=48\.8583\d+,2\.2944\d+(\n\nCaptured with [^\n]+)?$/); // the last line is the optional "Captured with ..."
   });
 });
 

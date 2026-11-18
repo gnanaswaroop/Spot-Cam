@@ -18,6 +18,8 @@ interface StoredSettings {
   mapService?: MapService;
   /** How long photos stay in the gallery (ms). Missing means until they are deleted by hand. */
   photoTtlMs?: number;
+  /** false when the person turned off the "Captured with ..." line in shared messages. Missing means on. */
+  shareSignature?: boolean;
 }
 
 /** Fired on the window when a setting that other parts of the app react to has changed. */
@@ -106,4 +108,17 @@ export function setPhotoTtlMs(ms: number | null) {
   } catch {
     // No window (tests): nobody is listening anyway.
   }
+}
+
+/** Whether the line "Captured with spotcam.in" is added to the message when a photo is shared. On by default. */
+export function getShareSignature(): boolean {
+  return readStored().shareSignature !== false;
+}
+
+/** Turns the line on or off. Turning it on removes the stored value, so the default keeps applying. */
+export function setShareSignature(on: boolean) {
+  const settings = readStored();
+  if (on) delete settings.shareSignature;
+  else settings.shareSignature = false;
+  writeStored(settings);
 }

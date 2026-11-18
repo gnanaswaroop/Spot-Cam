@@ -12,8 +12,8 @@ import { SLIDE_MS, prefersReducedMotion, useSlide } from '../hooks/useSlide';
 import { dataURLtoFile, formatDateTime } from '../utils/helpers';
 import { dayLabel } from '../utils/dateLabels';
 import { ttlLabel } from '../utils/photoExpiry';
-import { shareText } from '../utils/maps';
-import { getMapService, getPhotoTtlMs } from '../utils/settings';
+import { shareSignature, shareText } from '../utils/maps';
+import { getMapService, getPhotoTtlMs, getShareSignature } from '../utils/settings';
 import { track } from '../utils/analytics';
 import { ShareIcon, DeleteIcon, CloseIcon, GalleryIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { AppHeader } from './AppHeader';
@@ -186,7 +186,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
         await navigator.share({
           files: [file],
           title: `Photo from SpotCam`,
-          text: shareText(photo, getMapService()),
+          text: shareText(photo, getMapService(), getShareSignature() ? shareSignature(window.location.host) : null),
         });
         track('share_used');
       } catch (error) {
