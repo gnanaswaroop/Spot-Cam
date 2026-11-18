@@ -65,6 +65,12 @@ const App: React.FC = () => {
     setPhotos(prevPhotos => prevPhotos.filter(p => p.id !== id));
   };
 
+  /** Removes several photos at once (the gallery's multi-select). */
+  const handleDeleteMany = (ids: string[]) => {
+    const gone = new Set(ids);
+    setPhotos(prevPhotos => prevPhotos.filter(p => !gone.has(p.id)));
+  };
+
   return (
     <div className="w-full h-full bg-gray-900">
       {updateReady && <UpdateToast onReload={applyUpdate} />}
@@ -95,6 +101,7 @@ const App: React.FC = () => {
         <GalleryView
           photos={photos}
           onDelete={handleDelete}
+          onDeleteMany={handleDeleteMany}
           onSwitchView={() => switchView('camera')}
         />
       )}

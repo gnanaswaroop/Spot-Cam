@@ -3,7 +3,7 @@
  * to view, share, and delete them.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CapturedPhoto } from '../types';
 import { useHistoryOverlay, hasOverlayEntry } from '../hooks/useHistoryOverlay';
 import { useDialogFocus } from '../hooks/useDialogFocus';
@@ -24,6 +24,8 @@ interface GalleryViewProps {
   photos: CapturedPhoto[];
   /** Callback function to delete a photo by its ID. */
   onDelete: (id: string) => void;
+  /** Callback function to delete several photos at once. */
+  onDeleteMany: (ids: string[]) => void;
   /** Callback function to switch to the camera view. */
   onSwitchView: () => void;
 }
@@ -138,13 +140,13 @@ const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext,
 /**
  * A modal dialog to confirm a destructive action, such as deleting a photo.
  */
-const ConfirmationDialog = ({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void; }) => {
+const ConfirmationDialog = ({ count = 1, onConfirm, onCancel }: { count?: number; onConfirm: () => void; onCancel: () => void; }) => {
     const ref = useDialogFocus<HTMLDivElement>(onCancel);
     return (
         <div ref={ref} tabIndex={-1} className="focus:outline-none app-h fixed inset-x-0 top-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm animate-fade-in" aria-modal="true" role="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
             <div className="bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 shadow-2xl border border-gray-700">
                 <h3 className="text-white text-lg font-semibold mb-4" id="dialog-title">Confirm Deletion</h3>
-                <p className="text-gray-300 mb-6" id="dialog-description">Are you sure you want to delete this photo?</p>
+                <p className="text-gray-300 mb-6" id="dialog-description">{count === 1 ? 'Are you sure you want to delete this photo?' : `Are you sure you want to delete these ${count} photos?`}</p>
                 <div className="flex justify-end space-x-4">
                     <button 
                         onClick={onCancel} 
@@ -167,10 +169,13 @@ const ConfirmationDialog = ({ onConfirm, onCancel }: { onConfirm: () => void; on
 /**
  * The main component for the gallery interface.
  */
-export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSwitchView }) => {
+export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDeleteMany, onSwitchView }) => {
   // Both layers own a history entry, so the Back gesture closes the top one instead of leaving the page.
   const [selectedPhoto, openPhoto, closePhoto, showPhoto] = useHistoryOverlay<CapturedPhoto>('photoViewer');
   const [photoIdToDelete, openDeleteConfirm, closeDeleteConfirm] = useHistoryOverlay<string>('deleteConfirm');
+  const [idsToDelete, openDeleteMany, closeDeleteMany] = useHistoryOverlay<string[]>('deleteManyConfirm');
+  // Multi-select: `null` means normal browsing, a set means selecting.
+  const [selection, setSelection] = useState<Set<string> | null>(null);
 
   /**
    * Handles sharing a photo using the Web Share API.
@@ -219,6 +224,19 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
     }
   };
 
+  /** Deletes the selected photos and leaves select mode. */
+  const handleConfirmDeleteMany = () => {
+    if (idsToDelete) onDeleteMany(idsToDelete);
+    closeDeleteMany();
+    setSelection(null);
+  };
+
+  const toggleSelected = (id: string) => setSelection(prev => {
+    const next = new Set(prev);
+    if (!next.delete(id)) next.add(id);
+    return next;
+  });
+
   /** Cancels the deletion process. */
   const handleCancelDelete = () => {
     closeDeleteConfirm();
@@ -245,6 +263,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
     if (selectedPhoto && viewedIndex === -1 && !photoIdToDelete) closePhoto();
   }, [selectedPhoto, viewedIndex, photoIdToDelete, closePhoto]);
 
+  // Only photos that still exist count (one may have expired while selecting).
+  const selectedIds = selection ? sortedPhotos.filter(p => selection.has(p.id)).map(p => p.id) : [];
+  const allSelected = selection !== null && sortedPhotos.length > 0 && selectedIds.length === sortedPhotos.length;
+  // Leave select mode when the gallery empties.
+  useEffect(() => {
+    if (selection && photos.length === 0) setSelection(null);
+  }, [selection, photos.length]);
+
   const previous = viewedIndex > 0 ? () => showPhoto(sortedPhotos[viewedIndex - 1]) : undefined;
   const next = viewedIndex >= 0 && viewedIndex < sortedPhotos.length - 1 ? () => showPhoto(sortedPhotos[viewedIndex + 1]) : undefined;
 
@@ -252,7 +278,28 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
     <div className="app-h w-full bg-gray-900 text-white flex flex-col">
       <AppHeader onBack={onSwitchView} />
       <main className="flex min-h-0 flex-grow flex-col">
-      <h1 className="px-4 pt-4 text-xl font-bold">Gallery</h1>
+      <div className="flex items-center justify-between gap-2 px-4 pt-4">
+        <h1 className="text-xl font-bold">Gallery</h1>
+        {photos.length > 0 && !selection && (
+          <button type="button" onClick={() => setSelection(new Set())} className="min-h-11 rounded-md px-3 text-sm font-semibold text-blue-300 hover:text-blue-200">
+            Select
+          </button>
+        )}
+      </div>
+      {selection && (
+        <div role="toolbar" aria-label="Selection actions" className="flex flex-wrap items-center gap-2 px-4 pt-2">
+          <span role="status" className="mr-auto text-sm text-gray-300">{selectedIds.length} selected</span>
+          <button type="button" onClick={() => setSelection(allSelected ? new Set() : new Set(sortedPhotos.map(p => p.id)))} className="min-h-11 rounded-md bg-gray-700 px-3 text-sm hover:bg-gray-600">
+            {allSelected ? 'Clear selection' : 'Select all'}
+          </button>
+          <button type="button" disabled={selectedIds.length === 0} onClick={() => openDeleteMany(selectedIds)} className="min-h-11 rounded-md bg-red-600 px-3 text-sm font-semibold hover:bg-red-500 disabled:opacity-40 disabled:hover:bg-red-600">
+            Delete selected
+          </button>
+          <button type="button" onClick={() => setSelection(null)} className="min-h-11 rounded-md px-3 text-sm hover:bg-gray-700">
+            Cancel
+          </button>
+        </div>
+      )}
       {photos.length > 0 && getPhotoTtlMs() !== null && (
         <p className="px-4 pt-1 text-sm text-gray-400">Photos are removed after {ttlLabel(getPhotoTtlMs())}. You can change this in Settings.</p>
       )}
@@ -274,8 +321,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
               </h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
                 {day.photos.map((photo) => (
-                  <button key={photo.id} type="button" className="aspect-square bg-gray-700 rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 motion-reduce:transform-none transition-transform" onClick={() => openPhoto(photo)} aria-label={`Open photo taken ${photoDescription(photo)}`}>
+                  <button key={photo.id} type="button" className={`relative aspect-square bg-gray-700 rounded-lg overflow-hidden cursor-pointer ${selection?.has(photo.id) ? 'ring-4 ring-blue-500' : ''} transform hover:scale-105 motion-reduce:transform-none transition-transform`} onClick={() => (selection ? toggleSelected(photo.id) : openPhoto(photo))} aria-pressed={selection ? selection.has(photo.id) : undefined} aria-label={`${selection ? 'Select' : 'Open'} photo taken ${photoDescription(photo)}`}>
                     <img src={photo.dataUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    {selection && (
+                      <span aria-hidden="true" className={`absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 text-sm font-bold ${selection.has(photo.id) ? 'border-blue-500 bg-blue-500 text-white' : 'border-white bg-black/30'}`}>
+                        {selection.has(photo.id) ? '✓' : ''}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -286,6 +338,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
       </main>
       {/* Modals are rendered conditionally based on state */}
       {selectedPhoto && <PhotoModal photo={selectedPhoto} before={sortedPhotos[viewedIndex - 1]} after={sortedPhotos[viewedIndex + 1]} position={viewedIndex + 1} total={sortedPhotos.length} onPrevious={previous} onNext={next} onClose={closePhoto} onDelete={requestDelete} onShare={handleShare} />}
+      {idsToDelete && <ConfirmationDialog count={idsToDelete.length} onConfirm={handleConfirmDeleteMany} onCancel={closeDeleteMany} />}
       {photoIdToDelete && <ConfirmationDialog onConfirm={handleConfirmDelete} onCancel={handleCancelDelete} />}
     </div>
   );
