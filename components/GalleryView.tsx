@@ -15,6 +15,7 @@ import { ttlLabel } from '../utils/photoExpiry';
 import { shareSignature, shareText } from '../utils/maps';
 import { getMapService, getPhotoTtlMs, getShareSignature } from '../utils/settings';
 import { track } from '../utils/analytics';
+import { dataUrlBytes, estimateFreeBytes, formatBytes, isLowOnSpace } from '../utils/storageUsage';
 import { ShareIcon, DeleteIcon, CloseIcon, GalleryIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { AppHeader } from './AppHeader';
 
@@ -174,6 +175,15 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
   const [selectedPhoto, openPhoto, closePhoto, showPhoto] = useHistoryOverlay<CapturedPhoto>('photoViewer');
   const [photoIdToDelete, openDeleteConfirm, closeDeleteConfirm] = useHistoryOverlay<string>('deleteConfirm');
   const [idsToDelete, openDeleteMany, closeDeleteMany] = useHistoryOverlay<string[]>('deleteManyConfirm');
+  // How much room the photos take, and what the browser still has (an estimate; null when it cannot say).
+  const [freeBytes, setFreeBytes] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    estimateFreeBytes().then(free => !cancelled && setFreeBytes(free));
+    return () => {
+      cancelled = true;
+    };
+  }, [photos.length]);
   // Multi-select: `null` means normal browsing, a set means selecting.
   const [selection, setSelection] = useState<Set<string> | null>(null);
 
@@ -303,6 +313,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
       {photos.length > 0 && (
         <p className="px-4 pt-1 text-sm text-gray-400" data-testid="gallery-storage-note">
           These photos live inside SpotCam, not in your phone&rsquo;s Photos or Gallery app. To keep one, open it and tap Share, then save it to your phone.
+        </p>
+      )}
+      {photos.length > 0 && (
+        <p className="px-4 pt-1 text-sm text-gray-400" data-testid="gallery-storage-usage">
+          {photos.length === 1 ? '1 photo' : `${photos.length} photos`} use {formatBytes(photos.reduce((sum, p) => sum + dataUrlBytes(p.dataUrl), 0))} on this device
+          {freeBytes !== null && <> &middot; about {formatBytes(freeBytes)} still free</>}.
+          {isLowOnSpace(freeBytes) && <span className="font-semibold text-amber-300"> Space is running low: delete some photos to make room.</span>}
         </p>
       )}
       {photos.length > 0 && getPhotoTtlMs() !== null && (

@@ -139,8 +139,8 @@ flowchart TD
 
 `hooks/usePersistedPhotos.ts` keeps the gallery in **IndexedDB** via `idb-keyval`, under one key (`spotcam-photos`).
 
-- The list is capped at 12 photos, newest first. New photos are prepended and the oldest are dropped.
-- Older versions stored photos in `localStorage` (about 5 MB, which filled up quickly). On first load the hook migrates that data and removes the old key.
+- Each photo is its own entry (`spotcam-photo:<id>`) and an index (`spotcam-photo-ids`) keeps the order, newest first, so a new photo never rewrites the others. There is no cap on the count; the gallery shows the space used and the browser's estimate of what is free, and the app shows a notice if a save fails (out of space). Saves run one after another through a queue that starts with the load.
+- Older versions stored the whole list under one key (`spotcam-photos`), and before that in `localStorage` (about 5 MB). On first load the hook migrates either into per-photo entries and removes the old key.
 - A ref mirrors the state so rapid successive updates never act on stale data, and photos taken during the initial load aren't lost.
 
 ## 8. Address lookup
