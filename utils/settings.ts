@@ -1,9 +1,10 @@
 /**
- * @file User settings kept on this device (browser localStorage). The cache radius and the map service are customisable.
+ * @file User settings kept on this device (browser localStorage). The cache radius, the map service and how long photos are kept are customisable.
  * Nothing here is sent anywhere. Reads and writes never throw: if storage is blocked, the defaults apply.
  */
 
 import { DEFAULT_MAP_SERVICE, isMapService, type MapService } from './maps';
+import { isValidTtl } from './photoExpiry';
 
 const STORAGE_KEY = 'spotcam-settings';
 
@@ -15,7 +16,12 @@ export const CACHE_RADIUS_MAX_M = 500;
 interface StoredSettings {
   cacheRadiusM?: number;
   mapService?: MapService;
+  /** How long photos stay in the gallery (ms). Missing means until they are deleted by hand. */
+  photoTtlMs?: number;
 }
+
+/** Fired on the window when a setting that other parts of the app react to has changed. */
+export const SETTINGS_CHANGED_EVENT = 'spotcam:settings-changed';
 
 const isValidRadius = (m: unknown): m is number =>
   typeof m === 'number' && Number.isInteger(m) && m >= CACHE_RADIUS_MIN_M && m <= CACHE_RADIUS_MAX_M;
@@ -80,4 +86,24 @@ export function setMapService(service: MapService) {
     settings.mapService = service;
   }
   writeStored(settings);
+}
+
+/** How long photos are kept in the gallery (ms), or null to keep them until they are deleted by hand (the default). */
+export function getPhotoTtlMs(): number | null {
+  const saved = readStored().photoTtlMs;
+  return isValidTtl(saved) ? saved : null;
+}
+
+/** Saves how long photos are kept. null (keep until deleted) removes the stored value, so that default keeps applying. */
+export function setPhotoTtlMs(ms: number | null) {
+  if (ms !== null && !isValidTtl(ms)) return;
+  const settings = readStored();
+  if (ms === null) delete settings.photoTtlMs;
+  else settings.photoTtlMs = ms;
+  writeStored(settings);
+  try {
+    window.dispatchEvent(new Event(SETTINGS_CHANGED_EVENT));
+  } catch {
+    // No window (tests): nobody is listening anyway.
+  }
 }

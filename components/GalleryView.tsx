@@ -11,8 +11,9 @@ import { useSwipe } from '../hooks/useSwipe';
 import { SLIDE_MS, prefersReducedMotion, useSlide } from '../hooks/useSlide';
 import { dataURLtoFile, formatDateTime } from '../utils/helpers';
 import { dayLabel } from '../utils/dateLabels';
+import { ttlLabel } from '../utils/photoExpiry';
 import { shareText } from '../utils/maps';
-import { getMapService } from '../utils/settings';
+import { getMapService, getPhotoTtlMs } from '../utils/settings';
 import { track } from '../utils/analytics';
 import { ShareIcon, DeleteIcon, CloseIcon, GalleryIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { AppHeader } from './AppHeader';
@@ -238,6 +239,12 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
 
   // Where the open photo sits in that order, for the swipe and the arrows.
   const viewedIndex = selectedPhoto ? sortedPhotos.findIndex(p => p.id === selectedPhoto.id) : -1;
+  // If the photo being looked at expires (see "Keep photos for" in Settings), close the viewer instead of showing a deleted photo.
+  // (While a delete is being confirmed, the delete flow closes the viewer itself.)
+  useEffect(() => {
+    if (selectedPhoto && viewedIndex === -1 && !photoIdToDelete) closePhoto();
+  }, [selectedPhoto, viewedIndex, photoIdToDelete, closePhoto]);
+
   const previous = viewedIndex > 0 ? () => showPhoto(sortedPhotos[viewedIndex - 1]) : undefined;
   const next = viewedIndex >= 0 && viewedIndex < sortedPhotos.length - 1 ? () => showPhoto(sortedPhotos[viewedIndex + 1]) : undefined;
 
@@ -246,6 +253,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
       <AppHeader onBack={onSwitchView} />
       <main className="flex min-h-0 flex-grow flex-col">
       <h1 className="px-4 pt-4 text-xl font-bold">Gallery</h1>
+      {photos.length > 0 && getPhotoTtlMs() !== null && (
+        <p className="px-4 pt-1 text-sm text-gray-400">Photos are removed after {ttlLabel(getPhotoTtlMs())}. You can change this in Settings.</p>
+      )}
       {photos.length === 0 ? (
         // Display a message when the gallery is empty
         <div role="status" className="flex-grow flex flex-col items-center justify-center text-gray-400">

@@ -1,5 +1,5 @@
 /**
- * @file Settings: the address cache (size and clearing), saved photos (delete all), the cache radius, and the map service used for the link in shared text.
+ * @file Settings: the address cache (size and clearing), saved photos (delete all, and how long they are kept), the cache radius, and the map service used for the link in shared text.
  * Everything here is stored on this device only.
  */
 
@@ -12,10 +12,13 @@ import {
   DEFAULT_CACHE_RADIUS_M,
   getCacheRadiusM,
   getMapService,
+  getPhotoTtlMs,
   isCacheRadiusCustomised,
   setCacheRadiusM,
   setMapService,
+  setPhotoTtlMs,
 } from '../utils/settings';
+import { PHOTO_TTL_OPTIONS, expiredCount, ttlLabel } from '../utils/photoExpiry';
 import { MAP_SERVICES, type MapService } from '../utils/maps';
 import { AppHeader } from './AppHeader';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -23,6 +26,8 @@ import { useAnalytics } from '../hooks/useAnalytics';
 interface SettingsViewProps {
   /** How many photos are saved in the gallery. */
   photoCount: number;
+  /** When each saved photo was taken (ms), to tell how many a shorter "keep photos for" time would remove. */
+  photoTimestamps: number[];
   /** Deletes every saved photo. */
   onDeleteAllPhotos: () => void;
   /** Returns to the camera. */
@@ -87,7 +92,7 @@ const ConfirmAction = ({
   );
 };
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, onDeleteAllPhotos, onBack }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTimestamps, onDeleteAllPhotos, onBack }) => {
   const [status, setStatus] = useState('');
   const analytics = useAnalytics();
 
@@ -122,6 +127,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, onDelete
     setMapServiceState(service);
     setStatus(`Shared photos will link to ${MAP_SERVICES.find(s => s.id === service)!.label}.`);
   };
+
+  // How long photos are kept. A choice that would remove photos that are already saved asks first.
+  const [keepFor, setKeepFor] = useState<number | null>(getPhotoTtlMs);
+  const [pendingKeepFor, setPendingKeepFor] = useState<{ ms: number } | null>(null);
+  const applyKeepFor = (ms: number | null) => {
+    setPhotoTtlMs(ms); // the app removes any expired photos as soon as it hears about the change
+    setKeepFor(ms);
+    setPendingKeepFor(null);
+    setStatus(ms === null ? 'Photos will be kept until you delete them.' : `Photos will be removed after ${ttlLabel(ms)}.`);
+  };
+  const chooseKeepFor = (ms: number | null) => {
+    if (ms !== null && expiredCount(photoTimestamps, ms) > 0) setPendingKeepFor({ ms });
+    else applyKeepFor(ms);
+  };
+  const wouldRemove = pendingKeepFor ? expiredCount(photoTimestamps, pendingKeepFor.ms) : 0;
 
   return (
     <div className="app-h w-full bg-gray-900 text-white flex flex-col">
@@ -267,6 +287,47 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, onDelete
             </fieldset>
           </Section>
         )}
+
+        <Section id="keep-heading" title="Keep photos for">
+          <p className="text-sm text-gray-300">
+            Photos older than this are removed from the gallery automatically. They are saved only on this device, so share or save a
+            photo first if you want to keep it.
+          </p>
+          <fieldset className="space-y-2">
+            <legend className="sr-only">How long to keep photos</legend>
+            {PHOTO_TTL_OPTIONS.map(option => (
+              <label key={option.label} className="flex min-h-11 items-center gap-3 text-base">
+                <input
+                  type="radio"
+                  name="keep-photos-for"
+                  value={option.ms ?? 'forever'}
+                  checked={(pendingKeepFor ? pendingKeepFor.ms : keepFor) === option.ms}
+                  onChange={() => chooseKeepFor(option.ms)}
+                  className="h-5 w-5 accent-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <span>
+                  {option.label}
+                  {option.ms === null && <span className="text-gray-400"> (default)</span>}
+                </span>
+              </label>
+            ))}
+          </fieldset>
+          {pendingKeepFor && (
+            <div role="alertdialog" aria-label="Confirm removing photos" className="space-y-2 rounded-md border border-red-500/40 bg-red-950/30 p-3">
+              <p className="text-sm text-gray-200">
+                {`${wouldRemove} saved ${wouldRemove === 1 ? 'photo is' : 'photos are'} older than ${ttlLabel(pendingKeepFor.ms)} and will be permanently deleted now. This cannot be undone.`}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className={dangerButtonClass} onClick={() => applyKeepFor(pendingKeepFor.ms)}>
+                  {`Yes, delete ${wouldRemove === 1 ? 'it' : `these ${wouldRemove}`}`}
+                </button>
+                <button type="button" className={buttonClass} onClick={() => setPendingKeepFor(null)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </Section>
 
         <Section id="photos-heading" title="Saved photos">
           <p className="text-sm text-gray-300" data-testid="photo-count">

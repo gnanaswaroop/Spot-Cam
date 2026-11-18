@@ -85,6 +85,7 @@ const App: React.FC = () => {
       {view === 'settings' && (
         <SettingsView
           photoCount={photos.length}
+          photoTimestamps={photos.map(p => p.timestamp)}
           onDeleteAllPhotos={() => setPhotos([])}
           onBack={() => switchView('camera')}
         />

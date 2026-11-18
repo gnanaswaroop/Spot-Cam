@@ -71,7 +71,8 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
           <p>
             <strong className="text-white">Your photos.</strong> When you take a photo, it is saved in your browser's storage (IndexedDB)
             on your device, together with its date, time and location. SpotCam keeps your latest 12 photos and replaces the oldest as you
-            take new ones. Photos are not uploaded to us or to anyone else.
+            take new ones. In Settings you can also have photos removed automatically after a time you choose. Photos are not uploaded
+            to us or to anyone else.
           </p>
           <p>
             <strong className="text-white">Working offline.</strong> So that SpotCam opens without a connection, your browser keeps a copy of
