@@ -178,8 +178,12 @@ test.describe('address lookup', () => {
           const open = indexedDB.open('keyval-store');
           open.onerror = () => reject(open.error);
           open.onsuccess = () => {
-            const req = open.result.transaction('keyval').objectStore('keyval').get('spotcam-photos');
-            req.onsuccess = () => resolve(req.result);
+            const store = open.result.transaction('keyval').objectStore('keyval');
+            const req = store.get('spotcam-photo-ids'); // each photo is its own entry, listed by this index
+            req.onsuccess = () => {
+              const photos = (req.result as string[]).map(id => store.get(`spotcam-photo:${id}`));
+              Promise.all(photos.map(r => new Promise(done => (r.onsuccess = () => done(r.result))))).then(list => resolve(list as never));
+            };
             req.onerror = () => reject(req.error);
           };
         }),

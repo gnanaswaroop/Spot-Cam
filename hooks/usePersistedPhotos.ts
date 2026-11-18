@@ -7,38 +7,81 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { get, set } from 'idb-keyval';
+import { del, delMany, get, getMany, set, setMany } from 'idb-keyval';
 import { CapturedPhoto } from '../types';
 import { SETTINGS_CHANGED_EVENT, getPhotoTtlMs } from '../utils/settings';
 import { expiredCount, isExpired, nextExpiryDelayMs } from '../utils/photoExpiry';
 
-const DB_KEY = 'spotcam-photos';
+/** Each photo is its own entry, so taking or deleting one never rewrites the others; the index keeps them in order (newest first). */
+const INDEX_KEY = 'spotcam-photo-ids';
+const photoKey = (id: string) => `spotcam-photo:${id}`;
+/** Older versions kept the whole list under this one key (and before that in localStorage). */
+const LEGACY_LIST_KEY = 'spotcam-photos';
 const LEGACY_LOCALSTORAGE_KEY = 'spotcam-photos';
-const MAX_PHOTOS = 12;
 /** Browsers cap a timer at about 24.8 days; a longer wait is simply re-armed. */
 const MAX_TIMER_MS = 2_000_000_000;
 
 type Updater = CapturedPhoto[] | ((prev: CapturedPhoto[]) => CapturedPhoto[]);
 
-export function usePersistedPhotos(): [CapturedPhoto[], (value: Updater) => void, boolean] {
+/** Returns the photos, a setter, whether loading has finished, and whether the last save failed (usually: no space left). */
+export function usePersistedPhotos(): [CapturedPhoto[], (value: Updater) => void, boolean, boolean] {
   const [photos, setPhotosState] = useState<CapturedPhoto[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   // Mirrors state so successive updates never act on stale data.
   const latest = useRef<CapturedPhoto[]>([]);
+  // The ids that are in the database right now, and a queue so saves run one after another (the first one is the load).
+  const persisted = useRef<string[]>([]);
+  const queue = useRef<Promise<void>>(Promise.resolve());
+
+  /** Writes whatever the list is by the time it runs: new photos first, then the index, then the removals. */
+  const save = useCallback(() => {
+    queue.current = queue.current.then(async () => {
+      const target = latest.current;
+      const have = new Set(persisted.current);
+      const want = new Set(target.map(p => p.id));
+      try {
+        await setMany(target.filter(p => !have.has(p.id)).map(p => [photoKey(p.id), p] as [string, CapturedPhoto]));
+        await set(INDEX_KEY, target.map(p => p.id));
+        const gone = persisted.current.filter(id => !want.has(id));
+        persisted.current = target.map(p => p.id);
+        if (gone.length > 0) await delMany(gone.map(photoKey));
+        setSaveFailed(false);
+      } catch (error) {
+        console.error('Failed to save photos:', error);
+        setSaveFailed(true);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    // Saves wait for this, so a photo taken while loading can't overwrite the stored list.
+    queue.current = queue.current.then(async () => {
       let stored: CapturedPhoto[] = [];
       try {
-        stored = (await get<CapturedPhoto[]>(DB_KEY)) ?? [];
-        // One-time migration from the old localStorage storage.
-        if (stored.length === 0) {
-          const legacy = window.localStorage.getItem(LEGACY_LOCALSTORAGE_KEY);
-          if (legacy) {
-            stored = JSON.parse(legacy);
-            await set(DB_KEY, stored);
-            window.localStorage.removeItem(LEGACY_LOCALSTORAGE_KEY);
+        const ids = await get<string[]>(INDEX_KEY);
+        if (ids) {
+          stored = (await getMany<CapturedPhoto>(ids.map(photoKey))).filter((p): p is CapturedPhoto => !!p);
+          persisted.current = stored.map(p => p.id);
+        } else {
+          // One-time migration from the single list (or the even older localStorage copy) to one entry per photo.
+          let legacy = (await get<CapturedPhoto[]>(LEGACY_LIST_KEY)) ?? [];
+          let fromLocalStorage = false;
+          if (legacy.length === 0) {
+            const raw = window.localStorage.getItem(LEGACY_LOCALSTORAGE_KEY);
+            if (raw) {
+              legacy = JSON.parse(raw);
+              fromLocalStorage = true;
+            }
+          }
+          if (legacy.length > 0) {
+            await setMany(legacy.map(p => [photoKey(p.id), p] as [string, CapturedPhoto]));
+            await set(INDEX_KEY, legacy.map(p => p.id));
+            persisted.current = legacy.map(p => p.id);
+            stored = legacy;
+            await del(LEGACY_LIST_KEY);
+            if (fromLocalStorage) window.localStorage.removeItem(LEGACY_LOCALSTORAGE_KEY);
           }
         }
       } catch (error) {
@@ -46,22 +89,24 @@ export function usePersistedPhotos(): [CapturedPhoto[], (value: Updater) => void
       }
       if (cancelled) return;
       // Keep anything captured while loading.
-      latest.current = [...latest.current, ...stored].slice(0, MAX_PHOTOS);
+      const during = latest.current;
+      latest.current = [...during, ...stored];
       setPhotosState(latest.current);
       setLoaded(true);
-    })();
+      if (during.length > 0) save();
+    });
     return () => {
       cancelled = true;
     };
   }, []);
 
   const setPhotos = useCallback((value: Updater) => {
-    // Newest photos are first, so keep the head of the list and drop the oldest.
-    const next = (value instanceof Function ? value(latest.current) : value).slice(0, MAX_PHOTOS);
+    // Newest photos are first; there is no limit on how many are kept.
+    const next = value instanceof Function ? value(latest.current) : value;
     latest.current = next;
     setPhotosState(next);
-    set(DB_KEY, next).catch(error => console.error('Failed to save photos:', error));
-  }, []);
+    save();
+  }, [save]);
 
   // Removes the photos that have outlived the "keep photos for" setting.
   const removeExpired = useCallback(() => {
@@ -95,5 +140,5 @@ export function usePersistedPhotos(): [CapturedPhoto[], (value: Updater) => void
     return () => clearTimeout(timer);
   }, [loaded, photos, recheck, removeExpired]);
 
-  return [photos, setPhotos, loaded];
+  return [photos, setPhotos, loaded, saveFailed];
 }

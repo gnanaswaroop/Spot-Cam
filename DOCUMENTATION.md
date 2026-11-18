@@ -16,7 +16,7 @@ Open it at **https://spotcam.in**.
 
 - **Live camera** straight in the browser.
 - **Date, time and place on every photo**: current date and time, GPS coordinates and the street address, shown live and burned into the saved image on a dark band so it stays readable.
-- **Local gallery** of your latest 12 photos. The oldest is replaced as you take new ones.
+- **Local gallery** that keeps your photos until you delete them (or the time you choose in Settings), and shows how much space they use.
 - **Share** photos through your device's share sheet, or **delete** them.
 - **Helpful permission messages**: if camera or location is blocked, SpotCam says why it needs it and shows how to turn it back on for your browser.
 - **Direct links**: bookmark `/cam` to open the camera straight away.
@@ -78,7 +78,7 @@ Tap a photo to open it.
 ## 4. Good to know
 
 - Photos are saved **only in your browser**. Clearing site data or switching browsers removes them. Share or save photos you want to keep.
-- The gallery keeps your **latest 12** photos.
+- The gallery keeps your photos until you delete them, and shows the space they use.
 - The address comes from free public services based on [OpenStreetMap](https://www.openstreetmap.org/) data: Photon first, then BigDataCloud, then OpenStreetMap Nominatim if the others are unavailable. Your coordinates are sent only to the one that answers, only to look up the address. Photos are never sent anywhere.
 - SpotCam looks up the address only after you have moved a short way, not on every GPS update. If no service answers, the screen says "Address unavailable" with a Retry button, and a photo is stamped with the coordinates only (never with an error message).
 - SpotCam needs a modern browser (recent Chrome, Edge, Firefox or Safari) and a secure (HTTPS) connection for the camera and location.

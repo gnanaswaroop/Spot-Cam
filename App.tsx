@@ -20,6 +20,7 @@ import { UpdateToast } from './components/UpdateToast';
 import { ConsentBanner } from './components/ConsentBanner';
 import { useAnalytics } from './hooks/useAnalytics';
 import { pageView, track } from './utils/analytics';
+import { requestPersistentStorage } from './utils/storageUsage';
 
 /**
  * The main App component.
@@ -46,13 +47,14 @@ const App: React.FC = () => {
   }, [view, consent]);
 
   // Custom hook to manage the photos array, persisting it to IndexedDB.
-  const [photos, setPhotos] = usePersistedPhotos();
+  const [photos, setPhotos, , saveFailed] = usePersistedPhotos();
 
   /**
    * Adds a new photo to the beginning of the photos array.
    * @param {CapturedPhoto} photo The new photo object to add.
    */
   const handleCapture = (photo: CapturedPhoto) => {
+    void requestPersistentStorage(); // asks the browser to keep the photos even when space runs low
     setPhotos(prevPhotos => [photo, ...prevPhotos]);
     track('photo_captured');
   };
@@ -74,6 +76,11 @@ const App: React.FC = () => {
   return (
     <div className="w-full h-full bg-gray-900">
       {updateReady && <UpdateToast onReload={applyUpdate} />}
+      {saveFailed && (
+        <div role="alert" className="relative z-50 bg-red-700 px-4 py-2 text-sm text-white">
+          Your latest photo could not be saved because this device is out of space for SpotCam. Delete some photos in the gallery to make room.
+        </div>
+      )}
       {/* Only on the landing page: on the other pages the fixed banner would sit on top of their headings. */}
       {view === 'landing' && <ConsentBanner onPrivacy={() => switchView('privacy')} />}
       {view === 'landing' && <LandingView onStart={() => { track('start_cam'); switchView('camera'); }} onPrivacy={() => switchView('privacy')} onHowItWorks={() => switchView('howItWorks')} />}
@@ -84,6 +91,7 @@ const App: React.FC = () => {
         <CameraView
           onCapture={handleCapture}
           onSwitchView={() => switchView('gallery')}
+          lastPhotoUrl={photos.length > 0 ? photos.reduce((a, b) => (b.timestamp > a.timestamp ? b : a)).dataUrl : undefined}
           onHome={() => switchView('landing')}
           onOpenSettings={() => switchView('settings')}
         />

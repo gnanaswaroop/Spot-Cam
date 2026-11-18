@@ -18,6 +18,8 @@ interface CameraViewProps {
   onCapture: (photo: CapturedPhoto) => void;
   /** Callback function to switch to the gallery view. */
   onSwitchView: () => void;
+  /** The newest photo's image, shown as a small preview on the gallery button (the gallery icon when there is none). */
+  lastPhotoUrl?: string;
   /** Callback to return to the landing page. */
   onHome: () => void;
   /** Callback to open the settings view. */
@@ -81,7 +83,7 @@ async function openCamera(facing: 'environment' | 'user'): Promise<MediaStream> 
   throw lastError;
 }
 
-export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView, onHome, onOpenSettings }) => {
+export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView, lastPhotoUrl, onHome, onOpenSettings }) => {
   // Refs for video and canvas elements
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -446,9 +448,15 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
       
       {/* Bottom control bar */}
       <div data-testid="control-bar" className="absolute bottom-0 left-0 right-0 h-28 bg-gray-950/85 border-t border-white/10 flex items-center justify-around short:top-0 short:left-auto short:h-auto short:w-24 short:flex-col short:border-t-0 short:border-l">
-        <button onClick={onSwitchView} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors" aria-label="Open gallery">
-          <GalleryIcon className="w-8 h-8" />
-        </button>
+        {lastPhotoUrl ? (
+          <button onClick={onSwitchView} className="h-14 w-14 overflow-hidden rounded-xl border-2 border-white bg-gray-700 transition hover:opacity-90" aria-label="Open gallery" data-testid="last-photo">
+            <img src={lastPhotoUrl} alt="" className="h-full w-full object-cover" />
+          </button>
+        ) : (
+          <button onClick={onSwitchView} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors" aria-label="Open gallery">
+            <GalleryIcon className="w-8 h-8" />
+          </button>
+        )}
         <button onClick={handleCapture} disabled={!canCapture} className="disabled:opacity-40 disabled:cursor-not-allowed w-20 h-20 rounded-full border-4 border-white bg-transparent flex items-center justify-center group" aria-label="Capture photo">
             <div className="w-16 h-16 rounded-full bg-white group-hover:bg-blue-200 group-active:scale-95 transition"></div>
         </button>
