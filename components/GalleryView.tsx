@@ -4,25 +4,27 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { CapturedPhoto } from '../types';
+import { GalleryPhoto } from '../types';
 import { useHistoryOverlay, hasOverlayEntry } from '../hooks/useHistoryOverlay';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 import { useSwipe } from '../hooks/useSwipe';
 import { SLIDE_MS, prefersReducedMotion, useSlide } from '../hooks/useSlide';
-import { dataURLtoFile, formatDateTime } from '../utils/helpers';
+import { dataURLtoFile, downloadFile, formatDateTime } from '../utils/helpers';
+import { readFull } from '../utils/photoStore';
+import { useLongPress } from '../hooks/useLongPress';
 import { dayLabel } from '../utils/dateLabels';
 import { ttlLabel } from '../utils/photoExpiry';
 import { shareSignature, shareText } from '../utils/maps';
 import { getMapService, getPhotoTtlMs, getShareSignature } from '../utils/settings';
 import { track } from '../utils/analytics';
-import { dataUrlBytes, estimateFreeBytes, formatBytes, isLowOnSpace } from '../utils/storageUsage';
-import { ShareIcon, DeleteIcon, CloseIcon, GalleryIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
+import { estimateFreeBytes, formatBytes, isLowOnSpace } from '../utils/storageUsage';
+import { ShareIcon, DeleteIcon, DownloadIcon, CloseIcon, GalleryIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { AppHeader } from './AppHeader';
 
 /** Props for the GalleryView component. */
 interface GalleryViewProps {
   /** An array of captured photo objects. */
-  photos: CapturedPhoto[];
+  photos: GalleryPhoto[];
   /** Callback function to delete a photo by its ID. */
   onDelete: (id: string) => void;
   /** Callback function to delete several photos at once. */
@@ -32,7 +34,7 @@ interface GalleryViewProps {
 }
 
 /** "14/11/2026, 18:42:10 at Champ de Mars, Paris": the text a screen reader needs, since the stamp is drawn into the pixels. */
-const photoDescription = (photo: CapturedPhoto) => {
+const photoDescription = (photo: GalleryPhoto) => {
   const where = photo.location?.address ?? (photo.location ? `${photo.location.latitude.toFixed(5)}, ${photo.location.longitude.toFixed(5)}` : '');
   return where ? `${formatDateTime(photo.timestamp)} at ${where}` : formatDateTime(photo.timestamp);
 };
@@ -40,7 +42,21 @@ const photoDescription = (photo: CapturedPhoto) => {
 /**
  * A modal component to display a selected photo in full view with actions.
  */
-const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext, onClose, onDelete, onShare }: { photo: CapturedPhoto, before?: CapturedPhoto, after?: CapturedPhoto, position: number, total: number, onPrevious?: () => void, onNext?: () => void, onClose: () => void, onDelete: (id: string) => void, onShare: (photo: CapturedPhoto) => void }) => {
+/** The full-size photo, with the small copy showing until it has been read from storage. */
+const FullPhoto = ({ photo, alt }: { photo: GalleryPhoto; alt: string }) => {
+    const [full, setFull] = useState<string | undefined>(undefined);
+    useEffect(() => {
+        let cancelled = false;
+        setFull(undefined);
+        readFull(photo.id).then(url => !cancelled && setFull(url));
+        return () => {
+            cancelled = true;
+        };
+    }, [photo.id]);
+    return <img src={full ?? photo.thumbUrl} alt={alt} draggable={false} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />;
+};
+
+const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext, onClose, onDelete, onShare, onDownload }: { photo: GalleryPhoto, before?: GalleryPhoto, after?: GalleryPhoto, position: number, total: number, onPrevious?: () => void, onNext?: () => void, onClose: () => void, onDelete: (id: string) => void, onShare: (photo: GalleryPhoto) => void, onDownload: (photo: GalleryPhoto) => void }) => {
     // Layout is a flex column sized to the *visible* viewport: the image takes whatever space is left,
     // while the details and the Share/Delete buttons are pinned and can never be pushed off-screen.
     const ref = useDialogFocus<HTMLDivElement>(onClose);
@@ -62,16 +78,9 @@ const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext,
     }, [go]);
 
     /** One photo's place in the strip. The neighbours are only for looking at while sliding. */
-    const slot = (shown: CapturedPhoto | undefined, current: boolean) => (
+    const slot = (shown: GalleryPhoto | undefined, current: boolean) => (
         <div className="flex h-full w-full shrink-0 items-center justify-center" aria-hidden={current ? undefined : true}>
-            {shown && (
-                <img
-                    src={shown.dataUrl}
-                    alt={current ? `Photo taken ${photoDescription(shown)}` : ''}
-                    draggable={false}
-                    className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
-                />
-            )}
+            {shown && <FullPhoto photo={shown} alt={current ? `Photo taken ${photoDescription(shown)}` : ''} />}
         </div>
     );
 
@@ -129,6 +138,10 @@ const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext,
                     <ShareIcon className="w-8 h-8" />
                     <span className="text-xs mt-1">Share</span>
                 </button>
+                <button onClick={() => onDownload(photo)} className="flex min-h-11 min-w-11 flex-col items-center text-white hover:text-blue-400 transition-colors" aria-label="Download photo">
+                    <DownloadIcon className="w-8 h-8" />
+                    <span className="text-xs mt-1">Download</span>
+                </button>
                 <button onClick={() => onDelete(photo.id)} className="flex min-h-11 min-w-11 flex-col items-center text-white hover:text-red-400 transition-colors" aria-label="Delete photo">
                     <DeleteIcon className="w-8 h-8" />
                     <span className="text-xs mt-1">Delete</span>
@@ -172,7 +185,7 @@ const ConfirmationDialog = ({ count = 1, onConfirm, onCancel }: { count?: number
  */
 export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDeleteMany, onSwitchView }) => {
   // Both layers own a history entry, so the Back gesture closes the top one instead of leaving the page.
-  const [selectedPhoto, openPhoto, closePhoto, showPhoto] = useHistoryOverlay<CapturedPhoto>('photoViewer');
+  const [selectedPhoto, openPhoto, closePhoto, showPhoto] = useHistoryOverlay<GalleryPhoto>('photoViewer');
   const [photoIdToDelete, openDeleteConfirm, closeDeleteConfirm] = useHistoryOverlay<string>('deleteConfirm');
   const [idsToDelete, openDeleteMany, closeDeleteMany] = useHistoryOverlay<string[]>('deleteManyConfirm');
   // How much room the photos take, and what the browser still has (an estimate; null when it cannot say).
@@ -184,16 +197,19 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
       cancelled = true;
     };
   }, [photos.length]);
+  // Holding a photo starts selecting with that photo ticked.
+  const longPress = useLongPress((id: string) => setSelection(new Set([id])));
   // Multi-select: `null` means normal browsing, a set means selecting.
   const [selection, setSelection] = useState<Set<string> | null>(null);
 
   /**
    * Handles sharing a photo using the Web Share API.
-   * @param {CapturedPhoto} photo The photo to be shared.
+   * @param {GalleryPhoto} photo The photo to be shared.
    */
-  const handleShare = async (photo: CapturedPhoto) => {
+  const handleShare = async (photo: GalleryPhoto) => {
     // Convert the data URL to a File object, which is required by the Web Share API for files.
-    const file = await dataURLtoFile(photo.dataUrl, `SpotCam_${photo.id}.jpg`);
+    const file = await photoFile(photo);
+    if (!file) return alert('Could not read the photo.');
     
     // Check if the browser supports sharing files.
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -215,6 +231,28 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
     }
   };
   
+  /** The full-size photo as a file, read from storage (null if it is missing). */
+  const photoFile = async (photo: GalleryPhoto) => {
+    const dataUrl = await readFull(photo.id);
+    return dataUrl ? dataURLtoFile(dataUrl, `SpotCam_${photo.id}.jpg`) : null;
+  };
+
+  /** Saves a photo to the device's downloads. */
+  const handleDownload = async (photo: GalleryPhoto) => {
+    const file = await photoFile(photo);
+    if (file) downloadFile(file);
+    else alert('Could not read the photo.');
+  };
+
+  /** Downloads every selected photo, one after another (browsers ignore downloads that arrive all in the same instant). */
+  const handleDownloadSelected = async () => {
+    for (const id of selectedIds) {
+      const photo = photos.find(p => p.id === id);
+      if (photo) await handleDownload(photo);
+      await new Promise(done => setTimeout(done, 350));
+    }
+  };
+
   /** Sets the ID of the photo to be deleted, triggering the confirmation dialog. */
   const requestDelete = (id: string) => {
     openDeleteConfirm(id);
@@ -257,7 +295,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
 
   // The same photos in groups by calendar day ("Today", "Yesterday", ...), still newest first.
   const now = Date.now();
-  const days: { key: string; label: string; date: string; photos: CapturedPhoto[] }[] = [];
+  const days: { key: string; label: string; date: string; photos: GalleryPhoto[] }[] = [];
   for (const photo of sortedPhotos) {
     const day = dayLabel(photo.timestamp, now);
     const last = days[days.length - 1];
@@ -302,6 +340,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
           <button type="button" onClick={() => setSelection(allSelected ? new Set() : new Set(sortedPhotos.map(p => p.id)))} className="min-h-11 rounded-md bg-gray-700 px-3 text-sm hover:bg-gray-600">
             {allSelected ? 'Clear selection' : 'Select all'}
           </button>
+          <button type="button" disabled={selectedIds.length === 0} onClick={handleDownloadSelected} className="min-h-11 rounded-md bg-gray-700 px-3 text-sm hover:bg-gray-600 disabled:opacity-40 disabled:hover:bg-gray-700">
+            Download selected
+          </button>
           <button type="button" disabled={selectedIds.length === 0} onClick={() => openDeleteMany(selectedIds)} className="min-h-11 rounded-md bg-red-600 px-3 text-sm font-semibold hover:bg-red-500 disabled:opacity-40 disabled:hover:bg-red-600">
             Delete selected
           </button>
@@ -317,7 +358,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
       )}
       {photos.length > 0 && (
         <p className="px-4 pt-1 text-sm text-gray-400" data-testid="gallery-storage-usage">
-          {photos.length === 1 ? '1 photo' : `${photos.length} photos`} use {formatBytes(photos.reduce((sum, p) => sum + dataUrlBytes(p.dataUrl), 0))} on this device
+          {photos.length === 1 ? '1 photo' : `${photos.length} photos`} use {formatBytes(photos.reduce((sum, p) => sum + p.bytes, 0))} on this device
           {freeBytes !== null && <> &middot; about {formatBytes(freeBytes)} still free</>}.
           {isLowOnSpace(freeBytes) && <span className="font-semibold text-amber-300"> Space is running low: delete some photos to make room.</span>}
         </p>
@@ -343,8 +384,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
               </h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
                 {day.photos.map((photo) => (
-                  <button key={photo.id} type="button" className={`relative aspect-square bg-gray-700 rounded-lg overflow-hidden cursor-pointer ${selection?.has(photo.id) ? 'ring-4 ring-blue-500' : ''} transform hover:scale-105 motion-reduce:transform-none transition-transform`} onClick={() => (selection ? toggleSelected(photo.id) : openPhoto(photo))} aria-pressed={selection ? selection.has(photo.id) : undefined} aria-label={`${selection ? 'Select' : 'Open'} photo taken ${photoDescription(photo)}`}>
-                    <img src={photo.dataUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+                  <button key={photo.id} type="button" {...longPress(photo.id, !selection)} className={`relative aspect-square select-none [-webkit-touch-callout:none] bg-gray-700 rounded-lg overflow-hidden cursor-pointer ${selection?.has(photo.id) ? 'ring-4 ring-blue-500' : ''} transform hover:scale-105 motion-reduce:transform-none transition-transform`} onClick={() => (selection ? toggleSelected(photo.id) : openPhoto(photo))} aria-pressed={selection ? selection.has(photo.id) : undefined} aria-label={`${selection ? 'Select' : 'Open'} photo taken ${photoDescription(photo)}`}>
+                    <img src={photo.thumbUrl} alt="" draggable={false} className="pointer-events-none h-full w-full object-cover" loading="lazy" />
                     {selection && (
                       <span aria-hidden="true" className={`absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 text-sm font-bold ${selection.has(photo.id) ? 'border-blue-500 bg-blue-500 text-white' : 'border-white bg-black/30'}`}>
                         {selection.has(photo.id) ? '✓' : ''}
@@ -359,7 +400,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
       )}
       </main>
       {/* Modals are rendered conditionally based on state */}
-      {selectedPhoto && <PhotoModal photo={selectedPhoto} before={sortedPhotos[viewedIndex - 1]} after={sortedPhotos[viewedIndex + 1]} position={viewedIndex + 1} total={sortedPhotos.length} onPrevious={previous} onNext={next} onClose={closePhoto} onDelete={requestDelete} onShare={handleShare} />}
+      {selectedPhoto && <PhotoModal photo={selectedPhoto} before={sortedPhotos[viewedIndex - 1]} after={sortedPhotos[viewedIndex + 1]} position={viewedIndex + 1} total={sortedPhotos.length} onPrevious={previous} onNext={next} onClose={closePhoto} onDelete={requestDelete} onShare={handleShare} onDownload={handleDownload} />}
       {idsToDelete && <ConfirmationDialog count={idsToDelete.length} onConfirm={handleConfirmDeleteMany} onCancel={closeDeleteMany} />}
       {photoIdToDelete && <ConfirmationDialog onConfirm={handleConfirmDelete} onCancel={handleCancelDelete} />}
     </div>

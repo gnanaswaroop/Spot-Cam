@@ -22,3 +22,13 @@ test('the gallery explains that photos are kept inside SpotCam and how to export
   await expect(page.getByTestId('gallery-storage-note')).toContainText('not in your phone');
   await expect(page.getByTestId('gallery-storage-note')).toContainText('Share');
 });
+
+test('the shutter waits for the live picture, and a photo is never blank', async ({ page, context }) => {
+  await setUpGrantedCamera(page, context);
+  await takePhotos(page, 1);
+  await page.getByRole('button', { name: 'Open gallery' }).click();
+  await page.getByRole('button', { name: /^Open photo taken/ }).click();
+  const photo = page.getByRole('dialog', { name: 'Photo' }).locator('img[alt^="Photo taken"]');
+  await expect.poll(async () => ((await photo.getAttribute('src')) ?? '').length).toBeGreaterThan(1000); // a blank capture is just "data:,"
+  expect(await photo.evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+});

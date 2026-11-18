@@ -9,6 +9,7 @@ import { usePermissionState } from '../hooks/usePermissionState';
 import { PermissionNotice } from './PermissionNotice';
 import { GalleryIcon, SettingsIcon, SwitchCameraIcon } from './icons';
 import { FONT_FAMILY_OVERLAY } from '../utils/constants';
+import { makeThumbnail } from '../utils/thumbnail';
 import { useCameraRecovery } from '../hooks/useCameraRecovery';
 import { continuousModes, openingZoom, videoRequests, worthAskingAgain } from '../utils/cameraSettings';
 
@@ -90,6 +91,8 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
 
   // State for camera stream and errors
   const [stream, setStream] = useState<MediaStream | null>(null);
+  /** True once the live picture has a size; before that a capture would be a blank image. */
+  const [videoReady, setVideoReady] = useState(false);
   // The camera's video track, held directly so zoom changes always reach the same track that was opened.
   const videoTrack = useRef<MediaStreamTrack | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -159,6 +162,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
             activeStream = newStream;
             setStream(newStream);
             if (videoRef.current) {
+                setVideoReady(false); // the new picture is not there until the video reports its size
                 videoRef.current.srcObject = newStream;
             }
             setError(null);
@@ -232,6 +236,13 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
   /**
    * Handles the photo capture process.
    */
+  // The preview element only exists while the camera works, so attach the stream whenever both are there
+  // (for example after the camera comes back once the person allows it).
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && stream && video.srcObject !== stream) video.srcObject = stream;
+  });
+
   const handleCapture = () => {
     if (!canCapture) return;
     if (videoRef.current && canvasRef.current) {
@@ -243,6 +254,8 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
         if (!context) return;
+        // No picture yet: a photo now would be blank.
+        if (!video.videoWidth || !video.videoHeight) return;
         
         // Set canvas dimensions to match the video stream
         const { videoWidth, videoHeight } = video;
@@ -309,6 +322,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
         const newPhoto: CapturedPhoto = {
             id: `photo_${Date.now()}`,
             dataUrl,
+            thumbUrl: makeThumbnail(canvas, canvas.width, canvas.height),
             timestamp: Date.now(),
             location,
         };
@@ -334,7 +348,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
     if (geoPerm === 'granted' && geoError) retryGeo();
   }, [geoPerm]);
 
-  const canCapture = !error && !cameraBlocked && !locationBlocked;
+  const canCapture = !error && !cameraBlocked && !locationBlocked && videoReady;
 
   /** Toggles between 'user' and 'environment' (front/back) cameras. */
   const handleSwitchCamera = () => {
@@ -397,7 +411,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
           onRetry={handleRetryPermissions}
         />
       ) : (
-        <video ref={videoRef} autoPlay playsInline muted aria-label="Live camera preview" className="w-full h-full object-cover"></video>
+        <video ref={videoRef} autoPlay playsInline muted onLoadedMetadata={e => setVideoReady(e.currentTarget.videoWidth > 0)} onResize={e => setVideoReady(e.currentTarget.videoWidth > 0)} aria-label="Live camera preview" className="w-full h-full object-cover"></video>
       )}
 
       {/* Live data overlay */}

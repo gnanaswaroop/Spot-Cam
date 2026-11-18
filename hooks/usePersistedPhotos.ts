@@ -7,29 +7,23 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { del, delMany, get, getMany, set, setMany } from 'idb-keyval';
-import { CapturedPhoto } from '../types';
+import { GalleryPhoto } from '../types';
 import { SETTINGS_CHANGED_EVENT, getPhotoTtlMs } from '../utils/settings';
 import { expiredCount, isExpired, nextExpiryDelayMs } from '../utils/photoExpiry';
+import { loadAll, writeChanges } from '../utils/photoStore';
 
-/** Each photo is its own entry, so taking or deleting one never rewrites the others; the index keeps them in order (newest first). */
-const INDEX_KEY = 'spotcam-photo-ids';
-const photoKey = (id: string) => `spotcam-photo:${id}`;
-/** Older versions kept the whole list under this one key (and before that in localStorage). */
-const LEGACY_LIST_KEY = 'spotcam-photos';
-const LEGACY_LOCALSTORAGE_KEY = 'spotcam-photos';
 /** Browsers cap a timer at about 24.8 days; a longer wait is simply re-armed. */
 const MAX_TIMER_MS = 2_000_000_000;
 
-type Updater = CapturedPhoto[] | ((prev: CapturedPhoto[]) => CapturedPhoto[]);
+type Updater = GalleryPhoto[] | ((prev: GalleryPhoto[]) => GalleryPhoto[]);
 
 /** Returns the photos, a setter, whether loading has finished, and whether the last save failed (usually: no space left). */
-export function usePersistedPhotos(): [CapturedPhoto[], (value: Updater) => void, boolean, boolean] {
-  const [photos, setPhotosState] = useState<CapturedPhoto[]>([]);
+export function usePersistedPhotos(): [GalleryPhoto[], (value: Updater) => void, boolean, boolean] {
+  const [photos, setPhotosState] = useState<GalleryPhoto[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   // Mirrors state so successive updates never act on stale data.
-  const latest = useRef<CapturedPhoto[]>([]);
+  const latest = useRef<GalleryPhoto[]>([]);
   // The ids that are in the database right now, and a queue so saves run one after another (the first one is the load).
   const persisted = useRef<string[]>([]);
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -41,11 +35,9 @@ export function usePersistedPhotos(): [CapturedPhoto[], (value: Updater) => void
       const have = new Set(persisted.current);
       const want = new Set(target.map(p => p.id));
       try {
-        await setMany(target.filter(p => !have.has(p.id)).map(p => [photoKey(p.id), p] as [string, CapturedPhoto]));
-        await set(INDEX_KEY, target.map(p => p.id));
         const gone = persisted.current.filter(id => !want.has(id));
+        await writeChanges(target.filter(p => !have.has(p.id)), target.map(p => p.id), gone);
         persisted.current = target.map(p => p.id);
-        if (gone.length > 0) await delMany(gone.map(photoKey));
         setSaveFailed(false);
       } catch (error) {
         console.error('Failed to save photos:', error);
@@ -58,32 +50,10 @@ export function usePersistedPhotos(): [CapturedPhoto[], (value: Updater) => void
     let cancelled = false;
     // Saves wait for this, so a photo taken while loading can't overwrite the stored list.
     queue.current = queue.current.then(async () => {
-      let stored: CapturedPhoto[] = [];
+      let stored: GalleryPhoto[] = [];
       try {
-        const ids = await get<string[]>(INDEX_KEY);
-        if (ids) {
-          stored = (await getMany<CapturedPhoto>(ids.map(photoKey))).filter((p): p is CapturedPhoto => !!p);
-          persisted.current = stored.map(p => p.id);
-        } else {
-          // One-time migration from the single list (or the even older localStorage copy) to one entry per photo.
-          let legacy = (await get<CapturedPhoto[]>(LEGACY_LIST_KEY)) ?? [];
-          let fromLocalStorage = false;
-          if (legacy.length === 0) {
-            const raw = window.localStorage.getItem(LEGACY_LOCALSTORAGE_KEY);
-            if (raw) {
-              legacy = JSON.parse(raw);
-              fromLocalStorage = true;
-            }
-          }
-          if (legacy.length > 0) {
-            await setMany(legacy.map(p => [photoKey(p.id), p] as [string, CapturedPhoto]));
-            await set(INDEX_KEY, legacy.map(p => p.id));
-            persisted.current = legacy.map(p => p.id);
-            stored = legacy;
-            await del(LEGACY_LIST_KEY);
-            if (fromLocalStorage) window.localStorage.removeItem(LEGACY_LOCALSTORAGE_KEY);
-          }
-        }
+        stored = await loadAll();
+        persisted.current = stored.map(p => p.id);
       } catch (error) {
         console.error('Failed to load photos:', error);
       }

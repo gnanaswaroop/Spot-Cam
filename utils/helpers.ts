@@ -23,3 +23,15 @@ export const dataURLtoFile = async (dataUrl: string, filename: string): Promise<
     const blob = await res.blob();
     return new File([blob], filename, { type: blob.type });
 };
+
+/** Saves a file to the device's downloads (where a browser cannot share files, or the person prefers to). */
+export const downloadFile = (file: File): void => {
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+};
