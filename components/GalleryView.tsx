@@ -3,15 +3,18 @@
  * to view, share, and delete them.
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CapturedPhoto } from '../types';
 import { useHistoryOverlay, hasOverlayEntry } from '../hooks/useHistoryOverlay';
 import { useDialogFocus } from '../hooks/useDialogFocus';
+import { useSwipe } from '../hooks/useSwipe';
+import { SLIDE_MS, prefersReducedMotion, useSlide } from '../hooks/useSlide';
 import { dataURLtoFile, formatDateTime } from '../utils/helpers';
+import { dayLabel } from '../utils/dateLabels';
 import { shareText } from '../utils/maps';
 import { getMapService } from '../utils/settings';
 import { track } from '../utils/analytics';
-import { ShareIcon, DeleteIcon, CloseIcon, GalleryIcon } from './icons';
+import { ShareIcon, DeleteIcon, CloseIcon, GalleryIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { AppHeader } from './AppHeader';
 
 /** Props for the GalleryView component. */
@@ -33,22 +36,81 @@ const photoDescription = (photo: CapturedPhoto) => {
 /**
  * A modal component to display a selected photo in full view with actions.
  */
-const PhotoModal = ({ photo, onClose, onDelete, onShare }: { photo: CapturedPhoto, onClose: () => void, onDelete: (id: string) => void, onShare: (photo: CapturedPhoto) => void }) => {
+const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext, onClose, onDelete, onShare }: { photo: CapturedPhoto, before?: CapturedPhoto, after?: CapturedPhoto, position: number, total: number, onPrevious?: () => void, onNext?: () => void, onClose: () => void, onDelete: (id: string) => void, onShare: (photo: CapturedPhoto) => void }) => {
     // Layout is a flex column sized to the *visible* viewport: the image takes whatever space is left,
     // while the details and the Share/Delete buttons are pinned and can never be pushed off-screen.
     const ref = useDialogFocus<HTMLDivElement>(onClose);
+    // The photos before and after this one sit beside it, so they glide in as the finger moves.
+    const { go, settling, instant } = useSlide({ onNext, onPrevious });
+    const { handlers, offset, dragging } = useSwipe({ onNext: onNext && (() => go('next')), onPrevious: onPrevious && (() => go('previous')) });
+    const day = dayLabel(photo.timestamp);
+    const glide = !dragging && !instant && !prefersReducedMotion();
+    const strip = settling === 'next' ? 'translateX(-200%)' : settling === 'previous' ? 'translateX(0%)' : `translateX(calc(-100% + ${offset}px))`;
+
+    // Left and right arrow keys move between photos (a keyboard or a tablet with one).
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowRight') go('next');
+            else if (e.key === 'ArrowLeft') go('previous');
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [go]);
+
+    /** One photo's place in the strip. The neighbours are only for looking at while sliding. */
+    const slot = (shown: CapturedPhoto | undefined, current: boolean) => (
+        <div className="flex h-full w-full shrink-0 items-center justify-center" aria-hidden={current ? undefined : true}>
+            {shown && (
+                <img
+                    src={shown.dataUrl}
+                    alt={current ? `Photo taken ${photoDescription(shown)}` : ''}
+                    draggable={false}
+                    className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+                />
+            )}
+        </div>
+    );
+
     return (
         <div ref={ref} tabIndex={-1} className="app-h fixed inset-x-0 top-0 z-40 flex flex-col items-center bg-black/90 px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in focus:outline-none" role="dialog" aria-modal="true" aria-label="Photo">
             {/* Close Button */}
             <button onClick={onClose} className="absolute top-3 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-gray-800 text-white hover:bg-gray-700" aria-label="Close photo view">
                 <CloseIcon className="w-6 h-6" />
             </button>
-            {/* Image Container: fills the remaining height */}
-            <div className="flex min-h-0 w-full max-w-4xl flex-1 items-center justify-center">
-                <img src={photo.dataUrl} alt={`Photo taken ${photoDescription(photo)}`} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
+            {/* Which photo this is, out of how many */}
+            {total > 1 && (
+                <p className="absolute left-4 top-3 flex h-11 items-center rounded-full bg-gray-800 px-4 text-sm text-gray-200" aria-live="polite">
+                    <span className="sr-only">{`Photo ${position} of ${total}`}</span>
+                    <span aria-hidden="true">{position} / {total}</span>
+                </p>
+            )}
+            {/* Image Container: fills the remaining height. Swipe sideways for the next or previous photo. */}
+            <div className="relative min-h-0 w-full max-w-4xl flex-1 touch-pan-y select-none overflow-hidden" {...handlers}>
+                <div
+                    className="flex h-full w-full will-change-transform"
+                    style={{ transform: strip, transition: glide ? `transform ${SLIDE_MS}ms cubic-bezier(0.22, 1, 0.36, 1)` : 'none' }}
+                >
+                    {slot(before, false)}
+                    {slot(photo, true)}
+                    {slot(after, false)}
+                </div>
+                {onPrevious && (
+                    <button onClick={() => go('previous')} className="absolute left-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-gray-900/70 text-white hover:bg-gray-700" aria-label="Previous photo">
+                        <ChevronLeftIcon className="h-6 w-6" />
+                    </button>
+                )}
+                {onNext && (
+                    <button onClick={() => go('next')} className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-gray-900/70 text-white hover:bg-gray-700" aria-label="Next photo">
+                        <ChevronRightIcon className="h-6 w-6" />
+                    </button>
+                )}
             </div>
             {/* Photo Metadata (location lines are hidden on very short screens, e.g. landscape phones) */}
             <div className="mt-3 max-w-xl shrink-0 text-center text-sm text-gray-300">
+                <p className="font-semibold text-white">
+                    {day.label}
+                    {day.label !== day.date && <span className="font-normal text-gray-400"> · {day.date}</span>}
+                </p>
                 <p>{formatDateTime(photo.timestamp)}</p>
                 {photo.location && (
                     <div className="[@media(max-height:480px)]:hidden">
@@ -106,7 +168,7 @@ const ConfirmationDialog = ({ onConfirm, onCancel }: { onConfirm: () => void; on
  */
 export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSwitchView }) => {
   // Both layers own a history entry, so the Back gesture closes the top one instead of leaving the page.
-  const [selectedPhoto, openPhoto, closePhoto] = useHistoryOverlay<CapturedPhoto>('photoViewer');
+  const [selectedPhoto, openPhoto, closePhoto, showPhoto] = useHistoryOverlay<CapturedPhoto>('photoViewer');
   const [photoIdToDelete, openDeleteConfirm, closeDeleteConfirm] = useHistoryOverlay<string>('deleteConfirm');
 
   /**
@@ -164,6 +226,21 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
   // Create a sorted copy of the photos array to display the newest ones first.
   const sortedPhotos = [...photos].sort((a, b) => b.timestamp - a.timestamp);
 
+  // The same photos in groups by calendar day ("Today", "Yesterday", ...), still newest first.
+  const now = Date.now();
+  const days: { key: string; label: string; date: string; photos: CapturedPhoto[] }[] = [];
+  for (const photo of sortedPhotos) {
+    const day = dayLabel(photo.timestamp, now);
+    const last = days[days.length - 1];
+    if (last && last.key === day.key) last.photos.push(photo);
+    else days.push({ ...day, photos: [photo] });
+  }
+
+  // Where the open photo sits in that order, for the swipe and the arrows.
+  const viewedIndex = selectedPhoto ? sortedPhotos.findIndex(p => p.id === selectedPhoto.id) : -1;
+  const previous = viewedIndex > 0 ? () => showPhoto(sortedPhotos[viewedIndex - 1]) : undefined;
+  const next = viewedIndex >= 0 && viewedIndex < sortedPhotos.length - 1 ? () => showPhoto(sortedPhotos[viewedIndex + 1]) : undefined;
+
   return (
     <div className="app-h w-full bg-gray-900 text-white flex flex-col">
       <AppHeader onBack={onSwitchView} />
@@ -177,20 +254,28 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onSw
           <p>Go back to the camera to take some!</p>
         </div>
       ) : (
-        // Display the grid of photos
+        // Display the photos, a heading for each day
         <div className="flex-grow overflow-y-auto p-2">
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-            {sortedPhotos.map((photo) => (
-              <button key={photo.id} type="button" className="aspect-square bg-gray-700 rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 motion-reduce:transform-none transition-transform" onClick={() => openPhoto(photo)} aria-label={`Open photo taken ${photoDescription(photo)}`}>
-                <img src={photo.dataUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
-              </button>
-            ))}
-          </div>
+          {days.map(day => (
+            <section key={day.key} aria-labelledby={`day-${day.key}`} className="mb-4">
+              <h2 id={`day-${day.key}`} className="px-1 pb-2 pt-1 text-base font-semibold">
+                {day.label}
+                {day.label !== day.date && <span className="font-normal text-gray-400"> · {day.date}</span>}
+              </h2>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                {day.photos.map((photo) => (
+                  <button key={photo.id} type="button" className="aspect-square bg-gray-700 rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 motion-reduce:transform-none transition-transform" onClick={() => openPhoto(photo)} aria-label={`Open photo taken ${photoDescription(photo)}`}>
+                    <img src={photo.dataUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       )}
       </main>
       {/* Modals are rendered conditionally based on state */}
-      {selectedPhoto && <PhotoModal photo={selectedPhoto} onClose={closePhoto} onDelete={requestDelete} onShare={handleShare} />}
+      {selectedPhoto && <PhotoModal photo={selectedPhoto} before={sortedPhotos[viewedIndex - 1]} after={sortedPhotos[viewedIndex + 1]} position={viewedIndex + 1} total={sortedPhotos.length} onPrevious={previous} onNext={next} onClose={closePhoto} onDelete={requestDelete} onShare={handleShare} />}
       {photoIdToDelete && <ConfirmationDialog onConfirm={handleConfirmDelete} onCancel={handleCancelDelete} />}
     </div>
   );

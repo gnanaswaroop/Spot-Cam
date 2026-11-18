@@ -7,6 +7,7 @@
  *  - open()  pushes a history entry, so Back closes the layer and nothing else.
  *  - close() removes that entry (history.back()), so closing with the X button leaves no stale
  *    entry behind that a later Forward/Back could reopen.
+ *  - change() swaps what the open layer shows (the next photo) without touching history, so one Back still closes it.
  *  - Layers can nest (a confirm dialog over a viewer): each adds its own key to history.state.
  */
 
@@ -37,7 +38,10 @@ export function useHistoryOverlay<T>(key: string) {
     else setValue(null);
   }, [key]);
 
-  return [value, open, close] as const;
+  /** Shows something else in the already open layer. No new history entry. */
+  const change = useCallback((next: T) => setValue(next), []);
+
+  return [value, open, close, change] as const;
 }
 
 /** True if the given layer currently owns the active history entry. */
