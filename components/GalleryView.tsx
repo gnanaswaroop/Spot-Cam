@@ -300,6 +300,11 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
           </button>
         </div>
       )}
+      {photos.length > 0 && (
+        <p className="px-4 pt-1 text-sm text-gray-400" data-testid="gallery-storage-note">
+          These photos live inside SpotCam, not in your phone&rsquo;s Photos or Gallery app. To keep one, open it and tap Share, then save it to your phone.
+        </p>
+      )}
       {photos.length > 0 && getPhotoTtlMs() !== null && (
         <p className="px-4 pt-1 text-sm text-gray-400">Photos are removed after {ttlLabel(getPhotoTtlMs())}. You can change this in Settings.</p>
       )}

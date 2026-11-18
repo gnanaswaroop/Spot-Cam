@@ -84,6 +84,7 @@ const App: React.FC = () => {
         <CameraView
           onCapture={handleCapture}
           onSwitchView={() => switchView('gallery')}
+          lastPhotoUrl={photos.length > 0 ? photos.reduce((a, b) => (b.timestamp > a.timestamp ? b : a)).dataUrl : undefined}
           onHome={() => switchView('landing')}
           onOpenSettings={() => switchView('settings')}
         />
