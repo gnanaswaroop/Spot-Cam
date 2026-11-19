@@ -3,7 +3,7 @@
  * to view, share, and delete them.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { GalleryPhoto } from '../types';
 import { useHistoryOverlay, hasOverlayEntry } from '../hooks/useHistoryOverlay';
 import { useDialogFocus } from '../hooks/useDialogFocus';
@@ -60,6 +60,8 @@ const FullPhoto = ({ photo, alt }: { photo: GalleryPhoto; alt: string }) => {
 /** A saved video, played from storage. The small copy shows until the recording has been read. */
 const VideoPlayer = ({ photo, alt }: { photo: GalleryPhoto; alt: string }) => {
     const [url, setUrl] = useState<string | undefined>(undefined);
+    const player = useRef<HTMLVideoElement>(null);
+    const pressedAt = useRef(0);
     useEffect(() => {
         let cancelled = false;
         let made: string | undefined;
@@ -75,11 +77,19 @@ const VideoPlayer = ({ photo, alt }: { photo: GalleryPhoto; alt: string }) => {
         };
     }, [photo.id]);
     if (!url) return <img src={photo.thumbUrl} alt={alt} draggable={false} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />;
-    // Swiping works over the picture; only a press on the strip of controls at the bottom is left to the player (seeking).
-    const keepForControls = (e: React.PointerEvent<HTMLVideoElement>) => {
-        if (e.clientY > e.currentTarget.getBoundingClientRect().bottom - 56) e.stopPropagation();
+    // The player's own controls swallow presses (Firefox never reports them to the page), so a clear layer sits over the picture
+    // and the swipe starts there; the strip of controls along the bottom stays uncovered. A tap on the layer plays or pauses.
+    const toggle = (e: React.MouseEvent) => {
+        if (Math.abs(e.clientX - pressedAt.current) > 10) return; // the end of a swipe, not a tap
+        const video = player.current;
+        if (video) void (video.paused ? video.play() : video.pause());
     };
-    return <video src={url} poster={photo.thumbUrl} controls playsInline aria-label={alt} onPointerDown={keepForControls} className="max-h-full max-w-full touch-pan-y rounded-lg object-contain shadow-2xl" />;
+    return (
+        <div className="relative h-full w-full">
+            <video ref={player} src={url} poster={photo.thumbUrl} controls playsInline aria-label={alt} className="h-full w-full rounded-lg object-contain shadow-2xl" />
+            <div data-testid="video-swipe-layer" onPointerDown={e => (pressedAt.current = e.clientX)} onClick={toggle} className="absolute inset-x-0 top-0 bottom-14 touch-pan-y" />
+        </div>
+    );
 };
 
 const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext, onClose, onDelete, onShare, onDownload }: { photo: GalleryPhoto, before?: GalleryPhoto, after?: GalleryPhoto, position: number, total: number, onPrevious?: () => void, onNext?: () => void, onClose: () => void, onDelete: (id: string) => void, onShare: (photo: GalleryPhoto) => void, onDownload: (photo: GalleryPhoto) => void }) => {

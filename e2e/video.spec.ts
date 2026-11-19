@@ -380,6 +380,24 @@ test.describe('swiping on the video page', () => {
   });
 });
 
+test.describe('tapping the video page', () => {
+  test('a tap on the picture plays and pauses the video', async ({ page, context }) => {
+    await skipIfCannotRecord(page);
+    await setUpGrantedCamera(page, context);
+    await recordVideo(page, 1500);
+    await openGallery(page);
+    await videoTile(page).click();
+    const dialog = page.getByRole('dialog', { name: 'Video' });
+    const paused = () => dialog.locator('video').evaluate(v => (v as HTMLVideoElement).paused);
+    await expect(dialog.locator('video')).toHaveAttribute('src', /^blob:/);
+    expect(await paused()).toBe(true);
+    await dialog.getByTestId('video-swipe-layer').click();
+    await expect.poll(paused).toBe(false);
+    await dialog.getByTestId('video-swipe-layer').click();
+    await expect.poll(paused).toBe(true);
+  });
+});
+
 test.describe('video settings', () => {
   test('are on by default, with a 5 minute limit', async ({ page, context }) => {
     await setUpGrantedCamera(page, context);
