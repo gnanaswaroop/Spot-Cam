@@ -7,7 +7,7 @@ test('more than 12 photos are kept, and the gallery shows how much space they us
   await takePhotos(page, 14);
   await page.getByRole('button', { name: 'Open gallery' }).click();
   await expect(page.getByRole('button', { name: /^Open photo taken/ })).toHaveCount(14);
-  await expect(page.getByTestId('gallery-storage-usage')).toHaveText(/^14 photos use \d+(\.\d)? (KB|MB) on this device/);
+  await expect(page.getByTestId('gallery-storage-usage')).toHaveText(/^14 photos · \d+(\.\d)? (KB|MB) used/);
 
   await page.reload();
   await expect(page.getByRole('button', { name: /^Open photo taken/ })).toHaveCount(14); // and they survive a reload
@@ -67,11 +67,11 @@ test.describe('the space the photos use', () => {
     await setUpGrantedCamera(page, context);
     await takePhotos(page, 2);
     await openGallery(page);
-    await expect(usageLine(page)).toContainText('2 photos use');
+    await expect(usageLine(page)).toContainText('2 photos');
     await page.getByRole('button', { name: /^Open photo taken/ }).first().click();
     await page.getByRole('button', { name: 'Delete photo' }).click();
     await page.getByRole('button', { name: 'Delete', exact: true }).click();
-    await expect(usageLine(page)).toContainText('1 photo use');
+    await expect(usageLine(page)).toContainText('1 photo ·');
   });
 
   test('shows how much room the browser says is left', async ({ page, context }) => {
@@ -79,7 +79,7 @@ test.describe('the space the photos use', () => {
     await setUpGrantedCamera(page, context);
     await takePhotos(page, 1);
     await openGallery(page);
-    await expect(usageLine(page)).toContainText('about 4.7 GB still free');
+    await expect(usageLine(page)).toContainText('about 4.7 GB free');
     await expect(usageLine(page)).not.toContainText('running low');
   });
 
@@ -88,7 +88,7 @@ test.describe('the space the photos use', () => {
     await setUpGrantedCamera(page, context);
     await takePhotos(page, 1);
     await openGallery(page);
-    await expect(usageLine(page)).toContainText('still free');
+    await expect(usageLine(page)).toContainText('free');
     await expect(usageLine(page)).toContainText('Space is running low');
   });
 
@@ -98,7 +98,7 @@ test.describe('the space the photos use', () => {
     await takePhotos(page, 1);
     await openGallery(page);
     await expect(usageLine(page)).toContainText('use');
-    await expect(usageLine(page)).not.toContainText('still free');
+    await expect(usageLine(page)).not.toContainText('about');
     await expect(usageLine(page)).not.toContainText('running low');
   });
 });

@@ -63,7 +63,7 @@ test.describe('installed app, no connection', () => {
     await expect(page).toHaveURL(/\/gallery\/?$/);
     await expect(page.getByRole('heading', { name: 'Gallery', level: 1 })).toBeVisible();
     await expect(photoTile(page)).toHaveCount(2);
-    await expect(page.getByTestId('gallery-storage-usage')).toContainText('2 photos use');
+    await expect(page.getByTestId('gallery-storage-usage')).toContainText('2 photos');
 
     await photoTile(page).first().click();
     const viewer = page.getByRole('dialog', { name: 'Photo' });

@@ -75,8 +75,11 @@ const VideoPlayer = ({ photo, alt }: { photo: GalleryPhoto; alt: string }) => {
         };
     }, [photo.id]);
     if (!url) return <img src={photo.thumbUrl} alt={alt} draggable={false} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />;
-    // Pressing on the player is for its own controls (seeking), not for swiping to the next item.
-    return <video src={url} poster={photo.thumbUrl} controls playsInline aria-label={alt} onPointerDown={e => e.stopPropagation()} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />;
+    // Swiping works over the picture; only a press on the strip of controls at the bottom is left to the player (seeking).
+    const keepForControls = (e: React.PointerEvent<HTMLVideoElement>) => {
+        if (e.clientY > e.currentTarget.getBoundingClientRect().bottom - 56) e.stopPropagation();
+    };
+    return <video src={url} poster={photo.thumbUrl} controls playsInline aria-label={alt} onPointerDown={keepForControls} className="max-h-full max-w-full touch-pan-y rounded-lg object-contain shadow-2xl" />;
 };
 
 const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext, onClose, onDelete, onShare, onDownload }: { photo: GalleryPhoto, before?: GalleryPhoto, after?: GalleryPhoto, position: number, total: number, onPrevious?: () => void, onNext?: () => void, onClose: () => void, onDelete: (id: string) => void, onShare: (photo: GalleryPhoto) => void, onDownload: (photo: GalleryPhoto) => void }) => {
@@ -408,24 +411,25 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
         </div>
       )}
       {photos.length > 0 && (
-        <p className="px-4 pt-1 text-sm text-gray-400" data-testid="gallery-storage-note">
-          {videos.length > 0 ? 'These photos and videos' : 'These photos'} live inside SpotCam, not in your phone&rsquo;s Photos or Gallery app. To keep one, open it and tap Share, then save it to your phone.
-        </p>
-      )}
-      {photos.length > 0 && (
-        <p className="px-4 pt-1 text-sm text-gray-400" data-testid="gallery-storage-usage">
+        <p className="px-4 pt-1 text-xs text-gray-400" data-testid="gallery-storage-usage">
           {videos.length === 0
             ? count(photos.length, 'photo')
             : stills.length === 0
               ? count(videos.length, 'video')
-              : `${count(stills.length, 'photo')} and ${count(videos.length, 'video')}`} use {formatBytes(sizeOf(photos))} on this device
-          {videos.length > 0 && stills.length > 0 && <> (photos {formatBytes(sizeOf(stills))}, videos {formatBytes(sizeOf(videos))})</>}
-          {freeBytes !== null && <> &middot; about {formatBytes(freeBytes)} still free</>}.
-          {isLowOnSpace(freeBytes) && <span className="font-semibold text-amber-300"> Space is running low: delete some photos to make room.</span>}
+              : `${count(stills.length, 'photo')}, ${count(videos.length, 'video')}`} &middot; {formatBytes(sizeOf(photos))} used
+          {videos.length > 0 && stills.length > 0 && <> (videos {formatBytes(sizeOf(videos))})</>}
+          {freeBytes !== null && <> &middot; about {formatBytes(freeBytes)} free</>}
+          {isLowOnSpace(freeBytes) && <span className="font-semibold text-amber-300"> &middot; Space is running low: delete some to make room.</span>}
         </p>
       )}
-      {photos.length > 0 && getPhotoTtlMs() !== null && (
-        <p className="px-4 pt-1 text-sm text-gray-400">Photos are removed after {ttlLabel(getPhotoTtlMs())}. You can change this in Settings.</p>
+      {photos.length > 0 && (
+        <details className="px-4 text-xs text-gray-400" data-testid="gallery-storage-note">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center text-blue-300 hover:text-blue-200">Where are my {videos.length > 0 ? 'photos and videos' : 'photos'}?</summary>
+          <p className="pb-2">
+            {videos.length > 0 ? 'These photos and videos' : 'These photos'} live inside SpotCam, not in your phone&rsquo;s Photos or Gallery app. To keep one, open it and tap Share, then save it to your phone.
+            {getPhotoTtlMs() !== null && <> Photos are removed after {ttlLabel(getPhotoTtlMs())}. You can change this in Settings.</>}
+          </p>
+        </details>
       )}
       {photos.length > 0 && listed.length === 0 ? (
         <div role="status" className="flex-grow flex flex-col items-center justify-center text-gray-400">

@@ -117,6 +117,7 @@ test.describe('keep photos for', () => {
     await page.goto(`${SITE}/settings`);
     await keepFor(page, '7 days').check();
     await page.goto(`${SITE}/gallery`);
+    await page.getByText('Where are my photos?').click();
     await expect(page.getByText('Photos are removed after 7 days. You can change this in Settings.')).toBeVisible();
   });
 });
