@@ -6,7 +6,7 @@ import { test, expect } from './fixtures';
 import { SITE } from './helpers';
 
 const PUBLIC_PAGES = [
-  { path: '/', h1: 'SpotCam', canonical: '/' },
+  { path: '/', h1: 'SpotCam: free timestamp camera', canonical: '/' },
   { path: '/how-it-works/', h1: 'How SpotCam works', canonical: '/how-it-works/' },
   { path: '/privacy/', h1: 'Privacy Policy', canonical: '/privacy/' },
 ];
@@ -24,7 +24,7 @@ test.describe('initial HTML, no JavaScript needed', () => {
   for (const { path, h1, canonical } of PUBLIC_PAGES) {
     test(`${path} has its own title, description, canonical and content`, () => {
       const page = html[path];
-      expect(page).toContain(`<h1>${h1}</h1>`);
+      expect(page).toContain(`<h1>${h1}`);
       expect(page).toMatch(/<title>[^<]{10,}<\/title>/);
       expect(meta(page, 'name', 'description')!.length).toBeGreaterThan(50);
       expect(page).toContain(`<link rel="canonical" href="https://example.test${canonical}" />`);

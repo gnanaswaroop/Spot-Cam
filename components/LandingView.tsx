@@ -41,7 +41,7 @@ interface LandingViewProps {
 }
 
 
-const FEATURES = ['Date & time', 'GPS & address', 'Stays on your device'];
+const FEATURES = ['Photo & video', 'Date, time & GPS', 'Stays on your device'];
 
 export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy, onHowItWorks }) => {
   const installProps = useInstallPrompt();
@@ -57,14 +57,17 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy, on
       <main className="relative mx-auto flex h-full max-w-5xl flex-col justify-center-safe overflow-y-auto gap-5 px-6 py-5 md:flex-row md:items-center md:gap-14 md:py-10">
         {/* Intro */}
         <section className="flex flex-col items-center text-center md:flex-1 md:items-start md:text-left">
-          <div className="flex items-center gap-3">
-            <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-11 w-11 rounded-[22%] md:h-14 md:w-14" />
-            <h1 className="text-2xl font-semibold tracking-tight md:text-4xl">SpotCam</h1>
-          </div>
-          <p className="mt-2 text-sm font-semibold tracking-wide text-blue-400 md:mt-4 md:text-lg">{TAGLINE}</p>
-          <p className="mt-2 max-w-sm text-balance text-base text-gray-300 md:mt-4 md:text-xl">
-            A free timestamp camera that stamps the <span className="text-white">date, time and GPS location</span> onto every photo.
-          </p>
+          {/* The page's one heading says what the app is (the words people search for), with the name first. */}
+          <h1 className="flex flex-col items-center md:items-start">
+            <span className="flex items-center gap-3">
+              <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-11 w-11 rounded-[22%] md:h-14 md:w-14" />
+              <span className="text-2xl font-semibold tracking-tight md:text-4xl">SpotCam</span>
+            </span>
+            <span className="mt-2 max-w-sm text-balance text-base font-normal text-gray-300 md:mt-4 md:text-xl">
+              <span className="sr-only">: </span>A free <span className="text-white">timestamp camera</span> for photos and video, with the <span className="text-white">date, time and GPS location</span> stamped on every one.
+            </span>
+          </h1>
+          <p className="mt-2 text-sm font-semibold tracking-wide text-blue-400 md:mt-3 md:text-lg">{TAGLINE}</p>
           <ul className="mt-3 flex flex-wrap justify-center gap-2 md:mt-6 md:justify-start">
             {FEATURES.map(f => (
               <li key={f} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300 backdrop-blur md:text-sm">
