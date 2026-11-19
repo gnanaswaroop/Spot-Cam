@@ -12,6 +12,7 @@ import { HowItWorksView } from './components/HowItWorksView';
 import { SettingsView } from './components/SettingsView';
 import { PAGE_TITLES } from './utils/constants';
 import { CapturedPhoto } from './types';
+import { holdFull, metaFor } from './utils/photoStore';
 import { usePersistedPhotos } from './hooks/usePersistedPhotos';
 import { usePathRoute } from './hooks/usePathRoute';
 import { useViewportHeight } from './hooks/useViewportHeight';
@@ -55,7 +56,8 @@ const App: React.FC = () => {
    */
   const handleCapture = (photo: CapturedPhoto) => {
     void requestPersistentStorage(); // asks the browser to keep the photos even when space runs low
-    setPhotos(prevPhotos => [photo, ...prevPhotos]);
+    holdFull(photo.id, photo.dataUrl); // the full-size photo waits here until it is written; the gallery only keeps the small record
+    setPhotos(prevPhotos => [metaFor(photo), ...prevPhotos]);
     track('photo_captured');
   };
 
@@ -91,7 +93,7 @@ const App: React.FC = () => {
         <CameraView
           onCapture={handleCapture}
           onSwitchView={() => switchView('gallery')}
-          lastPhotoUrl={photos.length > 0 ? photos.reduce((a, b) => (b.timestamp > a.timestamp ? b : a)).dataUrl : undefined}
+          lastPhotoUrl={photos.length > 0 ? photos.reduce((a, b) => (b.timestamp > a.timestamp ? b : a)).thumbUrl : undefined}
           onHome={() => switchView('landing')}
           onOpenSettings={() => switchView('settings')}
         />

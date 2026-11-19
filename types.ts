@@ -22,8 +22,24 @@ export interface CapturedPhoto {
   id: string;
   /** The image data encoded as a Base64 data URL. */
   dataUrl: string;
+  /** A small copy for the gallery grid, made when the photo is taken. */
+  thumbUrl?: string;
   /** The Unix timestamp (in milliseconds) of when the photo was taken. */
   timestamp: number;
   /** The geolocation data at the time of capture. Can be null if location is unavailable. */
+  location: GeolocationData | null;
+}
+
+/**
+ * What the gallery holds for each photo: everything but the full-size image, which is read from storage only when needed.
+ * This keeps the gallery light however many photos there are.
+ */
+export interface GalleryPhoto {
+  id: string;
+  /** A small JPEG data URL, enough for the grid and as a stand-in while the full photo loads. */
+  thumbUrl: string;
+  /** The size of the full-size photo in bytes, for the "space used" line. */
+  bytes: number;
+  timestamp: number;
   location: GeolocationData | null;
 }

@@ -139,8 +139,8 @@ flowchart TD
 
 `hooks/usePersistedPhotos.ts` keeps the gallery in **IndexedDB** via `idb-keyval`, under one key (`spotcam-photos`).
 
-- Each photo is its own entry (`spotcam-photo:<id>`) and an index (`spotcam-photo-ids`) keeps the order, newest first, so a new photo never rewrites the others. There is no cap on the count; the gallery shows the space used and the browser's estimate of what is free, and the app shows a notice if a save fails (out of space). Saves run one after another through a queue that starts with the load.
-- Older versions stored the whole list under one key (`spotcam-photos`), and before that in `localStorage` (about 5 MB). On first load the hook migrates either into per-photo entries and removes the old key.
+- Each photo has two entries: a small record (`spotcam-photo:<id>`: time, place, a thumbnail and the size in bytes) and the full-size photo (`spotcam-photo-full:<id>`). An index (`spotcam-photo-ids`) keeps the order, newest first. The gallery holds only the small records (`GalleryPhoto`), so it stays light however many photos there are; the full photo is read (`utils/photoStore.ts`) only when it is opened, shared or downloaded. A new photo's full data waits in memory until it is written, so it opens at once. There is no cap on the count; the gallery shows the space used and the browser's estimate of what is free, and the app shows a notice if a save fails (out of space). Saves run one after another through a queue that starts with the load.
+- Older versions stored the whole list under one key (`spotcam-photos`), and before that in `localStorage` (about 5 MB). On first load the store migrates either (and the previous per-photo layout, where the full photo sat inside the record) into the layout above, making thumbnails on the way.
 - A ref mirrors the state so rapid successive updates never act on stale data, and photos taken during the initial load aren't lost.
 
 ## 8. Address lookup

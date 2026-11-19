@@ -71,6 +71,8 @@ test.describe('camera blocked', () => {
 
     await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Capture photo' })).toBeEnabled();
+    // The live picture is attached to the preview again (it used to stay empty after recovering), so a photo is not blank.
+    expect(await page.getByLabel('Live camera preview').evaluate(v => (v as HTMLVideoElement).videoWidth)).toBeGreaterThan(0);
   });
 
   test('no camera on the device: says so without blaming permissions', async ({ page, context }) => {
