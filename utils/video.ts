@@ -12,9 +12,18 @@ export const VIDEO_MIME_CANDIDATES = [
   'video/webm',
 ] as const;
 
+/** The same without an audio codec, for a recording with no sound (some browsers wait for audio that never comes if one is named). */
+export const SILENT_VIDEO_MIME_CANDIDATES = [
+  'video/mp4;codecs=avc1.42E01E',
+  'video/mp4',
+  'video/webm;codecs=vp9',
+  'video/webm;codecs=vp8',
+  'video/webm',
+] as const;
+
 /** The first format the browser can record, or undefined to let it choose its own default. */
-export const pickVideoMime = (isSupported: (type: string) => boolean): string | undefined =>
-  VIDEO_MIME_CANDIDATES.find(type => {
+export const pickVideoMime = (isSupported: (type: string) => boolean, withSound = true): string | undefined =>
+  (withSound ? VIDEO_MIME_CANDIDATES : SILENT_VIDEO_MIME_CANDIDATES).find(type => {
     try {
       return isSupported(type);
     } catch {

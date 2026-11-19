@@ -23,6 +23,11 @@ describe('pickVideoMime', () => {
     expect(pickVideoMime(t => t === 'video/webm')).toBe('video/webm');
   });
 
+  it('names no audio codec for a recording without sound', () => {
+    expect(pickVideoMime(t => t.startsWith('video/webm'), false)).toBe('video/webm;codecs=vp9');
+    expect(pickVideoMime(() => true, false)).toBe('video/mp4;codecs=avc1.42E01E');
+  });
+
   it('gives nothing when no type is supported, so the browser picks its own', () => {
     expect(pickVideoMime(() => false)).toBeUndefined();
   });

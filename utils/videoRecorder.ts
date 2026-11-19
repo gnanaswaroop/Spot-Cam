@@ -58,7 +58,7 @@ export function startRecording({ video, audioTracks, stamp, maxMs }: Options): R
 
   const canvasStream = canvas.captureStream(FRAMES_PER_SECOND);
   const stream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
-  const mime = pickVideoMime(type => MediaRecorder.isTypeSupported(type));
+  const mime = pickVideoMime(type => MediaRecorder.isTypeSupported(type), audioTracks.length > 0);
   let recorder: MediaRecorder;
   try {
     recorder = new MediaRecorder(stream, { ...(mime ? { mimeType: mime } : {}), videoBitsPerSecond: VIDEO_BITS_PER_SECOND });
