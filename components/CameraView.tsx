@@ -3,12 +3,16 @@
  * data overlay, and photo capture.
  */
 import React, { useCallback, useRef, useEffect, useState } from 'react';
-import { CapturedPhoto, GeolocationData } from '../types';
+import { CapturedPhoto, CapturedVideo, GeolocationData } from '../types';
 import { useGeolocation, AddressStatus } from '../hooks/useGeolocation';
 import { usePermissionState } from '../hooks/usePermissionState';
 import { PermissionNotice } from './PermissionNotice';
 import { GalleryIcon, SettingsIcon, SwitchCameraIcon } from './icons';
 import { FONT_FAMILY_OVERLAY } from '../utils/constants';
+import { drawStamp, type StampText } from '../utils/stamp';
+import { startRecording, type Recording } from '../utils/videoRecorder';
+import { canRecordVideo, formatDuration } from '../utils/video';
+import { getRecordSound, getVideoEnabled, getVideoMaxMinutes } from '../utils/settings';
 import { makeThumbnail } from '../utils/thumbnail';
 import { useCameraRecovery } from '../hooks/useCameraRecovery';
 import { continuousModes, openingZoom, videoRequests, worthAskingAgain } from '../utils/cameraSettings';
@@ -17,6 +21,8 @@ import { continuousModes, openingZoom, videoRequests, worthAskingAgain } from '.
 interface CameraViewProps {
   /** Callback function to execute when a photo is captured. */
   onCapture: (photo: CapturedPhoto) => void;
+  /** Callback function to execute when a video has been recorded. */
+  onVideo: (video: CapturedVideo) => void;
   /** Callback function to switch to the gallery view. */
   onSwitchView: () => void;
   /** The newest photo's image, shown as a small preview on the gallery button (the gallery icon when there is none). */
@@ -84,7 +90,7 @@ async function openCamera(facing: 'environment' | 'user'): Promise<MediaStream> 
   throw lastError;
 }
 
-export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView, lastPhotoUrl, onHome, onOpenSettings }) => {
+export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSwitchView, lastPhotoUrl, onHome, onOpenSettings }) => {
   // Refs for video and canvas elements
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -118,6 +124,19 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
   const [zoomCapabilities, setZoomCapabilities] = useState<{ min: number; max: number; step: number } | null>(null);
   const [currentZoom, setCurrentZoom] = useState(1);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+
+  // Video: offered when it is turned on in Settings and the browser can record the camera with the stamp drawn on every frame.
+  const [videoEnabled] = useState(() => getVideoEnabled() && canRecordVideo());
+  const [mode, setMode] = useState<'photo' | 'video'>('photo');
+  const [recording, setRecording] = useState(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const [recordNote, setRecordNote] = useState('');
+  const recordingRef = useRef<Recording | null>(null);
+  const starting = useRef(false);
+  const recordedAt = useRef(0);
+  // Recording callbacks outlive a render: they read the latest place and the latest onVideo from here.
+  const latestRef = useRef({ location, onVideo });
+  latestRef.current = { location, onVideo };
 
   // Spoken status for screen readers (an aria-live region): location found, address found, photo saved.
   const [announcement, setAnnouncement] = useState('');
@@ -243,6 +262,76 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
     if (video && stream && video.srcObject !== stream) video.srcObject = stream;
   });
 
+  /** The words stamped on a picture right now. */
+  const stampText = (when: string): StampText => {
+    const where = latestRef.current.location;
+    return {
+      dateTime: when,
+      coordinates: where ? `Lat: ${where.latitude.toFixed(5)}, Lon: ${where.longitude.toFixed(5)}` : 'Location not available',
+      address: where?.address || '',
+    };
+  };
+
+  /** Starts a video, with the microphone when Settings says so (and without it, saying why, when it is refused). */
+  const startVideo = async () => {
+    const video = videoRef.current;
+    if (!canCapture || !video || recordingRef.current || starting.current) return;
+    starting.current = true;
+    setRecordNote('');
+    let audioTracks: MediaStreamTrack[] = [];
+    if (getRecordSound()) {
+      try {
+        audioTracks = (await navigator.mediaDevices.getUserMedia({ audio: true })).getAudioTracks();
+      } catch {
+        setRecordNote('Recording without sound: SpotCam cannot use the microphone. Allow it in your browser to record sound.');
+      }
+    }
+    starting.current = false;
+    if (!video.videoWidth) {
+      audioTracks.forEach(track => track.stop());
+      return;
+    }
+    const startedAt = Date.now();
+    const where = latestRef.current.location;
+    let recorder: Recording;
+    try {
+      recorder = startRecording({ video, audioTracks, stamp: () => stampText(new Date().toLocaleString()), maxMs: getVideoMaxMinutes() * 60_000 });
+    } catch (err) {
+      console.error(err);
+      audioTracks.forEach(track => track.stop());
+      setRecordNote('This browser could not start recording.');
+      return;
+    }
+    recordingRef.current = recorder;
+    recordedAt.current = startedAt;
+    setElapsedMs(0);
+    setRecording(true);
+    setAnnouncement('Recording started');
+    recorder.done
+      .then(result => {
+        latestRef.current.onVideo({ id: `video_${startedAt}`, blob: result.blob, mimeType: result.mimeType, durationMs: result.durationMs, thumbUrl: result.thumbUrl, timestamp: startedAt, location: where });
+        setAnnouncement('Video saved to the gallery');
+      })
+      .catch(err => {
+        console.error(err);
+        setRecordNote('The video could not be saved.');
+      })
+      .finally(() => {
+        recordingRef.current = null;
+        setRecording(false);
+      });
+  };
+
+  const stopVideo = () => recordingRef.current?.stop();
+
+  // The running time; and a recording still running when the person leaves the page is ended and saved.
+  useEffect(() => {
+    if (!recording) return;
+    const timer = setInterval(() => setElapsedMs(Date.now() - recordedAt.current), 250);
+    return () => clearInterval(timer);
+  }, [recording]);
+  useEffect(() => () => recordingRef.current?.stop(), []);
+
   const handleCapture = () => {
     if (!canCapture) return;
     if (videoRef.current && canvasRef.current) {
@@ -265,57 +354,8 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
         // Draw the current video frame onto the canvas
         context.drawImage(video, 0, 0, videoWidth, videoHeight);
         
-        // Prepare overlay text
-        const overlayText1 = dateTime;
-        const overlayText2 = location ? `Lat: ${location.latitude.toFixed(5)}, Lon: ${location.longitude.toFixed(5)}` : 'Location not available';
-        // Only a real address is ever stamped. If none was found, the stamp carries the coordinates alone.
-        const overlayText3 = location?.address || '';
-        
-        // Draw the stamp: bold sans text on a translucent dark band so it stays readable on any photo.
-        const pad = Math.round(videoWidth / 50);
-        const headSize = Math.round(videoWidth / 32);
-        const addrSize = Math.round(videoWidth / 38);
-        const headLine = Math.round(headSize * 1.35);
-        const addrLine = Math.round(addrSize * 1.35);
-        const maxLineWidth = canvas.width * 0.92;
-
-        // Wrap the address into lines that fit the image width.
-        context.font = `600 ${addrSize}px ${FONT_FAMILY_OVERLAY}`;
-        const addrLines: string[] = [];
-        let line = '';
-        for (const word of overlayText3.split(' ').filter(Boolean)) {
-            const test = line ? `${line} ${word}` : word;
-            if (line && context.measureText(test).width > maxLineWidth) {
-                addrLines.push(line);
-                line = word;
-            } else {
-                line = test;
-            }
-        }
-        if (line) addrLines.push(line);
-
-        const bandHeight = pad * 2 + headLine * 2 + addrLines.length * addrLine;
-        context.fillStyle = 'rgba(0, 0, 0, 0.55)';
-        context.fillRect(0, 0, canvas.width, bandHeight);
-
-        context.fillStyle = 'white';
-        context.textAlign = 'center';
-        context.textBaseline = 'alphabetic';
-        context.shadowColor = 'rgba(0, 0, 0, 0.9)';
-        context.shadowBlur = 4;
-
-        let y = pad + headSize;
-        context.font = `700 ${headSize}px ${FONT_FAMILY_OVERLAY}`;
-        context.fillText(overlayText1, canvas.width / 2, y);
-        y += headLine;
-        context.fillText(overlayText2, canvas.width / 2, y);
-        y += addrLine;
-        context.font = `600 ${addrSize}px ${FONT_FAMILY_OVERLAY}`;
-        for (const l of addrLines) {
-            context.fillText(l, canvas.width / 2, y);
-            y += addrLine;
-        }
-        context.shadowBlur = 0;
+        // Draw the stamp over the photo (a real address is the only address ever stamped; without one it carries the coordinates alone).
+        drawStamp(context, videoWidth, stampText(dateTime));
 
         // Generate the final image as a data URL
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
@@ -439,7 +479,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
       
       {/* Zoom control slider */}
       {zoomCapabilities && (
-        <div className="absolute bottom-32 left-0 right-0 px-6 z-10 short:bottom-2 short:right-24 short:px-3">
+        <div className={`absolute left-0 right-0 px-6 z-10 short:right-24 short:px-3 ${videoEnabled ? 'bottom-44 short:bottom-14' : 'bottom-32 short:bottom-2'}`}>
             <div className="bg-black/60 rounded-full p-1 flex items-center space-x-2">
                 <button type="button" onClick={() => nudgeZoom(-1)} disabled={currentZoom <= zoomCapabilities.min} className="h-11 w-11 shrink-0 rounded-full text-xl font-bold text-white hover:bg-white/20 disabled:opacity-40" aria-label="Zoom out">-</button>
                 <label htmlFor="zoom-slider" className="text-white text-xs font-mono">ZOOM</label>
@@ -460,6 +500,28 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
         </div>
       )}
       
+      {/* What the shutter does (Photo or Video), or while recording the running time */}
+      {videoEnabled && (
+        <div className="absolute bottom-[7.25rem] left-0 right-0 z-10 flex justify-center short:bottom-2 short:left-2 short:right-24 short:justify-start">
+          {recording ? (
+            <p role="timer" data-testid="recording-timer" className="flex items-center gap-2 rounded-full bg-black/70 px-3 py-1 text-sm font-semibold text-white">
+              <span aria-hidden="true" className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500 motion-reduce:animate-none"></span>
+              <span className="sr-only">Recording </span>
+              {formatDuration(elapsedMs)} / {formatDuration(getVideoMaxMinutes() * 60_000)}
+            </p>
+          ) : (
+            <div role="group" aria-label="Camera mode" className="flex rounded-full bg-black/60 p-0.5 text-sm font-semibold text-white">
+              {([['photo', 'Photo'], ['video', 'Video']] as const).map(([m, label]) => (
+                <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)} className={`min-h-9 rounded-full px-4 ${mode === m ? 'bg-white text-gray-900' : 'hover:bg-white/20'}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {recordNote && <p role="status" className="absolute bottom-[10.25rem] z-10 mx-4 rounded bg-black/70 p-1 text-center text-xs text-amber-300 short:bottom-auto short:right-28 short:top-24">{recordNote}</p>}
+
       {/* Bottom control bar */}
       <div data-testid="control-bar" className="absolute bottom-0 left-0 right-0 h-28 bg-gray-950/85 border-t border-white/10 flex items-center justify-around short:top-0 short:left-auto short:h-auto short:w-24 short:flex-col short:border-t-0 short:border-l">
         {lastPhotoUrl ? (
@@ -471,10 +533,16 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onSwitchView,
             <GalleryIcon className="w-8 h-8" />
           </button>
         )}
-        <button onClick={handleCapture} disabled={!canCapture} className="disabled:opacity-40 disabled:cursor-not-allowed w-20 h-20 rounded-full border-4 border-white bg-transparent flex items-center justify-center group" aria-label="Capture photo">
-            <div className="w-16 h-16 rounded-full bg-white group-hover:bg-blue-200 group-active:scale-95 transition"></div>
-        </button>
-        <button onClick={handleSwitchCamera} disabled={!hasMultipleCameras} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Switch camera">
+        {mode === 'video' ? (
+          <button onClick={recording ? stopVideo : startVideo} disabled={!canCapture && !recording} className="disabled:opacity-40 disabled:cursor-not-allowed w-20 h-20 rounded-full border-4 border-white bg-transparent flex items-center justify-center group" aria-label={recording ? 'Stop recording' : 'Record video'}>
+              <div className={`bg-red-600 transition-all group-active:scale-95 ${recording ? 'h-8 w-8 rounded-md' : 'h-16 w-16 rounded-full'}`}></div>
+          </button>
+        ) : (
+          <button onClick={handleCapture} disabled={!canCapture} className="disabled:opacity-40 disabled:cursor-not-allowed w-20 h-20 rounded-full border-4 border-white bg-transparent flex items-center justify-center group" aria-label="Capture photo">
+              <div className="w-16 h-16 rounded-full bg-white group-hover:bg-blue-200 group-active:scale-95 transition"></div>
+          </button>
+        )}
+        <button onClick={handleSwitchCamera} disabled={!hasMultipleCameras || recording} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Switch camera">
             <SwitchCameraIcon className="w-8 h-8" />
         </button>
       </div>

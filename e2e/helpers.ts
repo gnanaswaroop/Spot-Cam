@@ -23,6 +23,8 @@ export interface MockOptions {
   failsAtLargeSize?: boolean;
   /** The first time the camera opens it takes this long, so a test can leave the page while it is opening. */
   slowFirstOpenMs?: number;
+  /** What happens when the page asks for the microphone (default 'granted': a silent test tone). */
+  mic?: 'granted' | 'denied';
 }
 
 /** Shape of the controller the init script exposes on `window`, so tests can flip modes live. */
@@ -71,6 +73,17 @@ export async function installMocks(page: Page, options: MockOptions) {
       // override vanish on a cold start), while the prototype keeps the override for good.
       const mediaDevicesTarget: object = (window as any).MediaDevices?.prototype ?? navigator.mediaDevices;
       override(mediaDevicesTarget, 'getUserMedia', async (constraints?: MediaStreamConstraints) => {
+        // The microphone alone (a video recording asks for it separately from the camera).
+        if (constraints?.audio && !constraints.video) {
+          w.__mock.asked.push('microphone');
+          if (o.mic === 'denied') throw new DOMException('Permission denied', 'NotAllowedError');
+          const audioContext = new AudioContext();
+          const destination = audioContext.createMediaStreamDestination();
+          const tone = audioContext.createOscillator();
+          tone.connect(destination);
+          tone.start();
+          return destination.stream;
+        }
         w.__mock.asked.push('camera');
         w.__mock.constraints.push(JSON.parse(JSON.stringify(constraints ?? null)));
         if (w.__mock.camera === 'denied') throw new DOMException('Permission denied', 'NotAllowedError');

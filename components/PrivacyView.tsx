@@ -12,7 +12,7 @@ interface PrivacyViewProps {
   onBack: () => void;
 }
 
-export const PRIVACY_LAST_UPDATED = '16 November 2026';
+export const PRIVACY_LAST_UPDATED = '19 November 2026';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="mt-8">
@@ -60,8 +60,13 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
 
         <Section title="What SpotCam uses, and why">
           <p>
-            <strong className="text-white">Camera.</strong> SpotCam asks your browser for camera access to show the live preview and take
-            photos. The video is not recorded and is never sent anywhere.
+            <strong className="text-white">Camera.</strong> SpotCam asks your browser for camera access to show the live preview, take
+            photos and, in Video mode, record videos. The live picture is not recorded unless you start a video, and it is never sent anywhere.
+          </p>
+          <p>
+            <strong className="text-white">Microphone.</strong> Only when you record a video with &ldquo;Record sound&rdquo; turned on in
+            Settings (it is on by default), SpotCam asks your browser for the microphone and records sound into the video. The microphone is
+            released when the video ends, and the sound is never sent anywhere. If you refuse, or turn the setting off, videos are recorded without sound.
           </p>
           <p>
             <strong className="text-white">Location.</strong> SpotCam asks for your location (GPS) so it can print the date, time,
@@ -69,10 +74,10 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
             a third party to get the address (see "Services we rely on" below). SpotCam does not keep a history of where you have been. To avoid repeating address lookups, your browser keeps the addresses it has already found, with the coordinates they were found for, in its storage on this device for up to 30 days. It also remembers the last address it found, so the camera can show it straight away. This is never sent anywhere. You can clear it, or change how far it reaches, in Settings, and clearing this site's data in your browser also removes it.
           </p>
           <p>
-            <strong className="text-white">Your photos.</strong> When you take a photo, it is saved in your browser's storage (IndexedDB)
-            on your device, together with its date, time and location. SpotCam keeps your photos until you delete them, as long as your browser has room; the gallery shows how much space they use.
-            In Settings you can also have photos removed automatically after a time you choose. Photos are not uploaded
-            to us or to anyone else.
+            <strong className="text-white">Your photos and videos.</strong> When you take a photo or record a video, it is saved in your browser's storage (IndexedDB)
+            on your device, together with its date, time and location. SpotCam keeps them until you delete them, as long as your browser has room; the gallery shows how much space they use.
+            In Settings you can also have them removed automatically after a time you choose. Photos are not uploaded
+            to us or to anyone else. Neither are videos.
           </p>
           <p>
             <strong className="text-white">Working offline.</strong> So that SpotCam opens without a connection, your browser keeps a copy of
@@ -151,7 +156,7 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
               <strong className="text-white">Delete everything</strong> by clearing this site's data in your browser settings.
             </li>
             <li>
-              <strong className="text-white">Withdraw permissions</strong> for the camera or location in your browser's site settings.
+              <strong className="text-white">Withdraw permissions</strong> for the camera, microphone or location in your browser's site settings.
               SpotCam can't take stamped photos without them, but nothing else is affected.
             </li>
           </ul>

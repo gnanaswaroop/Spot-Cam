@@ -1,5 +1,5 @@
 /**
- * @file Settings: the address cache (size and clearing), saved photos (delete all, and how long they are kept), the cache radius, and the map service used for the link in shared text.
+ * @file Settings: the address cache (size and clearing), video (on or off, sound, longest length), saved photos (delete all, and how long they are kept), the cache radius, and the map service used for the link in shared text.
  * Everything here is stored on this device only.
  */
 
@@ -10,17 +10,26 @@ import {
   CACHE_RADIUS_MAX_M,
   CACHE_RADIUS_MIN_M,
   DEFAULT_CACHE_RADIUS_M,
+  DEFAULT_VIDEO_MAX_MINUTES,
+  VIDEO_MAX_MINUTES_OPTIONS,
   getCacheRadiusM,
   getMapService,
   getPhotoTtlMs,
+  getRecordSound,
   getShareSignature,
+  getVideoEnabled,
+  getVideoMaxMinutes,
   isCacheRadiusCustomised,
   setCacheRadiusM,
   setMapService,
   setPhotoTtlMs,
+  setRecordSound,
   setShareSignature,
+  setVideoEnabled,
+  setVideoMaxMinutes,
 } from '../utils/settings';
 import { PHOTO_TTL_OPTIONS, expiredCount, ttlLabel } from '../utils/photoExpiry';
+import { minutesLabel } from '../utils/video';
 import { MAP_SERVICES, shareSignature, type MapService } from '../utils/maps';
 import { AppHeader } from './AppHeader';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -136,6 +145,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
     setShareSignature(on);
     setSignatureState(on);
     setStatus(on ? 'Shared photos will include a line about SpotCam.' : 'Shared photos will no longer mention SpotCam.');
+  };
+
+  // Video: whether the camera offers it, whether it records sound, and how long a video may be. Saved as soon as they change.
+  const [videoOn, setVideoOn] = useState(getVideoEnabled);
+  const [sound, setSound] = useState(getRecordSound);
+  const [videoMinutes, setVideoMinutes] = useState(getVideoMaxMinutes);
+  const chooseVideoOn = (on: boolean) => {
+    setVideoEnabled(on);
+    setVideoOn(on);
+    setStatus(on ? 'The camera will offer video.' : 'The camera will only take photos.');
+  };
+  const chooseSound = (on: boolean) => {
+    setRecordSound(on);
+    setSound(on);
+    setStatus(on ? 'Videos will be recorded with sound.' : 'Videos will be recorded without sound.');
+  };
+  const chooseVideoMinutes = (minutes: number) => {
+    setVideoMaxMinutes(minutes);
+    setVideoMinutes(minutes);
+    setStatus(`A video will stop after ${minutesLabel(minutes)}.`);
   };
 
   // How long photos are kept. A choice that would remove photos that are already saved asks first.
@@ -313,6 +342,56 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
               </span>
             </span>
           </label>
+        </Section>
+
+        <Section id="video-heading" title="Video">
+          <label className="flex min-h-11 items-start gap-3 text-base">
+            <input
+              type="checkbox"
+              checked={videoOn}
+              onChange={e => chooseVideoOn(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <span>
+              Record video
+              <span className="block text-sm text-gray-400">
+                Adds a Video mode to the camera. The date, time and place are drawn on every frame. On by default.
+              </span>
+            </span>
+          </label>
+          <label className="flex min-h-11 items-start gap-3 text-base">
+            <input
+              type="checkbox"
+              checked={sound}
+              disabled={!videoOn}
+              onChange={e => chooseSound(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-40"
+            />
+            <span className={videoOn ? '' : 'opacity-40'}>
+              Record sound
+              <span className="block text-sm text-gray-400">
+                Uses the microphone while a video is recorded. Your browser asks for permission the first time. On by default.
+              </span>
+            </span>
+          </label>
+          <div className={videoOn ? '' : 'opacity-40'}>
+            <label htmlFor="video-length" className="block text-base">Longest video</label>
+            <select
+              id="video-length"
+              value={videoMinutes}
+              disabled={!videoOn}
+              onChange={e => chooseVideoMinutes(Number(e.target.value))}
+              className="mt-1 min-h-11 rounded-md border border-gray-600 bg-gray-700 px-3 text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              {VIDEO_MAX_MINUTES_OPTIONS.map(minutes => (
+                <option key={minutes} value={minutes}>
+                  {minutesLabel(minutes)}
+                  {minutes === DEFAULT_VIDEO_MAX_MINUTES ? ' (default)' : ''}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-sm text-gray-400">A video stops by itself at this length. Videos are saved in the format your browser records, and take much more space than photos.</p>
+          </div>
         </Section>
 
         <Section id="keep-heading" title="Keep photos for">

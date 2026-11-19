@@ -1,11 +1,11 @@
 /**
  * Where the photos live in IndexedDB. Each photo has two entries so the gallery can stay light:
  *  - `spotcam-photo:<id>`      the small record: time, place, a thumbnail and the size of the photo
- *  - `spotcam-photo-full:<id>` the full-size photo (a data URL), read only when a photo is opened, shared or downloaded
+ *  - `spotcam-photo-full:<id>` the full-size photo (a data URL) or the video (a Blob), read only when it is opened, shared or downloaded
  * and `spotcam-photo-ids` lists the ids, newest first.
  */
 import { del, delMany, get, getMany, set, setMany } from 'idb-keyval';
-import type { CapturedPhoto, GalleryPhoto } from '../types';
+import type { CapturedPhoto, CapturedVideo, GalleryPhoto } from '../types';
 import { dataUrlBytes } from './storageUsage';
 import { thumbnailFromDataUrl } from './thumbnail';
 
@@ -17,13 +17,36 @@ const LEGACY_LIST_KEY = 'spotcam-photos';
 const LEGACY_LOCALSTORAGE_KEY = 'spotcam-photos';
 
 /** Photos taken but not yet written: their full-size data stays here, so they open at once and the write can use it. */
-const pendingFull = new Map<string, string>();
+const pendingFull = new Map<string, string | Blob>();
 
 /** Remembers a new photo's full-size data until it is written. */
-export const holdFull = (id: string, dataUrl: string) => void pendingFull.set(id, dataUrl);
+export const holdFull = (id: string, data: string | Blob) => void pendingFull.set(id, data);
+
+const readStored = async (id: string): Promise<string | Blob | undefined> => pendingFull.get(id) ?? (await get<string | Blob>(fullKey(id)));
 
 /** The full-size photo: from memory when it was just taken, otherwise from the database. */
-export const readFull = async (id: string): Promise<string | undefined> => pendingFull.get(id) ?? (await get<string>(fullKey(id)));
+export const readFull = async (id: string): Promise<string | undefined> => {
+  const stored = await readStored(id);
+  return typeof stored === 'string' ? stored : undefined;
+};
+
+/** A saved video's recording. */
+export const readVideo = async (id: string): Promise<Blob | undefined> => {
+  const stored = await readStored(id);
+  return typeof stored === 'string' ? undefined : stored;
+};
+
+/** The record for a video that was just recorded (its data goes in with `holdFull`). */
+export const metaForVideo = (video: CapturedVideo): GalleryPhoto => ({
+  id: video.id,
+  thumbUrl: video.thumbUrl,
+  bytes: video.blob.size,
+  timestamp: video.timestamp,
+  location: video.location,
+  kind: 'video',
+  mimeType: video.mimeType,
+  durationMs: video.durationMs,
+});
 
 /** The record for a photo that was just taken (the full-size data goes in with `holdFull`). */
 export const metaFor = (photo: CapturedPhoto): GalleryPhoto => ({
