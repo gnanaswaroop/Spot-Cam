@@ -134,7 +134,7 @@ test.describe('recording a video', () => {
 
     const first = await page.evaluate(async fn => {
       const thumb = document.querySelector<HTMLImageElement>('[data-testid="video-badge"]')!.parentElement!.querySelector('img')!;
-      await thumb.decode();
+      for (let i = 0; i < 100 && !(thumb.complete && thumb.naturalWidth > 0); i++) await new Promise(r => setTimeout(r, 50));
       return (new Function(`return (${fn})`)())(thumb, thumb.naturalWidth, thumb.naturalHeight);
     }, darkness.toString());
     expect(first.top).toBeLessThan(first.below * 0.7);
