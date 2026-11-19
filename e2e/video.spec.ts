@@ -339,6 +339,61 @@ test.describe('videos in the gallery', () => {
     await page.getByRole('button', { name: 'Delete selected' }).click();
     await expect(page.getByRole('dialog', { name: 'Confirm Deletion' })).toContainText('delete these 2 items');
   });
+
+  test('closing the share sheet says nothing, and a failed share names the video, not a photo', async ({ page, context }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __fail: string };
+      w.__fail = 'AbortError';
+      Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: async () => {
+          throw new DOMException('nope', w.__fail);
+        },
+      });
+    });
+    await galleryWithOneOfEach(page, context);
+    await videoTile(page).click();
+    const alerts: string[] = [];
+    page.on('dialog', d => {
+      alerts.push(d.message());
+      void d.dismiss();
+    });
+    const share = page.getByRole('dialog', { name: 'Video' }).getByRole('button', { name: 'Share video' });
+    await share.click(); // cancelled
+    await page.waitForTimeout(500);
+    expect(alerts).toEqual([]);
+
+    await page.evaluate(() => ((window as unknown as { __fail: string }).__fail = 'NotAllowedError'));
+    await share.click();
+    await expect.poll(() => alerts).toEqual(['Could not share the video.']);
+  });
+
+  test('sharing a video sends the same message as a photo: when, where and the map link', async ({ page, context }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __shared: { title?: string; text?: string; files: { name: string; type: string }[] }[] };
+      w.__shared = [];
+      Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: async (d: { title?: string; text?: string; files?: File[] }) => {
+          w.__shared.push({ title: d.title, text: d.text, files: (d.files ?? []).map(f => ({ name: f.name, type: f.type })) });
+        },
+      });
+    });
+    await galleryWithOneOfEach(page, context);
+    await videoTile(page).click();
+    await page.getByRole('dialog', { name: 'Video' }).getByRole('button', { name: 'Share video' }).click();
+    await expect.poll(() => page.evaluate(() => (window as any).__shared.length)).toBe(1);
+    const [share] = await page.evaluate(() => (window as any).__shared as { title: string; text: string; files: { name: string; type: string }[] }[]);
+    expect(share.files).toHaveLength(1);
+    expect(share.files[0].type).toMatch(/^video\//);
+    expect(share.title).toBe('Video from SpotCam');
+    const lines = share.text.split('\n');
+    expect(lines[0]).toMatch(/^When: .+/);
+    expect(lines[1]).toMatch(/^Where: .+/);
+    expect(lines[2]).toMatch(/^Map: https:/);
+  });
 });
 
 test.describe('swiping on the video page', () => {

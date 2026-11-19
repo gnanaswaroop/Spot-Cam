@@ -264,9 +264,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
         });
         track('share_used');
       } catch (error) {
-        // Handle cases where the user cancels the share dialog or an error occurs.
+        // Closing the share sheet without sharing is not an error: say nothing. Anything else is, so name what was being shared.
+        if (error instanceof DOMException && error.name === 'AbortError') return;
         console.error('Error sharing:', error);
-        alert('Could not share the photo.');
+        alert(`Could not share the ${photo.kind === 'video' ? 'video' : 'photo'}.`);
       }
     } else {
       // Fallback for browsers that do not support the Web Share API.
