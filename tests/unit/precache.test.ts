@@ -1,4 +1,5 @@
 /** Unit tests for the build-time service worker helpers. No build or browser involved. */
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { cacheVersion, listPrecacheUrls, renderServiceWorker } from '../../utils/precache';
 
@@ -86,5 +87,17 @@ describe('renderServiceWorker', () => {
 
   it('refuses to produce a worker with a placeholder left in it', () => {
     expect(() => renderServiceWorker(`${template} const X = '__MISSING__';`, { version: 'a', urls: [], base: '/' })).toThrow(/placeholders/);
+  });
+});
+
+describe('the real service worker template', () => {
+  const real = readFileSync(new URL('../../sw/sw.template.js', import.meta.url), 'utf8');
+
+  it('fills the precache from the network, not from the browser\'s HTTP cache (a stale page next to new scripts opens blank offline)', () => {
+    expect(real).toMatch(/new Request\(url, \{ cache: 'reload' \}\)/);
+  });
+
+  it('answers a page from the cache when the network fails', () => {
+    expect(real).toMatch(/fallback\(\)/);
   });
 });
