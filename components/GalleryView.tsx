@@ -3,7 +3,7 @@
  * to view, share, and delete them.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { GalleryPhoto } from '../types';
 import { useHistoryOverlay, hasOverlayEntry } from '../hooks/useHistoryOverlay';
 import { useDialogFocus } from '../hooks/useDialogFocus';
@@ -60,6 +60,8 @@ const FullPhoto = ({ photo, alt }: { photo: GalleryPhoto; alt: string }) => {
 /** A saved video, played from storage. The small copy shows until the recording has been read. */
 const VideoPlayer = ({ photo, alt }: { photo: GalleryPhoto; alt: string }) => {
     const [url, setUrl] = useState<string | undefined>(undefined);
+    const player = useRef<HTMLVideoElement>(null);
+    const pressedAt = useRef(0);
     useEffect(() => {
         let cancelled = false;
         let made: string | undefined;
@@ -75,8 +77,19 @@ const VideoPlayer = ({ photo, alt }: { photo: GalleryPhoto; alt: string }) => {
         };
     }, [photo.id]);
     if (!url) return <img src={photo.thumbUrl} alt={alt} draggable={false} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />;
-    // Pressing on the player is for its own controls (seeking), not for swiping to the next item.
-    return <video src={url} poster={photo.thumbUrl} controls playsInline aria-label={alt} onPointerDown={e => e.stopPropagation()} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />;
+    // The player's own controls swallow presses (Firefox never reports them to the page), so a clear layer sits over the picture
+    // and the swipe starts there; the strip of controls along the bottom stays uncovered. A tap on the layer plays or pauses.
+    const toggle = (e: React.MouseEvent) => {
+        if (Math.abs(e.clientX - pressedAt.current) > 10) return; // the end of a swipe, not a tap
+        const video = player.current;
+        if (video) void (video.paused ? video.play() : video.pause());
+    };
+    return (
+        <div className="relative h-full w-full">
+            <video ref={player} src={url} poster={photo.thumbUrl} controls playsInline aria-label={alt} className="h-full w-full rounded-lg object-contain shadow-2xl" />
+            <div data-testid="video-swipe-layer" onPointerDown={e => (pressedAt.current = e.clientX)} onClick={toggle} className="absolute inset-x-0 top-0 bottom-14 touch-pan-y" />
+        </div>
+    );
 };
 
 const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext, onClose, onDelete, onShare, onDownload }: { photo: GalleryPhoto, before?: GalleryPhoto, after?: GalleryPhoto, position: number, total: number, onPrevious?: () => void, onNext?: () => void, onClose: () => void, onDelete: (id: string) => void, onShare: (photo: GalleryPhoto) => void, onDownload: (photo: GalleryPhoto) => void }) => {
@@ -408,24 +421,25 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
         </div>
       )}
       {photos.length > 0 && (
-        <p className="px-4 pt-1 text-sm text-gray-400" data-testid="gallery-storage-note">
-          {videos.length > 0 ? 'These photos and videos' : 'These photos'} live inside SpotCam, not in your phone&rsquo;s Photos or Gallery app. To keep one, open it and tap Share, then save it to your phone.
-        </p>
-      )}
-      {photos.length > 0 && (
-        <p className="px-4 pt-1 text-sm text-gray-400" data-testid="gallery-storage-usage">
+        <p className="px-4 pt-1 text-xs text-gray-400" data-testid="gallery-storage-usage">
           {videos.length === 0
             ? count(photos.length, 'photo')
             : stills.length === 0
               ? count(videos.length, 'video')
-              : `${count(stills.length, 'photo')} and ${count(videos.length, 'video')}`} use {formatBytes(sizeOf(photos))} on this device
-          {videos.length > 0 && stills.length > 0 && <> (photos {formatBytes(sizeOf(stills))}, videos {formatBytes(sizeOf(videos))})</>}
-          {freeBytes !== null && <> &middot; about {formatBytes(freeBytes)} still free</>}.
-          {isLowOnSpace(freeBytes) && <span className="font-semibold text-amber-300"> Space is running low: delete some photos to make room.</span>}
+              : `${count(stills.length, 'photo')}, ${count(videos.length, 'video')}`} &middot; {formatBytes(sizeOf(photos))} used
+          {videos.length > 0 && stills.length > 0 && <> (videos {formatBytes(sizeOf(videos))})</>}
+          {freeBytes !== null && <> &middot; about {formatBytes(freeBytes)} free</>}
+          {isLowOnSpace(freeBytes) && <span className="font-semibold text-amber-300"> &middot; Space is running low: delete some to make room.</span>}
         </p>
       )}
-      {photos.length > 0 && getPhotoTtlMs() !== null && (
-        <p className="px-4 pt-1 text-sm text-gray-400">Photos are removed after {ttlLabel(getPhotoTtlMs())}. You can change this in Settings.</p>
+      {photos.length > 0 && (
+        <details className="px-4 text-xs text-gray-400" data-testid="gallery-storage-note">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center text-blue-300 hover:text-blue-200">Where are my {videos.length > 0 ? 'photos and videos' : 'photos'}?</summary>
+          <p className="pb-2">
+            {videos.length > 0 ? 'These photos and videos' : 'These photos'} live inside SpotCam, not in your phone&rsquo;s Photos or Gallery app. To keep one, open it and tap Share, then save it to your phone.
+            {getPhotoTtlMs() !== null && <> Photos are removed after {ttlLabel(getPhotoTtlMs())}. You can change this in Settings.</>}
+          </p>
+        </details>
       )}
       {photos.length > 0 && listed.length === 0 ? (
         <div role="status" className="flex-grow flex flex-col items-center justify-center text-gray-400">

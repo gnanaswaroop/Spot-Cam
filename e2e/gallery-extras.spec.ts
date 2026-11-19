@@ -133,7 +133,7 @@ test.describe('thumbnails', () => {
     }, png);
     await page.reload();
     await expect(page.getByRole('button', { name: /^Open photo taken/ })).toHaveCount(2);
-    await expect(page.getByTestId('gallery-storage-usage')).toContainText('2 photos use');
+    await expect(page.getByTestId('gallery-storage-usage')).toContainText('2 photos');
 
     const migrated = await page.evaluate(
       () =>

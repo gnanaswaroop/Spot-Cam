@@ -279,7 +279,7 @@ test.describe('videos in the gallery', () => {
 
   test('the storage meter counts both, with the size of each kind', async ({ page, context }) => {
     await galleryWithOneOfEach(page, context);
-    await expect(page.getByTestId('gallery-storage-usage')).toHaveText(/^1 photo and 1 video use \d+(\.\d)? (KB|MB) on this device \(photos \d+(\.\d)? (KB|MB), videos \d+(\.\d)? (KB|MB)\)/);
+    await expect(page.getByTestId('gallery-storage-usage')).toHaveText(/^1 photo, 1 video · \d+(\.\d)? (KB|MB) used \(videos \d+(\.\d)? (KB|MB)\)/);
     await expect(page.getByTestId('gallery-storage-note')).toContainText('photos and videos');
   });
 
@@ -317,7 +317,7 @@ test.describe('videos in the gallery', () => {
     await expect(photoTile(page)).toHaveCount(1);
     await page.reload();
     await expect(videoTile(page)).toHaveCount(0);
-    await expect(page.getByTestId('gallery-storage-usage')).toContainText('1 photo use');
+    await expect(page.getByTestId('gallery-storage-usage')).toContainText('1 photo ·');
     // Its recording is gone from storage too.
     const keys = await page.evaluate(
       () =>
@@ -338,6 +338,63 @@ test.describe('videos in the gallery', () => {
     await page.getByRole('button', { name: 'Select all' }).click();
     await page.getByRole('button', { name: 'Delete selected' }).click();
     await expect(page.getByRole('dialog', { name: 'Confirm Deletion' })).toContainText('delete these 2 items');
+  });
+});
+
+test.describe('swiping on the video page', () => {
+  test('a swipe over the video moves to the next and previous item, and the controls strip is left to the player', async ({ page, context }) => {
+    await skipIfCannotRecord(page);
+    await setUpGrantedCamera(page, context);
+    await takePhotos(page, 1);
+    await recordVideo(page, 1200);
+    await openGallery(page);
+    await videoTile(page).click(); // newest first: the video is first, the photo second
+    const dialog = page.getByRole('dialog', { name: 'Video' });
+    await expect(dialog.locator('video')).toHaveAttribute('src', /^blob:/);
+    const box = (await dialog.locator('video').boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 3;
+    const drag = async (dx: number, fromY = y) => {
+      await page.mouse.move(x, fromY);
+      await page.mouse.down();
+      await page.mouse.move(x + dx / 2, fromY, { steps: 4 });
+      await page.mouse.move(x + dx, fromY, { steps: 4 });
+      await page.mouse.up();
+    };
+
+    await drag(-150);
+    await expect(page.getByRole('dialog', { name: 'Photo' })).toBeVisible();
+    await expect(page.getByText('Photo 2 of 2')).toBeVisible();
+    await page.getByRole('dialog', { name: 'Photo' }).locator('img[alt^="Photo taken"]').waitFor();
+    // Back to the video by swiping right over the photo, then try the controls strip: it does not swipe.
+    const photoBox = (await page.getByRole('dialog', { name: 'Photo' }).locator('img[alt^="Photo taken"]').boundingBox())!;
+    await page.mouse.move(photoBox.x + photoBox.width / 2, photoBox.y + photoBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(photoBox.x + photoBox.width / 2 + 75, photoBox.y + photoBox.height / 2, { steps: 4 });
+    await page.mouse.move(photoBox.x + photoBox.width / 2 + 150, photoBox.y + photoBox.height / 2, { steps: 4 });
+    await page.mouse.up();
+    await expect(page.getByRole('dialog', { name: 'Video' })).toBeVisible();
+    const videoBox = (await page.getByRole('dialog', { name: 'Video' }).locator('video').boundingBox())!;
+    await drag(-150, videoBox.y + videoBox.height - 20);
+    await expect(page.getByRole('dialog', { name: 'Video' })).toBeVisible();
+  });
+});
+
+test.describe('tapping the video page', () => {
+  test('a tap on the picture plays and pauses the video', async ({ page, context }) => {
+    await skipIfCannotRecord(page);
+    await setUpGrantedCamera(page, context);
+    await recordVideo(page, 1500);
+    await openGallery(page);
+    await videoTile(page).click();
+    const dialog = page.getByRole('dialog', { name: 'Video' });
+    const paused = () => dialog.locator('video').evaluate(v => (v as HTMLVideoElement).paused);
+    await expect(dialog.locator('video')).toHaveAttribute('src', /^blob:/);
+    expect(await paused()).toBe(true);
+    await dialog.getByTestId('video-swipe-layer').click();
+    await expect.poll(paused).toBe(false);
+    await dialog.getByTestId('video-swipe-layer').click();
+    await expect.poll(paused).toBe(true);
   });
 });
 
