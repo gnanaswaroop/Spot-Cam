@@ -4,7 +4,7 @@ import { SITE, setUpGrantedCamera, skipIfNoCameraFrames, takePhotos } from './he
 
 test.describe('page titles', () => {
   for (const [path, title] of [
-    ['/', 'SpotCam: Free Timestamp Camera with GPS Location'],
+    ['/', 'Free Online Timestamp Camera with GPS Location | SpotCam'],
     ['/cam', 'Camera | SpotCam'],
     ['/gallery', 'Gallery | SpotCam'],
     ['/privacy', 'Privacy Policy | SpotCam'],

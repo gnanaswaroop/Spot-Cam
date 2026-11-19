@@ -12,7 +12,7 @@ export const TAGLINE = 'Spot it. Snap it. Stamp it.';
 
 /** The document title for each page (see the matching entries in index.html and the static route files). */
 export const PAGE_TITLES = {
-  landing: 'SpotCam: Free Timestamp Camera with GPS Location',
+  landing: 'Free Online Timestamp Camera with GPS Location | SpotCam',
   camera: 'Camera | SpotCam',
   gallery: 'Gallery | SpotCam',
   privacy: 'Privacy Policy | SpotCam',

@@ -83,3 +83,42 @@ describe('renderPage', () => {
     expect(() => renderPage('<head></head>', page(''), undefined)).toThrow(/seo:start/);
   });
 });
+
+describe('search wording', () => {
+  const landing = seoPages('/')[0];
+
+  it('puts the words people search for in the landing page title, description and heading', () => {
+    expect(landing.title.toLowerCase()).toContain('timestamp camera');
+    expect(landing.title.length).toBeLessThanOrEqual(65); // longer titles are cut in search results
+    expect(landing.description.length).toBeLessThanOrEqual(160);
+    expect(landing.description.toLowerCase()).toContain('video');
+    expect(landing.body).toMatch(/<h1>SpotCam: free timestamp camera/);
+  });
+
+  it('gives the landing page real text and a link to the how-it-works page for crawlers that run no JavaScript', () => {
+    const words = landing.body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
+    expect(words).toBeGreaterThan(80);
+    expect(landing.body).toContain('href="/how-it-works/"');
+    expect(landing.body).toContain('<h2>What people use it for</h2>');
+  });
+
+  it('describes the app and the site as structured data, with a screenshot', () => {
+    const tags = headTags(landing, 'https://example.com');
+    const blocks = [...tags.matchAll(/<script type="application\/ld\+json">([^<]*)<\/script>/g)].map(m => JSON.parse(m[1]));
+    const types = blocks.map(b => b['@type']);
+    expect(types).toEqual(['WebApplication', 'WebSite']);
+    expect(blocks[0].screenshot).toBe('https://example.com/screenshots/camera.png');
+    expect(blocks[0].featureList.join(' ')).toMatch(/video/i);
+  });
+
+  it('adds a breadcrumb trail to the content pages, and not to the landing page or the tools', () => {
+    const typesOf = (dir: string) => {
+      const page = seoPages('/').find(p => p.dir === dir)!;
+      return [...headTags(page, 'https://example.com').matchAll(/"@type":"(\w+)"/g)].map(m => m[1]);
+    };
+    expect(typesOf('privacy')).toContain('BreadcrumbList');
+    expect(typesOf('how-it-works')).toContain('BreadcrumbList');
+    expect(typesOf('')).not.toContain('BreadcrumbList');
+    expect(typesOf('cam')).not.toContain('BreadcrumbList');
+  });
+});

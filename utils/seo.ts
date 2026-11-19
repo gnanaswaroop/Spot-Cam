@@ -7,7 +7,7 @@
  * the pages simply have no canonical or absolute social-card URLs.
  */
 import { FAQ, HOW_IT_WORKS_INTRO, HOW_STEPS, USE_CASES } from '../content/howItWorks';
-import { TAGLINE } from './constants';
+import { PAGE_TITLES, TAGLINE } from './constants';
 import { absoluteUrl } from './sitemap';
 
 export interface SeoPage {
@@ -25,18 +25,21 @@ export interface SeoPage {
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const DESCRIPTION = 'Free online timestamp camera. Stamps the date, time, GPS location and address onto every photo. Private: photos never leave your device.';
-const LANDING_TITLE = 'SpotCam: Free Timestamp Camera with GPS Location';
+const DESCRIPTION = 'Free online timestamp camera. Stamps the date, time, GPS location and address onto every photo and video. Private: nothing leaves your device.';
+const LANDING_TITLE = PAGE_TITLES.landing;
 const LANDING_DESCRIPTION =
-  'Free timestamp camera in your browser. Photos with the date, time, GPS location and address stamped on. No app, no sign-up, and photos stay on your device.';
+  'Free timestamp camera in your browser: photos and videos with the date, time, GPS location and address stamped on. No app, no sign-up, nothing uploaded.';
 
 const nav = (base: string) =>
   `<nav aria-label="Pages"><a href="${base}cam">Start Cam</a> \u00b7 <a href="${base}how-it-works/">How it works</a> \u00b7 <a href="${base}privacy/">Privacy</a></nav>`;
 
 const landingBody = (base: string) =>
-  `<main><h1>SpotCam</h1><p>${TAGLINE}</p>` +
-  `<p>A free timestamp camera that stamps the date, time and GPS location onto every photo.</p>` +
-  `<ul><li>Date &amp; time</li><li>GPS &amp; address</li><li>Stays on your device</li></ul>${nav(base)}</main>`;
+  `<main><h1>SpotCam: free timestamp camera for photos and video, with GPS location</h1><p>${TAGLINE}</p>` +
+  `<p>SpotCam is a free timestamp camera that runs in your browser. It stamps the date, time, GPS coordinates and street address onto every photo and video, ` +
+  `so each one shows when and where it was taken. There is no app to install and no sign-up, and your photos and videos stay on your device.</p>` +
+  `<ul><li>Photo &amp; video</li><li>Date, time &amp; GPS</li><li>Address of the place</li><li>Stays on your device</li><li>Works offline</li></ul>` +
+  `<h2>What people use it for</h2><ul>${USE_CASES.map(u => `<li>${esc(u.title)}</li>`).join('')}</ul>` +
+  `<p><a href="${base}how-it-works/">How SpotCam works</a>: the three steps, what it is used for, and answers to common questions.</p>${nav(base)}</main>`;
 
 const howBody = (base: string) =>
   `<main><h1>How SpotCam works</h1><p>${esc(HOW_IT_WORKS_INTRO)}</p>` +
@@ -86,13 +89,30 @@ const jsonLd = (page: SeoPage, origin: string | undefined): object[] => {
       '@context': 'https://schema.org',
       '@type': 'WebApplication',
       name: 'SpotCam',
+      alternateName: 'SpotCam timestamp camera',
       description: LANDING_DESCRIPTION,
-      featureList: ['Date and time on every photo', 'GPS coordinates and street address', 'Works offline', 'Photos stay on your device', 'Share with a map link'],
+      featureList: [
+        'Date and time on every photo and video',
+        'GPS coordinates and street address',
+        'Photo and video with the stamp on every frame',
+        'Works offline',
+        'Photos and videos stay on your device',
+        'Share with a map link',
+      ],
       applicationCategory: 'PhotographyApplication',
       operatingSystem: 'Any (runs in the browser)',
       browserRequirements: 'Requires a camera and JavaScript',
+      inLanguage: 'en',
       isAccessibleForFree: true,
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      ...(origin ? { url: absoluteUrl(origin, '/'), screenshot: absoluteUrl(origin, '/screenshots/camera.png') } : {}),
+    });
+    data.push({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'SpotCam',
+      alternateName: 'SpotCam timestamp camera',
+      inLanguage: 'en',
       ...(origin ? { url: absoluteUrl(origin, '/') } : {}),
     });
   }
@@ -101,6 +121,17 @@ const jsonLd = (page: SeoPage, origin: string | undefined): object[] => {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
       mainEntity: FAQ.map(f => ({ '@type': 'Question', name: f.question, acceptedAnswer: { '@type': 'Answer', text: f.answer } })),
+    });
+  }
+  // A trail of Home > this page for the pages that are content (the tools are not indexed).
+  if (origin && page.index && page.dir !== '' && page.dir !== 'home') {
+    data.push({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'SpotCam', item: absoluteUrl(origin, '/') },
+        { '@type': 'ListItem', position: 2, name: page.title.split(' | ')[0].replace(/^How SpotCam works.*/, 'How SpotCam works'), item: absoluteUrl(origin, page.canonical) },
+      ],
     });
   }
   return data;

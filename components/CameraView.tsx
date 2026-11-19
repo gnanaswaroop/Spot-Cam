@@ -56,7 +56,7 @@ const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress, on
         {/* Brand badge: lives inside the existing band so it costs no vertical space. Tap to go home. */}
         <button onClick={onHome} className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-white/10 p-1 pr-1 hover:bg-white/20 sm:pr-2.5" aria-label="SpotCam home">
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-6 w-6 rounded-[22%]" />
-            <span className="hidden text-xs font-semibold tracking-tight sm:inline">SpotCam</span>
+            <span className="hidden text-xs font-semibold tracking-tight min-[390px]:inline">SpotCam</span>
         </button>
         <button onClick={onOpenSettings} className="absolute right-2 top-2 rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label="Settings">
             <SettingsIcon className="h-5 w-5" />
