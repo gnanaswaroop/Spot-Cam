@@ -55,6 +55,7 @@ If you blocked one, SpotCam shows a notice with what to do:
 4. **Gallery**: the button on the left opens your photos.
 5. **Switch camera**: the button on the right flips between front and back cameras (if your device has both).
 6. **Zoom**: if your camera supports it, a zoom slider appears above the controls.
+7. **Photo / Video**: the switch above the shutter chooses what the shutter does. In **Video** mode, tap the round button to start recording and tap it again to stop. The date, time and place are drawn on every frame of the video, the running time is shown, and the video stops by itself at the longest length chosen in Settings (5 minutes by default). Sound is recorded too: your browser asks for the microphone the first time, and if you refuse, the video is recorded without sound. Videos are saved in the format your browser records (MP4 or WebM), and the gallery keeps them next to your photos.
 
 ### 3.4. The gallery
 
@@ -78,7 +79,9 @@ Tap a photo to open it.
 ## 4. Good to know
 
 - Photos are saved **only in your browser**. Clearing site data or switching browsers removes them. Share or save photos you want to keep.
-- The gallery keeps your photos until you delete them, and shows the space they use.
+- The gallery keeps your photos and videos until you delete them. It shows the space they use, for photos and videos separately, and has a filter to show everything, only photos, or only videos. Videos take much more space than photos.
+- **Settings > Video** has three choices, all on by default except the length: record video at all, record sound, and the longest video (1, 2, 5, 10 or 15 minutes; 5 by default).
+- If your browser cannot record the camera, SpotCam only offers photos.
 - The address comes from free public services based on [OpenStreetMap](https://www.openstreetmap.org/) data: Photon first, then BigDataCloud, then OpenStreetMap Nominatim if the others are unavailable. Your coordinates are sent only to the one that answers, only to look up the address. Photos are never sent anywhere.
 - SpotCam looks up the address only after you have moved a short way, not on every GPS update. If no service answers, the screen says "Address unavailable" with a Retry button, and a photo is stamped with the coordinates only (never with an error message).
 - SpotCam needs a modern browser (recent Chrome, Edge, Firefox or Safari) and a secure (HTTPS) connection for the camera and location.

@@ -20,7 +20,17 @@ interface StoredSettings {
   photoTtlMs?: number;
   /** false when the person turned off the line about SpotCam at the end of shared messages. Missing means on. */
   shareSignature?: boolean;
+  /** false when video recording was turned off. Missing means on. */
+  videoEnabled?: boolean;
+  /** false when videos are recorded without sound. Missing means with sound. */
+  recordSound?: boolean;
+  /** The longest video, in minutes. Missing means the default. */
+  videoMaxMinutes?: number;
 }
+
+/** How long a video may be, in minutes: the choices in Settings, and the default. */
+export const VIDEO_MAX_MINUTES_OPTIONS = [1, 2, 5, 10, 15] as const;
+export const DEFAULT_VIDEO_MAX_MINUTES = 5;
 
 /** Fired on the window when a setting that other parts of the app react to has changed. */
 export const SETTINGS_CHANGED_EVENT = 'spotcam:settings-changed';
@@ -120,5 +130,48 @@ export function setShareSignature(on: boolean) {
   const settings = readStored();
   if (on) delete settings.shareSignature;
   else settings.shareSignature = false;
+  writeStored(settings);
+}
+
+/** Whether the camera offers video next to photos. On by default. */
+export function getVideoEnabled(): boolean {
+  return readStored().videoEnabled !== false;
+}
+
+/** Turns video on or off. Turning it on removes the stored value, so the default keeps applying. */
+export function setVideoEnabled(on: boolean) {
+  const settings = readStored();
+  if (on) delete settings.videoEnabled;
+  else settings.videoEnabled = false;
+  writeStored(settings);
+}
+
+/** Whether videos are recorded with the microphone. On by default. */
+export function getRecordSound(): boolean {
+  return readStored().recordSound !== false;
+}
+
+/** Turns sound on or off. Turning it on removes the stored value, so the default keeps applying. */
+export function setRecordSound(on: boolean) {
+  const settings = readStored();
+  if (on) delete settings.recordSound;
+  else settings.recordSound = false;
+  writeStored(settings);
+}
+
+const isValidVideoMinutes = (m: unknown): m is number => (VIDEO_MAX_MINUTES_OPTIONS as readonly unknown[]).includes(m);
+
+/** The longest a video may be, in minutes: the saved choice, otherwise 5. */
+export function getVideoMaxMinutes(): number {
+  const saved = readStored().videoMaxMinutes;
+  return isValidVideoMinutes(saved) ? saved : DEFAULT_VIDEO_MAX_MINUTES;
+}
+
+/** Saves the longest video. Choosing the default removes the stored value, so the default keeps applying. */
+export function setVideoMaxMinutes(minutes: number) {
+  if (!isValidVideoMinutes(minutes)) return;
+  const settings = readStored();
+  if (minutes === DEFAULT_VIDEO_MAX_MINUTES) delete settings.videoMaxMinutes;
+  else settings.videoMaxMinutes = minutes;
   writeStored(settings);
 }

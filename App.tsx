@@ -11,8 +11,8 @@ import { PrivacyView } from './components/PrivacyView';
 import { HowItWorksView } from './components/HowItWorksView';
 import { SettingsView } from './components/SettingsView';
 import { PAGE_TITLES } from './utils/constants';
-import { CapturedPhoto } from './types';
-import { holdFull, metaFor } from './utils/photoStore';
+import { CapturedPhoto, CapturedVideo } from './types';
+import { holdFull, metaFor, metaForVideo } from './utils/photoStore';
 import { usePersistedPhotos } from './hooks/usePersistedPhotos';
 import { usePathRoute } from './hooks/usePathRoute';
 import { useViewportHeight } from './hooks/useViewportHeight';
@@ -61,6 +61,13 @@ const App: React.FC = () => {
     track('photo_captured');
   };
 
+  /** Adds a video that was just recorded, next to the photos. */
+  const handleVideo = (video: CapturedVideo) => {
+    void requestPersistentStorage();
+    holdFull(video.id, video.blob); // the recording waits here until it is written
+    setPhotos(prevPhotos => [metaForVideo(video), ...prevPhotos]);
+  };
+
   /**
    * Removes a photo from the photos array by its ID.
    * @param {string} id The ID of the photo to delete.
@@ -92,6 +99,7 @@ const App: React.FC = () => {
       {view === 'camera' && (
         <CameraView
           onCapture={handleCapture}
+          onVideo={handleVideo}
           onSwitchView={() => switchView('gallery')}
           lastPhotoUrl={photos.length > 0 ? photos.reduce((a, b) => (b.timestamp > a.timestamp ? b : a)).thumbUrl : undefined}
           onHome={() => switchView('landing')}

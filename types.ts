@@ -42,4 +42,23 @@ export interface GalleryPhoto {
   bytes: number;
   timestamp: number;
   location: GeolocationData | null;
+  /** Absent for a photo. */
+  kind?: 'video';
+  /** A video's type without parameters, e.g. "video/mp4" (the format the browser recorded). */
+  mimeType?: string;
+  /** A video's length in milliseconds. */
+  durationMs?: number;
+}
+
+/** A video that was just recorded, before it is saved. */
+export interface CapturedVideo {
+  id: string;
+  /** The recording, in whatever format the browser records. */
+  blob: Blob;
+  mimeType: string;
+  durationMs: number;
+  /** A small picture of the first frame. */
+  thumbUrl: string;
+  timestamp: number;
+  location: GeolocationData | null;
 }
