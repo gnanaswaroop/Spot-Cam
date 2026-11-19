@@ -20,7 +20,9 @@ const PRECACHED = new Set(PRECACHE);
 const NETWORK_TIMEOUT_MS = 3000;
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(PRECACHE)));
+  // Always from the network, never from the browser's own HTTP cache: that copy can be up to 10 minutes old, and a page from
+  // the previous release stored next to the scripts of this one would open blank when there is no connection.
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(PRECACHE.map(url => new Request(url, { cache: 'reload' })))));
 });
 
 self.addEventListener('activate', event => {

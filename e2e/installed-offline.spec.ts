@@ -183,3 +183,65 @@ test.describe('installed app, no connection', () => {
     await expect(page.getByRole('dialog', { name: 'Video' }).locator('video')).toHaveAttribute('src', /^blob:/);
   });
 });
+
+test.describe('installed app: reopening and updates', () => {
+  test('closing the app and opening it again with no connection starts on the camera (its start page)', async ({ page, context, browserName }) => {
+    test.skip(browserName === 'firefox', FIREFOX_OFFLINE);
+    await skipIfNoCameraFrames(page);
+    await setUp(page, context);
+    await page.goto(`${SITE}/cam`);
+    await expect(page.getByRole('button', { name: 'Capture photo' })).toBeVisible();
+    await page.close(); // the app is closed
+
+    await context.setOffline(true);
+    const reopened = await context.newPage();
+    await installMocks(reopened, { camera: 'granted', location: 'granted' });
+    await reopened.goto(`${SITE}/cam`); // what the home screen icon opens (the manifest's start_url)
+    await expect(reopened.getByRole('button', { name: 'Capture photo' })).toBeVisible();
+    await reopened.getByRole('button', { name: 'Open gallery' }).click();
+    await expect(reopened.getByRole('heading', { name: 'Gallery', level: 1 })).toBeVisible();
+  });
+
+  test('with a new version downloaded but not yet applied, the app still opens with no connection', async ({ page, context, browserName }) => {
+    test.skip(browserName !== 'chromium', 'Only Chromium lets a test rewrite the worker script request');
+    // The first visit gets an "old" worker; the real script then plays the new release (as in pwa.spec.ts).
+    await context.route('**/sw.js', async route => {
+      const response = await route.fetch();
+      const script = (await response.text()).replace(/const VERSION = '[^']+'/, "const VERSION = 'oldrelease'");
+      await route.fulfill({ response, body: script });
+    });
+    await installMocks(page, { camera: 'granted', location: 'granted' });
+    await install(page);
+    await context.unroute('**/sw.js');
+    await page.evaluate(() => navigator.serviceWorker.getRegistration().then(reg => reg!.update()));
+    await expect(page.getByRole('status').filter({ hasText: 'A new version of SpotCam is available.' })).toBeVisible();
+
+    await context.setOffline(true);
+    for (const [path, heading] of [['/gallery/', 'Gallery'], ['/settings/', 'Settings']] as const) {
+      await page.goto(`${SITE}${path}`);
+      await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
+    }
+    await page.goto(`${SITE}/`);
+    await expect(page.getByText('Spot it. Snap it. Stamp it.')).toBeVisible();
+  });
+
+  test('every file the pages need is in the cache: no page asks the network for a script or style while offline', async ({ page, context, browserName }) => {
+    test.skip(browserName === 'firefox', FIREFOX_OFFLINE);
+    await installMocks(page, { camera: 'granted', location: 'granted' });
+    await install(page);
+    await context.setOffline(true);
+    const failed: string[] = [];
+    page.on('requestfailed', req => {
+      const url = new URL(req.url());
+      // Only this site's own files matter (the analytics config is optional and is allowed to fail).
+      if (url.origin === new URL(page.url()).origin && !url.pathname.endsWith('analytics.config.json')) failed.push(url.pathname);
+    });
+    for (const path of ['/', '/cam/', '/gallery/', '/settings/', '/privacy/', '/how-it-works/']) {
+      await page.goto(`${SITE}${path}`);
+      await page.waitForLoadState('load');
+      await page.waitForTimeout(500);
+    }
+    expect(failed).toEqual([]);
+  });
+});
+
