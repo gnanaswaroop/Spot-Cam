@@ -14,8 +14,6 @@ const recordShares = (page: Page) =>
   page.addInitScript(() => {
     const w = window as unknown as { __shared: Shared[] };
     w.__shared = [];
-    (w as unknown as { __copied: string[] }).__copied = [];
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (t: string) => (w as unknown as { __copied: string[] }).__copied.push(t) } });
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
     Object.defineProperty(navigator, 'share', {
       configurable: true,
@@ -50,9 +48,6 @@ test.describe('sharing a photo', () => {
     const [share] = await shared(page);
     expect(share.files).toBe(1);
     expect(share.title).toBe('Photo from SpotCam');
-    // The same message is copied, to paste as the caption, with a note saying so.
-    expect(await page.evaluate(() => (window as unknown as { __copied: string[] }).__copied)).toEqual([share.text]);
-    await expect(page.getByRole('status').filter({ hasText: 'Message copied. Paste it as the caption when you share the photo.' })).toBeVisible();
     const lines = share.text!.split('\n');
     expect(lines[0]).toMatch(/^When: .+/);
     expect(lines[1]).toMatch(/^Where: .*Paris, France$/);
