@@ -54,9 +54,9 @@ const AddressLine = ({ location, status, onRetry }: { location: GeolocationData;
 const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress, onOpenSettings }: { location: GeolocationData | null; addressStatus: AddressStatus; dateTime: string; onHome: () => void; onRetryAddress: () => void; onOpenSettings: () => void }) => (
     <div data-testid="stamp-overlay" className="absolute top-0 left-0 right-0 px-3 py-2 text-white text-center text-sm font-semibold bg-black/70 short:right-24 short:py-1 short:pl-12 short:text-xs short:leading-tight" style={{ fontFamily: FONT_FAMILY_OVERLAY, textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
         {/* Brand badge: lives inside the existing band so it costs no vertical space. Tap to go home. */}
-        <button onClick={onHome} className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-white/10 p-1 pr-1 hover:bg-white/20 sm:pr-2.5" aria-label="SpotCam home">
+        <button onClick={onHome} className="absolute left-2 top-2 flex flex-col items-center gap-0.5 rounded-xl bg-white/10 p-1 hover:bg-white/20 min-[390px]:flex-row min-[390px]:gap-1.5 min-[390px]:rounded-full min-[390px]:pr-2.5" aria-label="SpotCam home">
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-6 w-6 rounded-[22%]" />
-            <span className="hidden text-xs font-semibold tracking-tight min-[390px]:inline">SpotCam</span>
+            <span className="text-[9px] font-semibold leading-none tracking-tight min-[390px]:text-xs">SpotCam</span>
         </button>
         <button onClick={onOpenSettings} className="absolute right-2 top-2 rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label="Settings">
             <SettingsIcon className="h-5 w-5" />

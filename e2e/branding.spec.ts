@@ -3,7 +3,7 @@
  * and the manifest, and actually rendered by the app.
  */
 import { test, expect } from './fixtures';
-import { SITE } from './helpers';
+import { SITE, setUpGrantedCamera } from './helpers';
 
 /** Width and height from a PNG's IHDR chunk. */
 const pngSize = (body: Buffer) => ({ width: body.readUInt32BE(16), height: body.readUInt32BE(20) });
@@ -134,4 +134,19 @@ test.describe('branding', () => {
       expect(loaded, path).toBe(true);
     }
   });
+});
+
+test.describe('the name on the camera page', () => {
+  for (const width of [360, 430]) {
+    test(`shows the SpotCam name next to the icon on a ${width}px wide phone, inside the top band`, async ({ page, context }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await setUpGrantedCamera(page, context);
+      await page.goto(`${SITE}/cam`);
+      const badge = page.getByRole('button', { name: 'SpotCam home' });
+      await expect(badge.getByText('SpotCam', { exact: true })).toBeVisible();
+      const band = await page.getByTestId('stamp-overlay').boundingBox();
+      const box = await badge.boundingBox();
+      expect(box!.y + box!.height).toBeLessThanOrEqual(band!.y + band!.height); // the name does not make the band taller
+    });
+  }
 });

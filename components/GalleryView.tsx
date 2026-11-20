@@ -238,6 +238,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
       cancelled = true;
     };
   }, [photos.length]);
+  // A short note after copying a video's message for pasting; it fades away on its own.
+  const [copyNote, setCopyNote] = useState('');
+  useEffect(() => {
+    if (!copyNote) return;
+    const timer = setTimeout(() => setCopyNote(''), 8000);
+    return () => clearTimeout(timer);
+  }, [copyNote]);
   // Which kind of item the gallery lists: everything by default.
   const [filter, setFilter] = useState<'all' | 'photo' | 'video'>('all');
   // Holding a photo starts selecting with that photo ticked.
@@ -250,6 +257,11 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
    * @param {GalleryPhoto} photo The photo to be shared.
    */
   const handleShare = async (photo: GalleryPhoto) => {
+    const text = shareText(photo, getMapService(), getShareSignature() ? shareSignature(window.location.origin) : null);
+    // The message is also copied, ready to paste as the caption: phone share sheets show no text box for a video, and many apps
+    // ignore the text sent with a photo or video. This happens first, while the tap still counts as a user action (copying needs that).
+    const copied = await navigator.clipboard?.writeText(text).then(() => true, () => false);
+    setCopyNote(copied ? `Message copied. Paste it as the caption when you share the ${photo.kind === 'video' ? 'video' : 'photo'}.` : '');
     // Convert the data URL to a File object, which is required by the Web Share API for files.
     const file = await photoFile(photo);
     if (!file) return alert(`Could not read the ${photo.kind === 'video' ? 'video' : 'photo'}.`);
@@ -260,13 +272,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
         await navigator.share({
           files: [file],
           title: photo.kind === 'video' ? 'Video from SpotCam' : 'Photo from SpotCam',
-          text: shareText(photo, getMapService(), getShareSignature() ? shareSignature(window.location.origin) : null),
+          text,
         });
         track('share_used');
       } catch (error) {
-        // Handle cases where the user cancels the share dialog or an error occurs.
+        // Closing the share sheet without sharing is not an error: say nothing. Anything else is, so name what was being shared.
+        if (error instanceof DOMException && error.name === 'AbortError') return;
         console.error('Error sharing:', error);
-        alert('Could not share the photo.');
+        alert(`Could not share the ${photo.kind === 'video' ? 'video' : 'photo'}.`);
       }
     } else {
       // Fallback for browsers that do not support the Web Share API.
@@ -486,6 +499,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
       )}
       </main>
       {/* Modals are rendered conditionally based on state */}
+      <p role="status" className={copyNote ? 'fixed inset-x-4 bottom-28 z-[70] rounded-lg bg-gray-800 px-4 py-3 text-center text-sm text-white shadow-lg' : 'sr-only'}>{copyNote}</p>
       {selectedPhoto && <PhotoModal photo={selectedPhoto} before={listed[viewedIndex - 1]} after={listed[viewedIndex + 1]} position={viewedIndex + 1} total={listed.length} onPrevious={previous} onNext={next} onClose={closePhoto} onDelete={requestDelete} onShare={handleShare} onDownload={handleDownload} />}
       {idsToDelete && <ConfirmationDialog count={idsToDelete.length} noun={nounFor(idsToDelete)} onConfirm={handleConfirmDeleteMany} onCancel={closeDeleteMany} />}
       {photoIdToDelete && <ConfirmationDialog noun={nounFor([photoIdToDelete])} onConfirm={handleConfirmDelete} onCancel={handleCancelDelete} />}
