@@ -395,12 +395,12 @@ test.describe('videos in the gallery', () => {
     expect(lines[0]).toMatch(/^When: .+/);
     expect(lines[1]).toMatch(/^Where: .+/);
     expect(lines[2]).toMatch(/^Map: https:/);
-    // The share sheet has no text box for a video, so the same message is copied for pasting as the caption.
+    // The same message is copied for pasting as the caption.
     expect(await page.evaluate(() => (window as any).__copied)).toEqual([share.text]);
-    await expect(page.getByRole('status').filter({ hasText: 'Message copied. Paste it as the caption' })).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: 'Message copied. Paste it as the caption when you share the video.' })).toBeVisible();
   });
 
-  test('sharing a photo does not copy anything (its share sheet carries the message)', async ({ page, context }) => {
+  test('sharing a photo copies the same message too, for pasting as the caption', async ({ page, context }) => {
     await page.addInitScript(() => {
       (window as unknown as { __copied: string[] }).__copied = [];
       Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (t: string) => (window as unknown as { __copied: string[] }).__copied.push(t) } });
@@ -410,9 +410,11 @@ test.describe('videos in the gallery', () => {
     await galleryWithOneOfEach(page, context);
     await photoTile(page).click();
     await page.getByRole('dialog', { name: 'Photo' }).getByRole('button', { name: 'Share photo' }).click();
-    await page.waitForTimeout(500);
-    expect(await page.evaluate(() => (window as any).__copied)).toEqual([]);
-    await expect(page.getByRole('status').filter({ hasText: 'Message copied' })).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => (window as any).__copied.length)).toBe(1);
+    const copied = await page.evaluate(() => (window as any).__copied as string[]);
+    expect(copied).toHaveLength(1);
+    expect(copied[0].split(String.fromCharCode(10)).slice(0, 3).map(l => l.split(':')[0])).toEqual(['When', 'Where', 'Map']);
+    await expect(page.getByRole('status').filter({ hasText: 'Message copied. Paste it as the caption when you share the photo.' })).toBeVisible();
   });
 });
 

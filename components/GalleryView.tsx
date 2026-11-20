@@ -258,12 +258,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
    */
   const handleShare = async (photo: GalleryPhoto) => {
     const text = shareText(photo, getMapService(), getShareSignature() ? shareSignature(window.location.origin) : null);
-    // Phone share sheets show no text box for a video, and many apps ignore the text sent with one. So the message is also copied,
-    // ready to paste as the caption. This happens first, while the tap still counts as a user action (copying needs that).
-    if (photo.kind === 'video') {
-      const copied = await navigator.clipboard?.writeText(text).then(() => true, () => false);
-      setCopyNote(copied ? 'Message copied. Paste it as the caption when you share the video.' : '');
-    } else setCopyNote('');
+    // The message is also copied, ready to paste as the caption: phone share sheets show no text box for a video, and many apps
+    // ignore the text sent with a photo or video. This happens first, while the tap still counts as a user action (copying needs that).
+    const copied = await navigator.clipboard?.writeText(text).then(() => true, () => false);
+    setCopyNote(copied ? `Message copied. Paste it as the caption when you share the ${photo.kind === 'video' ? 'video' : 'photo'}.` : '');
     // Convert the data URL to a File object, which is required by the Web Share API for files.
     const file = await photoFile(photo);
     if (!file) return alert(`Could not read the ${photo.kind === 'video' ? 'video' : 'photo'}.`);
