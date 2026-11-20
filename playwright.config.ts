@@ -18,8 +18,9 @@ export default defineConfig({
   // screenshots: `npm run screenshots`; live: post-deploy checks against the real site (see playwright.live.config.ts)
   testIgnore: ['**/screenshots.spec.ts', '**/live/**'],
   fullyParallel: true,
-  // Three browser engines in parallel is heavy; keep the default light so a laptop stays responsive.
-  workers: 2,
+  // Three browser engines in parallel is heavy, so a laptop stays light with two. A GitHub runner has four cores, and each
+  // browser already runs in its own job there, so use them all.
+  workers: process.env.CI ? 4 : 2,
   retries: process.env.CI ? 1 : 0,
   reporter: [['list']],
   use: {
