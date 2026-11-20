@@ -26,15 +26,15 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:unit
 
-  # Each browser's tests are split over three runners, so the slowest browser finishes in about a third of the time.
+  # Each browser's tests are split over five runners, so the slowest browser finishes in about a fifth of the time.
   e2e-shard:
-    name: E2E shard (${{ matrix.project }} ${{ matrix.shard }}/3)
+    name: E2E shard (${{ matrix.project }} ${{ matrix.shard }}/5)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         project: [chromium-android, firefox, webkit-iphone]
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -44,7 +44,7 @@ jobs:
       - run: npm ci
       - name: Install browser
         run: npx playwright install --with-deps ${{ matrix.project == 'chromium-android' && 'chromium' || matrix.project == 'firefox' && 'firefox' || 'webkit' }}
-      - run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/3
+      - run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/5
       - name: Upload traces from failed tests
         if: failure()
         uses: actions/upload-artifact@v4
