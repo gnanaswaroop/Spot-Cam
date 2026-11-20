@@ -373,6 +373,8 @@ test.describe('videos in the gallery', () => {
     await page.addInitScript(() => {
       const w = window as unknown as { __shared: { title?: string; text?: string; files: { name: string; type: string }[] }[] };
       w.__shared = [];
+      (window as unknown as { __copied: string[] }).__copied = [];
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (t: string) => (window as unknown as { __copied: string[] }).__copied.push(t) } });
       Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
       Object.defineProperty(navigator, 'share', {
         configurable: true,
@@ -393,6 +395,24 @@ test.describe('videos in the gallery', () => {
     expect(lines[0]).toMatch(/^When: .+/);
     expect(lines[1]).toMatch(/^Where: .+/);
     expect(lines[2]).toMatch(/^Map: https:/);
+    // The share sheet has no text box for a video, so the same message is copied for pasting as the caption.
+    expect(await page.evaluate(() => (window as any).__copied)).toEqual([share.text]);
+    await expect(page.getByRole('status').filter({ hasText: 'Message copied. Paste it as the caption' })).toBeVisible();
+  });
+
+  test('sharing a photo does not copy anything (its share sheet carries the message)', async ({ page, context }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { __copied: string[] }).__copied = [];
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (t: string) => (window as unknown as { __copied: string[] }).__copied.push(t) } });
+      Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+      Object.defineProperty(navigator, 'share', { configurable: true, value: async () => {} });
+    });
+    await galleryWithOneOfEach(page, context);
+    await photoTile(page).click();
+    await page.getByRole('dialog', { name: 'Photo' }).getByRole('button', { name: 'Share photo' }).click();
+    await page.waitForTimeout(500);
+    expect(await page.evaluate(() => (window as any).__copied)).toEqual([]);
+    await expect(page.getByRole('status').filter({ hasText: 'Message copied' })).toHaveCount(0);
   });
 });
 
