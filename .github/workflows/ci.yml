@@ -26,13 +26,15 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:unit
 
-  e2e:
-    name: End-to-end (${{ matrix.project }})
+  # Each browser's tests are split over three runners, so the slowest browser finishes in about a third of the time.
+  e2e-shard:
+    name: E2E shard (${{ matrix.project }} ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         project: [chromium-android, firefox, webkit-iphone]
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -42,11 +44,28 @@ jobs:
       - run: npm ci
       - name: Install browser
         run: npx playwright install --with-deps ${{ matrix.project == 'chromium-android' && 'chromium' || matrix.project == 'firefox' && 'firefox' || 'webkit' }}
-      - run: npx playwright test --project=${{ matrix.project }}
+      - run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/3
       - name: Upload traces from failed tests
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces-${{ matrix.project }}
+          name: playwright-traces-${{ matrix.project }}-${{ matrix.shard }}
           path: test-results/
           retention-days: 7
+
+  # One result per browser under the original names, because the branch protection rules require these exact check names.
+  e2e:
+    name: End-to-end (${{ matrix.project }})
+    needs: e2e-shard
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [chromium-android, firefox, webkit-iphone]
+    steps:
+      - name: All shards passed
+        run: |
+          if [ "${{ needs.e2e-shard.result }}" != "success" ]; then
+            echo "A shard of the end-to-end tests failed or was cancelled. Open the shard jobs above for the details."
+            exit 1
+          fi
