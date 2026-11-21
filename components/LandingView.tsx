@@ -221,6 +221,11 @@ const StartButton = ({
         {t('landing.how')}
       </a>
       <span aria-hidden="true"> · </span>
+      <button type="button" onClick={shareSite} className="underline hover:text-gray-200">
+        {t('landing.shareSite')}
+      </button>
+    </p>
+    <p className="mt-1 text-xs text-gray-400">
       <a
         href={`${import.meta.env.BASE_URL}settings/`}
         onClick={e => {
@@ -231,10 +236,6 @@ const StartButton = ({
       >
         {t('landing.language')}
       </a>
-      <span aria-hidden="true"> · </span>
-      <button type="button" onClick={shareSite} className="underline hover:text-gray-200">
-        {t('landing.shareSite')}
-      </button>
     </p>
     <p role="status" className="text-xs text-gray-300">{shareMessage ? t(shareMessage) : ''}</p>
     {canInstall && (
