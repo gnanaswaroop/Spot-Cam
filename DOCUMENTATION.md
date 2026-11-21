@@ -20,6 +20,7 @@ Open it at **https://spotcam.in**.
 - **Share** photos through your device's share sheet, or **delete** them.
 - **Helpful permission messages**: if camera or location is blocked, SpotCam says why it needs it and shows how to turn it back on for your browser.
 - **Direct links**: bookmark `/cam` to open the camera straight away.
+- **Languages**: English and Hindi. Choose one in Settings; until you do, SpotCam follows your browser's preferred language only when that is clear, and otherwise uses English.
 - **Private by design**: photos and data stay in your browser (IndexedDB).
 
 ---
@@ -84,6 +85,7 @@ Tap a photo to open it.
 - If your browser cannot record the camera, SpotCam only offers photos.
 - The address comes from free public services based on [OpenStreetMap](https://www.openstreetmap.org/) data: Photon first, then BigDataCloud, then OpenStreetMap Nominatim if the others are unavailable. Your coordinates are sent only to the one that answers, only to look up the address. Photos are never sent anywhere.
 - SpotCam looks up the address only after you have moved a short way, not on every GPS update. If no service answers, the screen says "Address unavailable" with a Retry button, and a photo is stamped with the coordinates only (never with an error message).
+- **Settings > Language** changes the language of the buttons and messages at once; it is kept on this device. The privacy policy and the steps for turning a blocked permission back on stay in English, and the stamp on photos and videos is always the same.
 - SpotCam needs a modern browser (recent Chrome, Edge, Firefox or Safari) and a secure (HTTPS) connection for the camera and location.
 
 ---

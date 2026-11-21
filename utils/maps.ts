@@ -4,6 +4,7 @@
  */
 import type { CapturedPhoto } from '../types';
 import { formatDateTime } from './helpers';
+import { translate } from './i18n';
 
 export type MapService = 'google' | 'apple' | 'osm';
 
@@ -53,9 +54,9 @@ export const shareText = (
   signature?: string | null,
 ): string => {
   const { location } = photo;
-  const where = location ? location.address || `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}` : 'Unknown location';
-  const lines = [`When: ${formatDateTime(photo.timestamp)}`, `Where: ${where}`];
-  if (location) lines.push(`Map: ${mapsUrl(location.latitude, location.longitude, service)}`);
+  const where = location ? location.address || `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}` : translate('share.unknownLocation');
+  const lines = [`${translate('share.when')}: ${formatDateTime(photo.timestamp)}`, `${translate('share.where')}: ${where}`];
+  if (location) lines.push(`${translate('share.map')}: ${mapsUrl(location.latitude, location.longitude, service)}`);
   const message = lines.join('\n');
   return signature ? `${message}\n\n${signature}` : message;
 };
@@ -64,5 +65,4 @@ export const shareText = (
  * The end of a shared photo's message, two short lines: what SpotCam does, and how to use it with the link. `origin` is the address the app
  * is opened from ("https://spotcam.in"), so the link is right on any domain and a tap opens it.
  */
-export const shareSignature = (origin: string): string =>
-  `Stamp the date, time and location on your own photos.\nFree, nothing to install: ${origin}`;
+export const shareSignature = (origin: string): string => translate('share.signature', { origin });

@@ -8,6 +8,7 @@ import { geocoder } from '../utils/geocoder';
 import { distanceMeters } from '../utils/geo';
 import { getCacheRadiusM } from '../utils/settings';
 import { loadLastAddress, saveLastAddress } from '../utils/lastAddress';
+import { translate } from '../utils/i18n';
 
 /** An address older than this distance is no longer shown: it would describe somewhere else. */
 export const ADDRESS_STALE_DISTANCE_M = 200;
@@ -129,7 +130,7 @@ export function useGeolocation() {
 
     let watchId: number | undefined;
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser');
+      setError(translate('camera.geoUnsupported'));
     } else {
       watchId = navigator.geolocation.watchPosition(handlePositionSuccess, handlePositionError, {
         enableHighAccuracy: true, // Request the most accurate position possible.

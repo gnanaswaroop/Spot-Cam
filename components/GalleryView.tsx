@@ -13,8 +13,9 @@ import { dataURLtoFile, downloadFile, formatDateTime } from '../utils/helpers';
 import { readFull, readVideo } from '../utils/photoStore';
 import { formatDuration, videoExtension } from '../utils/video';
 import { useLongPress } from '../hooks/useLongPress';
-import { dayLabel } from '../utils/dateLabels';
-import { ttlLabel } from '../utils/photoExpiry';
+import { dayLabel, type DayLabel } from '../utils/dateLabels';
+import { translate, useT } from '../utils/i18n';
+import { PHOTO_TTL_OPTIONS } from '../utils/photoExpiry';
 import { shareSignature, shareText } from '../utils/maps';
 import { getMapService, getPhotoTtlMs, getShareSignature } from '../utils/settings';
 import { track } from '../utils/analytics';
@@ -37,8 +38,12 @@ interface GalleryViewProps {
 /** "14/11/2026, 18:42:10 at Champ de Mars, Paris": the text a screen reader needs, since the stamp is drawn into the pixels. */
 const photoDescription = (photo: GalleryPhoto) => {
   const where = photo.location?.address ?? (photo.location ? `${photo.location.latitude.toFixed(5)}, ${photo.location.longitude.toFixed(5)}` : '');
-  return where ? `${formatDateTime(photo.timestamp)} at ${where}` : formatDateTime(photo.timestamp);
+  return where ? translate('viewer.takenAt', { when: formatDateTime(photo.timestamp), where }) : formatDateTime(photo.timestamp);
 };
+
+/** Day and month names follow the chosen language (English keeps the device's own style); "Today" and friends are translated. */
+const dayLocale = (lang: string) => (lang === 'en' ? undefined : lang);
+const localDay = (day: DayLabel): DayLabel => (day.relative ? { ...day, label: translate(`gallery.${day.relative}` as const) } : day);
 
 /**
  * A modal component to display a selected photo in full view with actions.
@@ -96,10 +101,11 @@ const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext,
     // Layout is a flex column sized to the *visible* viewport: the image takes whatever space is left,
     // while the details and the Share/Delete buttons are pinned and can never be pushed off-screen.
     const ref = useDialogFocus<HTMLDivElement>(onClose);
+    const { t, lang } = useT();
     // The photos before and after this one sit beside it, so they glide in as the finger moves.
     const { go, settling, instant } = useSlide({ onNext, onPrevious });
     const { handlers, offset, dragging } = useSwipe({ onNext: onNext && (() => go('next')), onPrevious: onPrevious && (() => go('previous')) });
-    const day = dayLabel(photo.timestamp);
+    const day = localDay(dayLabel(photo.timestamp, undefined, dayLocale(lang)));
     const noun = photo.kind === 'video' ? 'video' : 'photo';
     const glide = !dragging && !instant && !prefersReducedMotion();
     const strip = settling === 'next' ? 'translateX(-200%)' : settling === 'previous' ? 'translateX(0%)' : `translateX(calc(-100% + ${offset}px))`;
@@ -118,23 +124,23 @@ const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext,
     const slot = (shown: GalleryPhoto | undefined, current: boolean) => (
         <div className="flex h-full w-full shrink-0 items-center justify-center" aria-hidden={current ? undefined : true}>
             {shown && (shown.kind === 'video' && current
-                ? <VideoPlayer photo={shown} alt={`Video taken ${photoDescription(shown)}`} />
+                ? <VideoPlayer photo={shown} alt={t('viewer.alt.video', { when: photoDescription(shown) })} />
                 : shown.kind === 'video'
                     ? <img src={shown.thumbUrl} alt="" draggable={false} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
-                    : <FullPhoto photo={shown} alt={current ? `Photo taken ${photoDescription(shown)}` : ''} />)}
+                    : <FullPhoto photo={shown} alt={current ? t('viewer.alt.photo', { when: photoDescription(shown) }) : ''} />)}
         </div>
     );
 
     return (
-        <div ref={ref} tabIndex={-1} className="app-h fixed inset-x-0 top-0 z-40 flex flex-col items-center bg-black/90 px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in focus:outline-none" role="dialog" aria-modal="true" aria-label={noun === 'video' ? 'Video' : 'Photo'}>
+        <div ref={ref} tabIndex={-1} className="app-h fixed inset-x-0 top-0 z-40 flex flex-col items-center bg-black/90 px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in focus:outline-none" role="dialog" aria-modal="true" aria-label={t(noun === 'video' ? 'viewer.dialog.video' : 'viewer.dialog.photo')}>
             {/* Close Button */}
-            <button onClick={onClose} className="absolute top-3 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-gray-800 text-white hover:bg-gray-700" aria-label={`Close ${noun} view`}>
+            <button onClick={onClose} className="absolute top-3 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-gray-800 text-white hover:bg-gray-700" aria-label={t(noun === 'video' ? 'viewer.close.video' : 'viewer.close.photo')}>
                 <CloseIcon className="w-6 h-6" />
             </button>
             {/* Which photo this is, out of how many */}
             {total > 1 && (
                 <p className="absolute left-4 top-3 flex h-11 items-center rounded-full bg-gray-800 px-4 text-sm text-gray-200" aria-live="polite">
-                    <span className="sr-only">{`${noun === 'video' ? 'Video' : 'Photo'} ${position} of ${total}`}</span>
+                    <span className="sr-only">{t(noun === 'video' ? 'viewer.position.video' : 'viewer.position.photo', { position, total })}</span>
                     <span aria-hidden="true">{position} / {total}</span>
                 </p>
             )}
@@ -149,12 +155,12 @@ const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext,
                     {slot(after, false)}
                 </div>
                 {onPrevious && (
-                    <button onClick={() => go('previous')} className="absolute left-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-gray-900/70 text-white hover:bg-gray-700" aria-label={`Previous ${before?.kind === 'video' ? 'video' : 'photo'}`}>
+                    <button onClick={() => go('previous')} className="absolute left-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-gray-900/70 text-white hover:bg-gray-700" aria-label={t(before?.kind === 'video' ? 'viewer.previous.video' : 'viewer.previous.photo')}>
                         <ChevronLeftIcon className="h-6 w-6" />
                     </button>
                 )}
                 {onNext && (
-                    <button onClick={() => go('next')} className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-gray-900/70 text-white hover:bg-gray-700" aria-label={`Next ${after?.kind === 'video' ? 'video' : 'photo'}`}>
+                    <button onClick={() => go('next')} className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-gray-900/70 text-white hover:bg-gray-700" aria-label={t(after?.kind === 'video' ? 'viewer.next.video' : 'viewer.next.photo')}>
                         <ChevronRightIcon className="h-6 w-6" />
                     </button>
                 )}
@@ -175,17 +181,17 @@ const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext,
             </div>
             {/* Action Buttons: always visible */}
             <div className="mt-4 flex shrink-0 items-center space-x-8">
-                <button onClick={() => onShare(photo)} className="flex min-h-11 min-w-11 flex-col items-center text-white hover:text-blue-400 transition-colors" aria-label={`Share ${noun}`}>
+                <button onClick={() => onShare(photo)} className="flex min-h-11 min-w-11 flex-col items-center text-white hover:text-blue-400 transition-colors" aria-label={t(noun === 'video' ? 'viewer.share.video' : 'viewer.share.photo')}>
                     <ShareIcon className="w-8 h-8" />
-                    <span className="text-xs mt-1">Share</span>
+                    <span className="text-xs mt-1">{t('viewer.shareLabel')}</span>
                 </button>
-                <button onClick={() => onDownload(photo)} className="flex min-h-11 min-w-11 flex-col items-center text-white hover:text-blue-400 transition-colors" aria-label={`Download ${noun}`}>
+                <button onClick={() => onDownload(photo)} className="flex min-h-11 min-w-11 flex-col items-center text-white hover:text-blue-400 transition-colors" aria-label={t(noun === 'video' ? 'viewer.download.video' : 'viewer.download.photo')}>
                     <DownloadIcon className="w-8 h-8" />
-                    <span className="text-xs mt-1">Download</span>
+                    <span className="text-xs mt-1">{t('viewer.downloadLabel')}</span>
                 </button>
-                <button onClick={() => onDelete(photo.id)} className="flex min-h-11 min-w-11 flex-col items-center text-white hover:text-red-400 transition-colors" aria-label={`Delete ${noun}`}>
+                <button onClick={() => onDelete(photo.id)} className="flex min-h-11 min-w-11 flex-col items-center text-white hover:text-red-400 transition-colors" aria-label={t(noun === 'video' ? 'viewer.delete.video' : 'viewer.delete.photo')}>
                     <DeleteIcon className="w-8 h-8" />
-                    <span className="text-xs mt-1">Delete</span>
+                    <span className="text-xs mt-1">{t('viewer.deleteLabel')}</span>
                 </button>
             </div>
         </div>
@@ -197,23 +203,24 @@ const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext,
  */
 const ConfirmationDialog = ({ count = 1, noun = 'photo', onConfirm, onCancel }: { count?: number; noun?: 'photo' | 'video' | 'item'; onConfirm: () => void; onCancel: () => void; }) => {
     const ref = useDialogFocus<HTMLDivElement>(onCancel);
+    const { t, tn } = useT();
     return (
         <div ref={ref} tabIndex={-1} className="focus:outline-none app-h fixed inset-x-0 top-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm animate-fade-in" aria-modal="true" role="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
             <div className="bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 shadow-2xl border border-gray-700">
-                <h3 className="text-white text-lg font-semibold mb-4" id="dialog-title">Confirm Deletion</h3>
-                <p className="text-gray-300 mb-6" id="dialog-description">{count === 1 ? `Are you sure you want to delete this ${noun}?` : `Are you sure you want to delete these ${count} ${noun}s?`}</p>
+                <h3 className="text-white text-lg font-semibold mb-4" id="dialog-title">{t('confirm.title')}</h3>
+                <p className="text-gray-300 mb-6" id="dialog-description">{tn(`confirm.${noun}s`, count)}</p>
                 <div className="flex justify-end space-x-4">
                     <button 
                         onClick={onCancel} 
                         className="px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
                     >
-                        Cancel
+                        {t('common.cancel')}
                     </button>
                     <button 
                         onClick={onConfirm} 
                         className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 transition-colors"
                     >
-                        Delete
+                        {t('common.delete')}
                     </button>
                 </div>
             </div>
@@ -225,6 +232,7 @@ const ConfirmationDialog = ({ count = 1, noun = 'photo', onConfirm, onCancel }: 
  * The main component for the gallery interface.
  */
 export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDeleteMany, onSwitchView }) => {
+  const { t, tn, lang } = useT();
   // Both layers own a history entry, so the Back gesture closes the top one instead of leaving the page.
   const [selectedPhoto, openPhoto, closePhoto, showPhoto] = useHistoryOverlay<GalleryPhoto>('photoViewer');
   const [photoIdToDelete, openDeleteConfirm, closeDeleteConfirm] = useHistoryOverlay<string>('deleteConfirm');
@@ -252,14 +260,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
   const handleShare = async (photo: GalleryPhoto) => {
     // Convert the data URL to a File object, which is required by the Web Share API for files.
     const file = await photoFile(photo);
-    if (!file) return alert(`Could not read the ${photo.kind === 'video' ? 'video' : 'photo'}.`);
+    if (!file) return alert(translate(photo.kind === 'video' ? 'share.errorRead.video' : 'share.errorRead.photo'));
     
     // Check if the browser supports sharing files.
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
           files: [file],
-          title: photo.kind === 'video' ? 'Video from SpotCam' : 'Photo from SpotCam',
+          title: translate(photo.kind === 'video' ? 'share.title.video' : 'share.title.photo'),
           text: shareText(photo, getMapService(), getShareSignature() ? shareSignature(window.location.origin) : null),
         });
         track('share_used');
@@ -267,11 +275,11 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
         // Closing the share sheet without sharing is not an error: say nothing. Anything else is, so name what was being shared.
         if (error instanceof DOMException && error.name === 'AbortError') return;
         console.error('Error sharing:', error);
-        alert(`Could not share the ${photo.kind === 'video' ? 'video' : 'photo'}.`);
+        alert(translate(photo.kind === 'video' ? 'share.error.video' : 'share.error.photo'));
       }
     } else {
       // Fallback for browsers that do not support the Web Share API.
-      alert('Sharing is not supported on this browser.');
+      alert(translate('share.unsupported'));
     }
   };
   
@@ -290,7 +298,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
   const handleDownload = async (photo: GalleryPhoto) => {
     const file = await photoFile(photo);
     if (file) downloadFile(file);
-    else alert(`Could not read the ${photo.kind === 'video' ? 'video' : 'photo'}.`);
+    else alert(translate(photo.kind === 'video' ? 'share.errorRead.video' : 'share.errorRead.photo'));
   };
 
   /** Downloads every selected photo, one after another (browsers ignore downloads that arrive all in the same instant). */
@@ -347,7 +355,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
   const videos = photos.filter(p => p.kind === 'video');
   const stills = photos.filter(p => p.kind !== 'video');
   const sizeOf = (items: GalleryPhoto[]) => items.reduce((sum, p) => sum + p.bytes, 0);
-  const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
   /** "photos", "videos" or "items" for the ones with these ids, for the deletion question. */
   const nounFor = (ids: string[]): 'photo' | 'video' | 'item' => {
     const kinds = new Set(ids.map(id => (photos.find(p => p.id === id)?.kind === 'video' ? 'video' : 'photo')));
@@ -358,7 +365,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
   const now = Date.now();
   const days: { key: string; label: string; date: string; photos: GalleryPhoto[] }[] = [];
   for (const photo of listed) {
-    const day = dayLabel(photo.timestamp, now);
+    const day = localDay(dayLabel(photo.timestamp, now, dayLocale(lang)));
     const last = days[days.length - 1];
     if (last && last.key === day.key) last.photos.push(photo);
     else days.push({ ...day, photos: [photo] });
@@ -388,16 +395,16 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
       <AppHeader onBack={onSwitchView} />
       <main className="flex min-h-0 flex-grow flex-col">
       <div className="flex items-center justify-between gap-2 px-4 pt-4">
-        <h1 className="text-xl font-bold">Gallery</h1>
+        <h1 className="text-xl font-bold">{t('gallery.title')}</h1>
         {photos.length > 0 && !selection && (
           <button type="button" onClick={() => setSelection(new Set())} className="min-h-11 rounded-md px-3 text-sm font-semibold text-blue-300 hover:text-blue-200">
-            Select
+            {t('gallery.select')}
           </button>
         )}
       </div>
       {photos.length > 0 && (
-        <div role="group" aria-label="Show" className="flex gap-2 px-4 pt-2">
-          {([['all', 'All'], ['photo', 'Photos'], ['video', 'Videos']] as const).map(([id, label]) => (
+        <div role="group" aria-label={t('gallery.show')} className="flex gap-2 px-4 pt-2">
+          {([['all', t('gallery.filter.all')], ['photo', t('gallery.filter.photo')], ['video', t('gallery.filter.video')]] as const).map(([id, label]) => (
             <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)} className={`min-h-9 rounded-full px-4 text-sm font-semibold ${filter === id ? 'bg-white text-gray-900' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}`}>
               {label}
             </button>
@@ -405,54 +412,58 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
         </div>
       )}
       {selection && (
-        <div role="toolbar" aria-label="Selection actions" className="flex flex-wrap items-center gap-2 px-4 pt-2">
-          <span role="status" className="mr-auto text-sm text-gray-300">{selectedIds.length} selected</span>
+        <div role="toolbar" aria-label={t('gallery.toolbar')} className="flex flex-wrap items-center gap-2 px-4 pt-2">
+          <span role="status" className="mr-auto text-sm text-gray-300">{tn('gallery.selected', selectedIds.length)}</span>
           <button type="button" onClick={() => setSelection(allSelected ? new Set() : new Set(listed.map(p => p.id)))} className="min-h-11 rounded-md bg-gray-700 px-3 text-sm hover:bg-gray-600">
-            {allSelected ? 'Clear selection' : 'Select all'}
+            {allSelected ? t('gallery.clearSelection') : t('gallery.selectAll')}
           </button>
           <button type="button" disabled={selectedIds.length === 0} onClick={handleDownloadSelected} className="min-h-11 rounded-md bg-gray-700 px-3 text-sm hover:bg-gray-600 disabled:opacity-40 disabled:hover:bg-gray-700">
-            Download selected
+            {t('gallery.downloadSelected')}
           </button>
           <button type="button" disabled={selectedIds.length === 0} onClick={() => openDeleteMany(selectedIds)} className="min-h-11 rounded-md bg-red-600 px-3 text-sm font-semibold hover:bg-red-500 disabled:opacity-40 disabled:hover:bg-red-600">
-            Delete selected
+            {t('gallery.deleteSelected')}
           </button>
           <button type="button" onClick={() => setSelection(null)} className="min-h-11 rounded-md px-3 text-sm hover:bg-gray-700">
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       )}
       {photos.length > 0 && (
         <p className="px-4 pt-1 text-xs text-gray-400" data-testid="gallery-storage-usage">
-          {videos.length === 0
-            ? count(photos.length, 'photo')
-            : stills.length === 0
-              ? count(videos.length, 'video')
-              : `${count(stills.length, 'photo')}, ${count(videos.length, 'video')}`} &middot; {formatBytes(sizeOf(photos))} used
-          {videos.length > 0 && stills.length > 0 && <> (videos {formatBytes(sizeOf(videos))})</>}
-          {freeBytes !== null && <> &middot; about {formatBytes(freeBytes)} free</>}
-          {isLowOnSpace(freeBytes) && <span className="font-semibold text-amber-300"> &middot; Space is running low: delete some to make room.</span>}
+          {t('gallery.used', {
+            items:
+              videos.length === 0
+                ? tn('gallery.photos', photos.length)
+                : stills.length === 0
+                  ? tn('gallery.videos', videos.length)
+                  : `${tn('gallery.photos', stills.length)}, ${tn('gallery.videos', videos.length)}`,
+            size: formatBytes(sizeOf(photos)),
+          })}
+          {videos.length > 0 && stills.length > 0 && <> {t('gallery.usedVideos', { size: formatBytes(sizeOf(videos)) })}</>}
+          {freeBytes !== null && <> {t('gallery.free', { size: formatBytes(freeBytes) })}</>}
+          {isLowOnSpace(freeBytes) && <span className="font-semibold text-amber-300"> {t('gallery.low')}</span>}
         </p>
       )}
       {photos.length > 0 && (
         <details className="px-4 text-xs text-gray-400" data-testid="gallery-storage-note">
-          <summary className="inline-flex min-h-11 cursor-pointer items-center text-blue-300 hover:text-blue-200">Where are my {videos.length > 0 ? 'photos and videos' : 'photos'}?</summary>
+          <summary className="inline-flex min-h-11 cursor-pointer items-center text-blue-300 hover:text-blue-200">{t(videos.length > 0 ? 'gallery.where.both' : 'gallery.where.photos')}</summary>
           <p className="pb-2">
-            {videos.length > 0 ? 'These photos and videos' : 'These photos'} live inside SpotCam, not in your phone&rsquo;s Photos or Gallery app. To keep one, open it and tap Share, then save it to your phone.
-            {getPhotoTtlMs() !== null && <> Photos are removed after {ttlLabel(getPhotoTtlMs())}. You can change this in Settings.</>}
+            {t(videos.length > 0 ? 'gallery.whereText.both' : 'gallery.whereText.photos')}
+            {getPhotoTtlMs() !== null && <> {t('gallery.removedAfter', { time: t(PHOTO_TTL_OPTIONS.find(option => option.ms === getPhotoTtlMs())!.key as 'ttl.hour') })}</>}
           </p>
         </details>
       )}
       {photos.length > 0 && listed.length === 0 ? (
         <div role="status" className="flex-grow flex flex-col items-center justify-center text-gray-400">
           <GalleryIcon className="w-16 h-16 mb-4" />
-          <p>{filter === 'video' ? 'No videos yet.' : 'No photos yet.'}</p>
+          <p>{filter === 'video' ? t('gallery.emptyVideos') : t('gallery.empty')}</p>
         </div>
       ) : photos.length === 0 ? (
         // Display a message when the gallery is empty
         <div role="status" className="flex-grow flex flex-col items-center justify-center text-gray-400">
           <GalleryIcon className="w-16 h-16 mb-4" />
-          <p>No photos yet.</p>
-          <p>Go back to the camera to take some!</p>
+          <p>{t('gallery.empty')}</p>
+          <p>{t('gallery.emptyHint')}</p>
         </div>
       ) : (
         // Display the photos, a heading for each day
@@ -465,7 +476,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
               </h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
                 {day.photos.map((photo) => (
-                  <button key={photo.id} type="button" {...longPress(photo.id, !selection)} className={`relative aspect-square select-none [-webkit-touch-callout:none] bg-gray-700 rounded-lg overflow-hidden cursor-pointer ${selection?.has(photo.id) ? 'ring-4 ring-blue-500' : ''} transform hover:scale-105 motion-reduce:transform-none transition-transform`} onClick={() => (selection ? toggleSelected(photo.id) : openPhoto(photo))} aria-pressed={selection ? selection.has(photo.id) : undefined} aria-label={`${selection ? 'Select' : 'Open'} ${photo.kind === 'video' ? 'video' : 'photo'} taken ${photoDescription(photo)}`}>
+                  <button key={photo.id} type="button" {...longPress(photo.id, !selection)} className={`relative aspect-square select-none [-webkit-touch-callout:none] bg-gray-700 rounded-lg overflow-hidden cursor-pointer ${selection?.has(photo.id) ? 'ring-4 ring-blue-500' : ''} transform hover:scale-105 motion-reduce:transform-none transition-transform`} onClick={() => (selection ? toggleSelected(photo.id) : openPhoto(photo))} aria-pressed={selection ? selection.has(photo.id) : undefined} aria-label={t(`gallery.${selection ? 'pick' : 'open'}.${photo.kind === 'video' ? 'video' : 'photo'}` as const, { when: photoDescription(photo) })}>
                     <img src={photo.thumbUrl} alt="" draggable={false} className="pointer-events-none h-full w-full object-cover" loading="lazy" />
                     {photo.kind === 'video' && (
                       <span aria-hidden="true" data-testid="video-badge" className="absolute bottom-1 left-1 flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 text-xs font-semibold text-white">

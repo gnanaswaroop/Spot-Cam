@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { useT } from '../utils/i18n';
 
 interface PrivacyViewProps {
   onBack: () => void;
@@ -30,6 +31,7 @@ const ExternalLink = ({ href, children }: { href: string; children: React.ReactN
 export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
   // The visit-counting section is shown only on a site that has analytics switched on.
   const { available: analyticsOn } = useAnalytics();
+  const { t, lang } = useT();
 
   return (
     <div className="app-h w-full overflow-y-auto bg-gray-950 text-gray-200">
@@ -48,6 +50,7 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
 
         <h1 className="mt-6 text-3xl font-bold tracking-tight text-white">Privacy Policy</h1>
         <p className="mt-2 text-sm text-gray-400">Last updated: {PRIVACY_LAST_UPDATED}</p>
+        {lang !== 'en' && <p lang={lang} className="mt-2 text-sm text-amber-300">{t('privacy.englishOnly')}</p>}
 
         <Section title="The short version">
           <p>

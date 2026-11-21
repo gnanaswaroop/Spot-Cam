@@ -11,6 +11,8 @@ export interface DayLabel {
   label: string;
   /** The date itself ("12 Nov 2026"); the year is left out for days in the current year. */
   date: string;
+  /** Set for "Today", "Yesterday" and "Tomorrow", so the app can show those words in its own language. */
+  relative?: 'today' | 'yesterday' | 'tomorrow';
 }
 
 /** Whole calendar days from a to b on the device's calendar. */
@@ -30,11 +32,12 @@ export function dayLabel(timestamp: number, now: number = Date.now(), locale?: s
   const key = `${taken.getFullYear()}-${taken.getMonth() + 1}-${taken.getDate()}`;
 
   let label = date;
-  if (daysAgo === 0) label = 'Today';
-  else if (daysAgo === 1) label = 'Yesterday';
-  else if (daysAgo === -1) label = 'Tomorrow'; // only if the phone's clock was set back
+  let relative: DayLabel['relative'];
+  if (daysAgo === 0) [label, relative] = ['Today', 'today'];
+  else if (daysAgo === 1) [label, relative] = ['Yesterday', 'yesterday'];
+  else if (daysAgo === -1) [label, relative] = ['Tomorrow', 'tomorrow']; // only if the phone's clock was set back
   else if (daysAgo > 1 && daysAgo < 7) label = taken.toLocaleDateString(locale, { weekday: 'long' });
-  return { key, label, date };
+  return { key, label, date, ...(relative ? { relative } : {}) };
 }
 
 /** The time of day, such as "18:42" (in the device's own style). */
