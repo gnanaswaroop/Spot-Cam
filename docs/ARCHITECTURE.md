@@ -38,6 +38,7 @@ components/
   GalleryView.tsx       Photo grid, photo viewer, delete confirmation
   PermissionNotice.tsx  "We need this permission" message + browser-specific steps
   PrivacyView.tsx       The privacy policy page (keep it true to what the code does)
+  SettingsView.tsx      Settings, including the language
   icons.tsx             Inline SVG icons
 
 hooks/
@@ -50,8 +51,13 @@ hooks/
 
 utils/
   helpers.ts            formatDateTime, dataURLtoFile
-  permissionHelp.ts     Detects the browser and returns "how to enable it" steps
-  constants.ts          FONT_FAMILY_OVERLAY (stamp font)
+  permissionHelp.ts     Detects the browser and returns "how to enable it" steps (worded in the chosen language, from the catalogs)
+  constants.ts          FONT_FAMILY_OVERLAY (stamp font), page titles and tagline (from the English messages)
+  i18n.ts               Languages: detection, the chosen language, message lookup, plural forms
+
+locales/
+  en.ts                 Every message in English, and the list of keys the other languages must have
+  <code>.ts              One file per other language (hi, es, fr, ar, ...), loaded only when it is the language in use
 
 public/                 Copied as-is to the site root: icons, manifest, sample.jpg
 e2e/                    Playwright tests + a Pages-like static server
@@ -153,6 +159,18 @@ The geocoder is built to be gentle on free public services, because the public N
 ## 9. Sharing
 
 `GalleryView` and the landing page's sample viewer convert the image to a `File` (`dataURLtoFile`) and call the **Web Share API**. Where file sharing isn't supported, the sample falls back to a download. The text shared with a gallery photo ends with a link to the spot it was taken (`utils/maps.ts`, `shareText`). The map service for that link (Google Maps by default, or Apple Maps or OpenStreetMap) is chosen on the Settings page and kept in `localStorage` with the other settings; the link is only text, so nothing is sent anywhere by SpotCam.
+
+## 9a. Languages
+
+All the words the person reads live in `locales/`: `en.ts` holds every message (and defines the key list), and each other language is a file with the same keys (`hi.ts`, `es.ts`, ... 20 languages in all, listed in `LANGUAGES`). `utils/i18n.ts` looks messages up (`translate`, `translatePlural`, the `useT()` hook) and falls back to English for a message a language lacks. English is built in; the others are separate chunks loaded only when chosen, and the service worker keeps each one the first time it is used (they are not precached, so a visitor does not download the ones they never use), so a language used online also works offline.
+
+- **Which language is used.** The person's choice in Settings (kept in the `language` setting in `localStorage`) wins. Without one, the browser's preferred languages decide, but only when that is clear: the first one SpotCam has (`hi-IN` counts as Hindi). A list with nothing SpotCam has, or no list, means English. `index.tsx` waits for the language to load before the first draw, so the page never flashes English first, and `<html lang>` follows the language.
+- **Messages.** `{name}` is filled in by the app; `<b>text</b>` is shown highlighted; a count-dependent message has one entry per plural form (`key.one`, `key.other`, plus `few` and `many` where a language needs them), chosen with `Intl.PluralRules`. Whole sentences per kind (photo, video) are used instead of gluing nouns together, because word order and endings differ by language.
+- **Right to left.** Arabic and Urdu set `dir="rtl"` on `<html>` (`directionOf` in `utils/i18n.ts`). Text spacing uses logical classes (`ps-`, `me-`, ...) so it flips; the camera and gallery overlays keep their physical corners, as camera apps usually do; the English privacy policy stays `dir="ltr"`.
+- **Counts.** Languages with several plural forms (Russian, Arabic) word a count so that one form reads correctly for every number ("Фото: 5"), so each file only needs `.one` and `.other`.
+- **Simplified Chinese only.** `zh` is Simplified; a browser asking for Traditional (`zh-TW`, `zh-HK`, `zh-Hant`) is not a clear match and gets English until Traditional is added.
+- **Adding a language.** Add its file under `locales/` (the compiler lists every missing key), add it to `LANGUAGES` and `loaders` in `utils/i18n.ts`, and add it to `e2e/messages.ts` (`CATALOGS`, `BROWSER_LOCALE`). The unit test checks every key exists, no message is empty and the `{placeholders}` match English; `e2e/language-screens.spec.ts` then checks every screen in the new language with no other edit.
+- **What stays in English everywhere:** the name SpotCam, the stamp drawn on photos and videos, the privacy policy (a note in the chosen language says so), and the map services' names. The steps for turning a blocked permission back on are translated, but they quote the browser's own menu names, which depend on the browser's language, so a native speaker should check them (see the note on review in the pull request). The pre-rendered static pages (what search engines see) are English; one page per language with `hreflang` is future work (issue #3).
 
 ## 10. Branding, icons and installability
 

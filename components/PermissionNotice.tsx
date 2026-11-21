@@ -9,6 +9,7 @@
 import React, { useEffect } from 'react';
 import { PermissionName, getEnableSteps } from '../utils/permissionHelp';
 import { track } from '../utils/analytics';
+import { useT } from '../utils/i18n';
 
 interface PermissionNoticeProps {
   title: string;
@@ -25,6 +26,7 @@ const primaryButton =
   'px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-full shadow-lg shadow-blue-600/30 hover:bg-blue-500';
 
 export const PermissionNotice: React.FC<PermissionNoticeProps> = ({ title, message, what, hardBlocked, onRetry }) => {
+  const { t } = useT();
   // Which kind of permission was blocked, and nothing else.
   useEffect(() => {
     if (what === 'Camera') track('permission_blocked', 'camera');
@@ -34,34 +36,34 @@ export const PermissionNotice: React.FC<PermissionNoticeProps> = ({ title, messa
   <div className="max-w-sm max-h-full overflow-y-auto p-6 text-center text-white short:p-3 short:max-w-md" role="alert">
     <h2 className="mb-3 text-xl font-semibold text-red-400">
       {/* A symbol as well as the red colour, so the problem is not signalled by colour alone. */}
-      <span aria-hidden="true" className="mr-2">&#9888;</span>
+      <span aria-hidden="true" className="me-2">&#9888;</span>
       {title}
     </h2>
     <p className="mb-5 text-gray-300">{message}</p>
 
     {hardBlocked ? (
       <button onClick={() => window.location.reload()} className={primaryButton}>
-        Reload page
+        {t('common.reloadPage')}
       </button>
     ) : (
       <button onClick={onRetry} className={primaryButton}>
-        {what ? 'Allow access' : 'Try again'}
+        {what ? t('perm.allow') : t('perm.tryAgain')}
       </button>
     )}
 
     {what && (
       <details open={hardBlocked} className="mt-5 rounded-xl border border-white/10 bg-white/5 p-3 text-left text-sm">
         <summary className="cursor-pointer text-center text-gray-300">
-          {hardBlocked ? `How to turn ${what.toLowerCase()} back on` : 'No prompt? Enable it manually'}
+          {hardBlocked ? t(what === 'Camera' ? 'perm.howToCamera' : 'perm.howToLocation') : t('perm.noPrompt')}
         </summary>
-        <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-gray-300">
+        <ol className="mt-3 list-decimal space-y-1.5 ps-5 text-gray-300">
           {getEnableSteps(what).map(step => (
             <li key={step}>{step}</li>
           ))}
         </ol>
         {!hardBlocked && (
           <button onClick={() => window.location.reload()} className="mt-3 block w-full text-center text-blue-400 underline">
-            Reload page
+            {t('common.reloadPage')}
           </button>
         )}
       </details>

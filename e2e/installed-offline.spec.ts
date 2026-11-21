@@ -4,6 +4,7 @@
  */
 import { Page } from '@playwright/test';
 import { test, expect, GEOCODER_HOSTS } from './fixtures';
+import { ENGLISH, OTHER_LANGUAGES, say } from './messages';
 import { SITE, grantLocation, installMocks, skipIfNoCameraFrames } from './helpers';
 
 test.use({ serviceWorkers: 'allow' });
@@ -243,5 +244,21 @@ test.describe('installed app: reopening and updates', () => {
     }
     expect(failed).toEqual([]);
   });
-});
 
+  for (const { code, name } of OTHER_LANGUAGES) {
+    test(`${name}, chosen while online, still opens in that language with no connection`, async ({ page, context, browserName }) => {
+      test.skip(browserName === 'firefox', FIREFOX_OFFLINE);
+      await installMocks(page, { camera: 'granted', location: 'granted' });
+      await install(page);
+      await page.goto(`${SITE}/settings/`);
+      await page.getByRole('combobox', { name: say(ENGLISH, 'settings.language.label') }).selectOption(code);
+      await expect(page.getByRole('heading', { name: say(code, 'settings.title'), level: 1 })).toBeVisible();
+
+      await context.setOffline(true);
+      for (const [path, key] of [['/gallery/', 'gallery.title'], ['/settings/', 'settings.title'], ['/how-it-works/', 'how.title']] as const) {
+        await page.goto(`${SITE}${path}`);
+        await expect(page.getByRole('heading', { name: say(code, key), level: 1 })).toBeVisible();
+      }
+    });
+  }
+});

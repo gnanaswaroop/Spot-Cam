@@ -16,10 +16,10 @@ interface ShareEnvironment {
 }
 
 /** Opens the share window with the sentence and the link; copies the link when that is not possible. */
-export async function shareWebsite(env: ShareEnvironment, url: string): Promise<ShareSiteResult> {
+export async function shareWebsite(env: ShareEnvironment, url: string, text: string = SHARE_TEXT): Promise<ShareSiteResult> {
   if (env.share) {
     try {
-      await env.share({ title: SHARE_TITLE, text: SHARE_TEXT, url });
+      await env.share({ title: SHARE_TITLE, text, url });
       return 'shared';
     } catch (err) {
       // Closing the share window is not an error.

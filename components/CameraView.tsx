@@ -16,6 +16,7 @@ import { getRecordSound, getVideoEnabled, getVideoMaxMinutes } from '../utils/se
 import { makeThumbnail } from '../utils/thumbnail';
 import { useCameraRecovery } from '../hooks/useCameraRecovery';
 import { continuousModes, openingZoom, videoRequests, worthAskingAgain } from '../utils/cameraSettings';
+import { translate, useT } from '../utils/i18n';
 
 /** Props for the CameraView component. */
 interface CameraViewProps {
@@ -37,28 +38,31 @@ interface CameraViewProps {
  * A component that displays real-time data (date, time, location) as an overlay on the camera view.
  */
 const AddressLine = ({ location, status, onRetry }: { location: GeolocationData; status: AddressStatus; onRetry: () => void }) => {
+    const { t } = useT();
     // aria-live: the address is read out when it arrives ("Looking up address..." turns into the street).
     if (location.address) return <p className="px-2 break-words" aria-live="polite">{location.address}</p>;
-    if (status === 'offline') return <p className="px-2">Offline: the address will appear when you are back online</p>;
+    if (status === 'offline') return <p className="px-2">{t('camera.offlineAddress')}</p>;
     if (status === 'failed') {
         return (
             <p className="px-2">
-                Address unavailable.{' '}
-                <button onClick={onRetry} className="inline-block min-h-6 px-1 underline underline-offset-2" aria-label="Retry address lookup">Retry</button>
+                {t('camera.addressUnavailable')}{' '}
+                <button onClick={onRetry} className="inline-block min-h-6 px-1 underline underline-offset-2" aria-label={t('camera.retryAddress')}>{t('common.retry')}</button>
             </p>
         );
     }
-    return <p className="px-2">Looking up address...</p>;
+    return <p className="px-2">{t('camera.lookingUp')}</p>;
 };
 
-const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress, onOpenSettings }: { location: GeolocationData | null; addressStatus: AddressStatus; dateTime: string; onHome: () => void; onRetryAddress: () => void; onOpenSettings: () => void }) => (
+const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress, onOpenSettings }: { location: GeolocationData | null; addressStatus: AddressStatus; dateTime: string; onHome: () => void; onRetryAddress: () => void; onOpenSettings: () => void }) => {
+  const { t } = useT();
+  return (
     <div data-testid="stamp-overlay" className="absolute top-0 left-0 right-0 px-3 py-2 text-white text-center text-sm font-semibold bg-black/70 short:right-24 short:py-1 short:pl-12 short:text-xs short:leading-tight" style={{ fontFamily: FONT_FAMILY_OVERLAY, textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
         {/* Brand badge: lives inside the existing band so it costs no vertical space. Tap to go home. */}
-        <button onClick={onHome} className="absolute left-2 top-2 flex flex-col items-center gap-0.5 rounded-xl bg-white/10 p-1 hover:bg-white/20 min-[390px]:flex-row min-[390px]:gap-1.5 min-[390px]:rounded-full min-[390px]:pr-2.5" aria-label="SpotCam home">
+        <button onClick={onHome} className="absolute left-2 top-2 flex flex-col items-center gap-0.5 rounded-xl bg-white/10 p-1 hover:bg-white/20 min-[390px]:flex-row min-[390px]:gap-1.5 min-[390px]:rounded-full min-[390px]:pe-2.5" aria-label={t('camera.home')}>
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-6 w-6 rounded-[22%]" />
             <span className="text-[9px] font-semibold leading-none tracking-tight min-[390px]:text-xs">SpotCam</span>
         </button>
-        <button onClick={onOpenSettings} className="absolute right-2 top-2 rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label="Settings">
+        <button onClick={onOpenSettings} className="absolute right-2 top-2 rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label={t('camera.settings')}>
             <SettingsIcon className="h-5 w-5" />
         </button>
         <p>{dateTime}</p>
@@ -68,10 +72,11 @@ const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress, on
                 <AddressLine location={location} status={addressStatus} onRetry={onRetryAddress} />
             </>
         ) : (
-            <p>Locating...</p>
+            <p>{t('camera.locating')}</p>
         )}
     </div>
-);
+  );
+};
 
 /**
  * The main component for the camera interface.
@@ -91,6 +96,7 @@ async function openCamera(facing: 'environment' | 'user'): Promise<MediaStream> 
 }
 
 export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSwitchView, lastPhotoUrl, onHome, onOpenSettings }) => {
+  const { t } = useT();
   // Refs for video and canvas elements
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -142,8 +148,8 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
   const [announcement, setAnnouncement] = useState('');
   const hasLocation = location !== null;
   const address = location?.address;
-  useEffect(() => { if (hasLocation) setAnnouncement('Location found'); }, [hasLocation]);
-  useEffect(() => { if (address) setAnnouncement('Address found'); }, [address]);
+  useEffect(() => { if (hasLocation) setAnnouncement(translate('camera.said.location')); }, [hasLocation]);
+  useEffect(() => { if (address) setAnnouncement(translate('camera.said.address')); }, [address]);
 
   // Effect to update the date and time every second
   useEffect(() => {
@@ -267,7 +273,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
     const where = latestRef.current.location;
     return {
       dateTime: when,
-      coordinates: where ? `Lat: ${where.latitude.toFixed(5)}, Lon: ${where.longitude.toFixed(5)}` : 'Location not available',
+      coordinates: where ? `Lat: ${where.latitude.toFixed(5)}, Lon: ${where.longitude.toFixed(5)}` : 'Location not available', // the stamp itself stays in English
       address: where?.address || '',
     };
   };
@@ -283,7 +289,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
       try {
         audioTracks = (await navigator.mediaDevices.getUserMedia({ audio: true })).getAudioTracks();
       } catch {
-        setRecordNote('Recording without sound: SpotCam cannot use the microphone. Allow it in your browser to record sound.');
+        setRecordNote(translate('camera.note.noSound'));
       }
     }
     starting.current = false;
@@ -299,22 +305,22 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
     } catch (err) {
       console.error(err);
       audioTracks.forEach(track => track.stop());
-      setRecordNote('This browser could not start recording.');
+      setRecordNote(translate('camera.note.cannotRecord'));
       return;
     }
     recordingRef.current = recorder;
     recordedAt.current = startedAt;
     setElapsedMs(0);
     setRecording(true);
-    setAnnouncement('Recording started');
+    setAnnouncement(translate('camera.said.recording'));
     recorder.done
       .then(result => {
         latestRef.current.onVideo({ id: `video_${startedAt}`, blob: result.blob, mimeType: result.mimeType, durationMs: result.durationMs, thumbUrl: result.thumbUrl, timestamp: startedAt, location: where });
-        setAnnouncement('Video saved to the gallery');
+        setAnnouncement(translate('camera.said.videoSaved'));
       })
       .catch(err => {
         console.error(err);
-        setRecordNote('The video could not be saved.');
+        setRecordNote(translate('camera.note.cannotSave'));
       })
       .finally(() => {
         recordingRef.current = null;
@@ -369,7 +375,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
         // Pass the captured photo data to the parent component
         onCapture(newPhoto);
         // The trailing dot alternates so a second photo is announced again (identical text is not re-read).
-        setAnnouncement(prev => (prev === 'Photo saved to the gallery' ? 'Photo saved to the gallery.' : 'Photo saved to the gallery'));
+        setAnnouncement(prev => (prev === translate('camera.said.photoSaved') ? `${translate('camera.said.photoSaved')}.` : translate('camera.said.photoSaved')));
     }
   };
 
@@ -419,7 +425,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
 
   return (
     <main className="relative w-full h-full flex flex-col items-center justify-center bg-black">
-      <h1 className="sr-only">SpotCam camera</h1>
+      <h1 className="sr-only">{t('camera.heading')}</h1>
       {/* Spoken updates for screen readers */}
       <div role="status" aria-live="polite" className="sr-only">{announcement}</div>
       {/* Flash effect overlay (much dimmer when the user asks for reduced motion, for photosensitive users) */}
@@ -430,28 +436,28 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
       {error ? (
         <PermissionNotice
           title={
-            cameraIssue === 'insecure' ? 'Secure connection required'
-            : cameraIssue === 'unsupported' ? 'Camera not supported'
-            : cameraIssue === 'notfound' ? 'No camera found'
-            : cameraIssue === 'denied' ? 'Camera access is blocked'
-            : 'Camera unavailable'
+            cameraIssue === 'insecure' ? t('camera.issue.insecure.title')
+            : cameraIssue === 'unsupported' ? t('camera.issue.unsupported.title')
+            : cameraIssue === 'notfound' ? t('camera.issue.notfound.title')
+            : cameraIssue === 'denied' ? t('camera.issue.denied.title')
+            : t('camera.issue.other.title')
           }
           message={
-            cameraIssue === 'insecure' ? 'Browsers only allow camera and location on HTTPS pages. Open this site using an https:// address.'
-            : cameraIssue === 'unsupported' ? "This browser can't open the camera. Try the latest version of Chrome, Safari, Firefox or Edge."
-            : cameraIssue === 'notfound' ? 'We could not find a usable camera on this device.'
+            cameraIssue === 'insecure' ? t('camera.issue.insecure.text')
+            : cameraIssue === 'unsupported' ? t('camera.issue.unsupported.text')
+            : cameraIssue === 'notfound' ? t('camera.issue.notfound.text')
             : cameraIssue === 'denied'
               ? (cameraPerm === 'denied'
-                  ? "Your browser has blocked the camera for this site, so it won't ask again on its own. SpotCam can't work without it. Turn it back on and we'll pick up from there."
-                  : 'SpotCam needs the camera to take photos. Tap "Allow access" and choose Allow when your browser asks.')
-            : 'Something went wrong starting the camera. Make sure no other app is using it, then try again.'
+                  ? t('camera.issue.denied.textBlocked')
+                  : t('camera.issue.denied.textAsk'))
+            : t('camera.issue.other.text')
           }
           what={cameraIssue === 'denied' ? 'Camera' : undefined}
           hardBlocked={cameraIssue === 'denied' && cameraPerm === 'denied'}
           onRetry={handleRetryPermissions}
         />
       ) : (
-        <video ref={videoRef} autoPlay playsInline muted onLoadedMetadata={e => setVideoReady(e.currentTarget.videoWidth > 0)} onResize={e => setVideoReady(e.currentTarget.videoWidth > 0)} aria-label="Live camera preview" className="w-full h-full object-cover"></video>
+        <video ref={videoRef} autoPlay playsInline muted onLoadedMetadata={e => setVideoReady(e.currentTarget.videoWidth > 0)} onResize={e => setVideoReady(e.currentTarget.videoWidth > 0)} aria-label={t('camera.live')} className="w-full h-full object-cover"></video>
       )}
 
       {/* Live data overlay */}
@@ -461,11 +467,11 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
       {locationBlocked && !error && (
         <div className="absolute inset-x-0 top-0 bottom-28 z-30 bg-black bg-opacity-85 flex items-center justify-center overflow-y-auto short:bottom-0 short:right-24">
           <PermissionNotice
-            title="Location access is blocked"
+            title={t('camera.location.title')}
             message={
               geoPerm === 'denied'
-                ? "Your browser has blocked location for this site, so it won't ask again on its own. SpotCam cannot stamp your photos without it, so capture is disabled."
-                : 'SpotCam stamps your location onto every photo, so capture is disabled until you allow it. Tap "Allow access" and choose Allow when your browser asks.'
+                ? t('camera.location.textBlocked')
+                : t('camera.location.textAsk')
             }
             what="Location"
             hardBlocked={geoPerm === 'denied'}
@@ -481,8 +487,8 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
       {zoomCapabilities && (
         <div className={`absolute left-0 right-0 px-6 z-10 short:right-24 short:px-3 ${videoEnabled ? 'bottom-44 short:bottom-14' : 'bottom-32 short:bottom-2'}`}>
             <div className="bg-black/60 rounded-full p-1 flex items-center space-x-2">
-                <button type="button" onClick={() => nudgeZoom(-1)} disabled={currentZoom <= zoomCapabilities.min} className="h-11 w-11 shrink-0 rounded-full text-xl font-bold text-white hover:bg-white/20 disabled:opacity-40" aria-label="Zoom out">-</button>
-                <label htmlFor="zoom-slider" className="text-white text-xs font-mono">ZOOM</label>
+                <button type="button" onClick={() => nudgeZoom(-1)} disabled={currentZoom <= zoomCapabilities.min} className="h-11 w-11 shrink-0 rounded-full text-xl font-bold text-white hover:bg-white/20 disabled:opacity-40" aria-label={t('camera.zoomOut')}>-</button>
+                <label htmlFor="zoom-slider" className="text-white text-xs font-mono">{t('camera.zoom')}</label>
                 <input 
                     id="zoom-slider"
                     type="range" 
@@ -495,7 +501,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
                     aria-valuetext={`${currentZoom.toFixed(1)}x`}
                 />
                 <span className="w-10 shrink-0 text-center text-xs font-mono text-white" aria-hidden="true">{currentZoom.toFixed(1)}x</span>
-                <button type="button" onClick={() => nudgeZoom(1)} disabled={currentZoom >= zoomCapabilities.max} className="h-11 w-11 shrink-0 rounded-full text-xl font-bold text-white hover:bg-white/20 disabled:opacity-40" aria-label="Zoom in">+</button>
+                <button type="button" onClick={() => nudgeZoom(1)} disabled={currentZoom >= zoomCapabilities.max} className="h-11 w-11 shrink-0 rounded-full text-xl font-bold text-white hover:bg-white/20 disabled:opacity-40" aria-label={t('camera.zoomIn')}>+</button>
             </div>
         </div>
       )}
@@ -506,12 +512,12 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
           {recording ? (
             <p role="timer" data-testid="recording-timer" className="flex items-center gap-2 rounded-full bg-black/70 px-3 py-1 text-sm font-semibold text-white">
               <span aria-hidden="true" className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500 motion-reduce:animate-none"></span>
-              <span className="sr-only">Recording </span>
+              <span className="sr-only">{t('camera.recordingSr')}</span>
               {formatDuration(elapsedMs)} / {formatDuration(getVideoMaxMinutes() * 60_000)}
             </p>
           ) : (
-            <div role="group" aria-label="Camera mode" className="flex rounded-full bg-black/60 p-0.5 text-sm font-semibold text-white">
-              {([['photo', 'Photo'], ['video', 'Video']] as const).map(([m, label]) => (
+            <div role="group" aria-label={t('camera.mode')} className="flex rounded-full bg-black/60 p-0.5 text-sm font-semibold text-white">
+              {([['photo', t('common.photo')], ['video', t('common.video')]] as const).map(([m, label]) => (
                 <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)} className={`min-h-9 rounded-full px-4 ${mode === m ? 'bg-white text-gray-900' : 'hover:bg-white/20'}`}>
                   {label}
                 </button>
@@ -525,24 +531,24 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
       {/* Bottom control bar */}
       <div data-testid="control-bar" className="absolute bottom-0 left-0 right-0 h-28 bg-gray-950/85 border-t border-white/10 flex items-center justify-around short:top-0 short:left-auto short:h-auto short:w-24 short:flex-col short:border-t-0 short:border-l">
         {lastPhotoUrl ? (
-          <button onClick={onSwitchView} className="h-14 w-14 overflow-hidden rounded-xl border-2 border-white bg-gray-700 transition hover:opacity-90" aria-label="Open gallery" data-testid="last-photo">
+          <button onClick={onSwitchView} className="h-14 w-14 overflow-hidden rounded-xl border-2 border-white bg-gray-700 transition hover:opacity-90" aria-label={t('camera.openGallery')} data-testid="last-photo">
             <img src={lastPhotoUrl} alt="" className="h-full w-full object-cover" />
           </button>
         ) : (
-          <button onClick={onSwitchView} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors" aria-label="Open gallery">
+          <button onClick={onSwitchView} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors" aria-label={t('camera.openGallery')}>
             <GalleryIcon className="w-8 h-8" />
           </button>
         )}
         {mode === 'video' ? (
-          <button onClick={recording ? stopVideo : startVideo} disabled={!canCapture && !recording} className="disabled:opacity-40 disabled:cursor-not-allowed w-20 h-20 rounded-full border-4 border-white bg-transparent flex items-center justify-center group" aria-label={recording ? 'Stop recording' : 'Record video'}>
+          <button onClick={recording ? stopVideo : startVideo} disabled={!canCapture && !recording} className="disabled:opacity-40 disabled:cursor-not-allowed w-20 h-20 rounded-full border-4 border-white bg-transparent flex items-center justify-center group" aria-label={recording ? t('camera.stop') : t('camera.record')}>
               <div className={`bg-red-600 transition-all group-active:scale-95 ${recording ? 'h-8 w-8 rounded-md' : 'h-16 w-16 rounded-full'}`}></div>
           </button>
         ) : (
-          <button onClick={handleCapture} disabled={!canCapture} className="disabled:opacity-40 disabled:cursor-not-allowed w-20 h-20 rounded-full border-4 border-white bg-transparent flex items-center justify-center group" aria-label="Capture photo">
+          <button onClick={handleCapture} disabled={!canCapture} className="disabled:opacity-40 disabled:cursor-not-allowed w-20 h-20 rounded-full border-4 border-white bg-transparent flex items-center justify-center group" aria-label={t('camera.capture')}>
               <div className="w-16 h-16 rounded-full bg-white group-hover:bg-blue-200 group-active:scale-95 transition"></div>
           </button>
         )}
-        <button onClick={handleSwitchCamera} disabled={!hasMultipleCameras || recording} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Switch camera">
+        <button onClick={handleSwitchCamera} disabled={!hasMultipleCameras || recording} className="text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" aria-label={t('camera.switch')}>
             <SwitchCameraIcon className="w-8 h-8" />
         </button>
       </div>

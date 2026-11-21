@@ -9,17 +9,19 @@ const DAY_MS = 24 * HOUR_MS;
 export interface TtlOption {
   /** How long a photo is kept (ms); null keeps photos until they are deleted by hand. */
   ms: number | null;
-  /** The choice as the person reads it in Settings. */
+  /** The choice as the person reads it in Settings (English; the app shows the message called `key` in the chosen language). */
   label: string;
+  /** The name of the message with this choice's words (see locales/en.ts). */
+  key: string;
 }
 
 /** The choices offered in Settings. The first is the default. */
 export const PHOTO_TTL_OPTIONS: readonly TtlOption[] = [
-  { ms: null, label: 'Until I delete them' },
-  { ms: HOUR_MS, label: '1 hour' },
-  { ms: DAY_MS, label: '1 day' },
-  { ms: 7 * DAY_MS, label: '7 days' },
-  { ms: 30 * DAY_MS, label: '30 days' },
+  { ms: null, label: 'Until I delete them', key: 'ttl.forever' },
+  { ms: HOUR_MS, label: '1 hour', key: 'ttl.hour' },
+  { ms: DAY_MS, label: '1 day', key: 'ttl.day' },
+  { ms: 7 * DAY_MS, label: '7 days', key: 'ttl.week' },
+  { ms: 30 * DAY_MS, label: '30 days', key: 'ttl.month' },
 ];
 
 export const isValidTtl = (ms: unknown): ms is number => PHOTO_TTL_OPTIONS.some(option => option.ms !== null && option.ms === ms);

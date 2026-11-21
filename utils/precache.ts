@@ -8,6 +8,13 @@ import { createHash } from 'node:crypto';
 /** social-card.png is only for link previews and crawlers; the app itself never shows it. */
 const NEVER_PRECACHE = new Set(['sw.js', 'version.txt', 'sitemap.xml', 'robots.txt', '404.html', 'social-card.png', 'analytics.config.json']);
 
+/**
+ * The words of each language are a separate file (assets/hi-<hash>.js, a two-letter language code then a hash). They are not
+ * precached: that would make every visitor download all of them, once per release. The service worker keeps each one the first
+ * time it is used instead (see sw/sw.template.js), so a language used online also opens offline.
+ */
+export const isLanguageChunk = (file: string): boolean => /^assets\/[a-z]{2}-[A-Za-z0-9_-]+\.js$/.test(file);
+
 /** Folders that are not needed to run the app offline (for example install-dialog screenshots). */
 const SKIPPED_FOLDERS = ['screenshots/'];
 
@@ -23,6 +30,7 @@ export function listPrecacheUrls(files: string[], base = '/'): string[] {
   for (const file of files) {
     if (NEVER_PRECACHE.has(file)) continue;
     if (SKIPPED_FOLDERS.some(folder => file.startsWith(folder))) continue;
+    if (isLanguageChunk(file)) continue;
     if (file === 'index.html') urls.add(root);
     else if (file.endsWith('/index.html')) urls.add(`${root}${file.slice(0, -'index.html'.length)}`);
     else urls.add(`${root}${file}`);

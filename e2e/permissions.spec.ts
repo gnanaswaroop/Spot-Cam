@@ -3,6 +3,7 @@
  * run identically in Chromium, Firefox and WebKit. Real Chromium prompts: chromium-native.spec.ts.
  */
 import { test, expect } from './fixtures';
+import { BROWSER_LOCALE, OTHER_LANGUAGES, say } from './messages';
 import { SITE, askedFor, installMocks, mockGeocoder, grantLocation, setMock, setUpGrantedCamera, skipIfNoCameraFrames } from './helpers';
 
 test.describe('granted', () => {
@@ -180,6 +181,26 @@ const BROWSERS = [
     steps: ['In the Safari menu, choose "Settings for This Website…".', 'Set Camera to "Allow".'],
   },
 ];
+
+test.describe('recovery steps in another language', () => {
+  for (const { code, name } of OTHER_LANGUAGES) {
+    test.describe(name, () => {
+      test.use({ userAgent: BROWSERS.find(b => b.name === 'Chrome (desktop)')!.ua, locale: BROWSER_LOCALE[code] });
+
+      test('are shown in that language, with the permission named in it', async ({ page, context }) => {
+        await installMocks(page, { camera: 'denied', location: 'granted', permissionStates: { camera: 'denied' } });
+        await grantLocation(context);
+        await mockGeocoder(page);
+
+        await page.goto(`${SITE}/cam`);
+        const notice = page.getByRole('alert');
+        await expect(notice.getByText(say(code, 'step.chromium.icon'))).toBeVisible();
+        await expect(notice.getByText(say(code, 'step.chromium.switch', { what: say(code, 'perm.name.Camera') }))).toBeVisible();
+        await expect(notice.getByText(say(code, 'step.reload'))).toBeVisible();
+      });
+    });
+  }
+});
 
 test.describe('recovery steps per browser', () => {
   for (const browser of BROWSERS) {

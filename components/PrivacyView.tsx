@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { directionOf, useT } from '../utils/i18n';
 
 interface PrivacyViewProps {
   onBack: () => void;
@@ -30,10 +31,11 @@ const ExternalLink = ({ href, children }: { href: string; children: React.ReactN
 export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
   // The visit-counting section is shown only on a site that has analytics switched on.
   const { available: analyticsOn } = useAnalytics();
+  const { t, lang } = useT();
 
   return (
     <div className="app-h w-full overflow-y-auto bg-gray-950 text-gray-200">
-      <main className="mx-auto max-w-2xl px-6 pb-16 pt-6 leading-relaxed">
+      <main lang="en" dir="ltr" className="mx-auto max-w-2xl px-6 pb-16 pt-6 leading-relaxed">
         <a
           href={import.meta.env.BASE_URL}
           onClick={e => {
@@ -48,6 +50,7 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
 
         <h1 className="mt-6 text-3xl font-bold tracking-tight text-white">Privacy Policy</h1>
         <p className="mt-2 text-sm text-gray-400">Last updated: {PRIVACY_LAST_UPDATED}</p>
+        {lang !== 'en' && <p lang={lang} dir={directionOf(lang)} className="mt-2 text-sm text-amber-300">{t('privacy.englishOnly')}</p>}
 
         <Section title="The short version">
           <p>
@@ -137,7 +140,7 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
         )}
 
         <Section title="What we don't do">
-          <ul className="list-disc space-y-1.5 pl-6">
+          <ul className="list-disc space-y-1.5 ps-6">
             <li>We don't have accounts or ask for your name or email.</li>
             <li>
               SpotCam itself doesn't set cookies. It uses your browser's storage only to keep your photos and settings.
@@ -148,7 +151,7 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ onBack }) => {
         </Section>
 
         <Section title="Your choices and control">
-          <ul className="list-disc space-y-1.5 pl-6">
+          <ul className="list-disc space-y-1.5 ps-6">
             <li>
               <strong className="text-white">Delete a photo</strong> from the gallery at any time. This removes it from your device.
             </li>

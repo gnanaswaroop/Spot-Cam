@@ -5,11 +5,13 @@
  */
 import React, { useEffect, useRef } from 'react';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { useT } from '../utils/i18n';
 
 const button = 'min-h-11 flex-1 rounded-full px-4 text-sm font-semibold transition-colors';
 
 export const ConsentBanner: React.FC<{ onPrivacy: () => void }> = ({ onPrivacy }) => {
   const { needsChoice, accept, decline } = useAnalytics();
+  const { t } = useT();
   const ref = useRef<HTMLElement>(null);
 
   // Tell the page how tall the banner is (--banner-height), so the page below is made shorter by that much instead of
@@ -32,11 +34,11 @@ export const ConsentBanner: React.FC<{ onPrivacy: () => void }> = ({ onPrivacy }
   return (
     <section
       ref={ref}
-      aria-label="Usage statistics"
+      aria-label={t('consent.label')}
       className="relative z-50 border-b border-white/10 bg-gray-900 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow-lg"
     >
       <p className="mx-auto max-w-2xl text-sm text-gray-200">
-        Help us improve SpotCam by allowing basic usage statistics. Your photos and location are never shared.{' '}
+        {t('consent.text')}{' '}
         <a
           href={`${import.meta.env.BASE_URL}privacy`}
           onClick={e => {
@@ -45,15 +47,15 @@ export const ConsentBanner: React.FC<{ onPrivacy: () => void }> = ({ onPrivacy }
           }}
           className="text-blue-300 underline"
         >
-          Details
+          {t('consent.details')}
         </a>
       </p>
       <div className="mx-auto mt-2 flex max-w-2xl gap-3">
         <button type="button" onClick={decline} className={`${button} border border-white/30 text-white hover:bg-white/10`}>
-          No thanks
+          {t('consent.no')}
         </button>
         <button type="button" onClick={accept} className={`${button} border border-white/30 text-white hover:bg-white/10`}>
-          Yes, allow
+          {t('consent.yes')}
         </button>
       </div>
     </section>

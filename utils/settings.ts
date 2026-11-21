@@ -5,6 +5,7 @@
 
 import { DEFAULT_MAP_SERVICE, isMapService, type MapService } from './maps';
 import { isValidTtl } from './photoExpiry';
+import { isLanguage, type LanguageCode } from './i18n';
 
 const STORAGE_KEY = 'spotcam-settings';
 
@@ -26,6 +27,8 @@ interface StoredSettings {
   recordSound?: boolean;
   /** The longest video, in minutes. Missing means the default. */
   videoMaxMinutes?: number;
+  /** The language the person chose in Settings. Missing means: follow the browser when that is clear, otherwise English. */
+  language?: string;
 }
 
 /** How long a video may be, in minutes: the choices in Settings, and the default. */
@@ -173,5 +176,19 @@ export function setVideoMaxMinutes(minutes: number) {
   const settings = readStored();
   if (minutes === DEFAULT_VIDEO_MAX_MINUTES) delete settings.videoMaxMinutes;
   else settings.videoMaxMinutes = minutes;
+  writeStored(settings);
+}
+
+/** The language the person chose, or null when they have not (then the browser's preference decides, see utils/i18n.ts). */
+export function getLanguage(): LanguageCode | null {
+  const saved = readStored().language;
+  return isLanguage(saved) ? saved : null;
+}
+
+/** Saves the chosen language. */
+export function setLanguage(code: LanguageCode) {
+  if (!isLanguage(code)) return;
+  const settings = readStored();
+  settings.language = code;
   writeStored(settings);
 }
