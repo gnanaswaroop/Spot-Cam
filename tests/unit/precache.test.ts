@@ -1,7 +1,7 @@
 /** Unit tests for the build-time service worker helpers. No build or browser involved. */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { cacheVersion, listPrecacheUrls, renderServiceWorker } from '../../utils/precache';
+import { cacheVersion, isLanguageChunk, listPrecacheUrls, renderServiceWorker } from '../../utils/precache';
 
 const built = [
   'index.html',
@@ -9,6 +9,8 @@ const built = [
   'gallery/index.html',
   'assets/index-abc123.js',
   'assets/index-def456.css',
+  'assets/hi-abc123.js',
+  'assets/jsx-runtime-abc123.js',
   'favicon.svg',
   'manifest.webmanifest',
   'sample.jpg',
@@ -27,12 +29,23 @@ describe('listPrecacheUrls', () => {
       '/',
       '/assets/index-abc123.js',
       '/assets/index-def456.css',
+      '/assets/jsx-runtime-abc123.js',
       '/cam/',
       '/favicon.svg',
       '/gallery/',
       '/manifest.webmanifest',
       '/sample.jpg',
     ]);
+  });
+
+  it('leaves the words of each language out (they are kept the first time they are used), but keeps other scripts', () => {
+    const urls = listPrecacheUrls(built);
+    expect(urls).not.toContain('/assets/hi-abc123.js');
+    expect(urls).toContain('/assets/jsx-runtime-abc123.js');
+    expect(isLanguageChunk('assets/hi-abc123.js')).toBe(true);
+    expect(isLanguageChunk('assets/zh-A_b-1.js')).toBe(true);
+    expect(isLanguageChunk('assets/index-abc123.js')).toBe(false);
+    expect(isLanguageChunk('assets/jsx-runtime-abc123.js')).toBe(false);
   });
 
   it('never caches the version marker, the SEO files, the 404 page, the worker itself or the screenshots', () => {

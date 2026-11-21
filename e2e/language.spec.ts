@@ -81,6 +81,28 @@ test.describe('the browser asks for English', () => {
     });
   }
 
+  test('the settings gear on the landing page opens Settings', async ({ page }) => {
+    await page.goto(`${SITE}/`);
+    await page.getByRole('link', { name: say(ENGLISH, 'camera.settings') }).click();
+    await expect(page.getByRole('heading', { name: say(ENGLISH, 'settings.title'), level: 1 })).toBeVisible();
+  });
+
+  test('the landing page links to the language setting', async ({ page }) => {
+    await page.goto(`${SITE}/`);
+    await page.getByRole('link', { name: say(ENGLISH, 'landing.language') }).click();
+    await expect(page.getByRole('heading', { name: say(ENGLISH, 'settings.title'), level: 1 })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: say(ENGLISH, 'settings.language.label') })).toBeVisible();
+  });
+
+  for (const { code } of OTHER_LANGUAGES) {
+    test(`the landing page's language link is in ${code} when that language is chosen`, async ({ page }) => {
+      await page.addInitScript(([key, lang]) => localStorage.setItem(key, JSON.stringify({ language: lang })), [SETTINGS_KEY, code]);
+      await page.goto(`${SITE}/`);
+      await page.getByRole('link', { name: say(code, 'landing.language') }).click();
+      await expect(page.getByRole('heading', { name: say(code, 'settings.title'), level: 1 })).toBeVisible();
+    });
+  }
+
   test('an unknown saved language is ignored', async ({ page }) => {
     await page.addInitScript(key => localStorage.setItem(key, JSON.stringify({ language: 'tlh' })), SETTINGS_KEY);
     await page.goto(`${SITE}/`);

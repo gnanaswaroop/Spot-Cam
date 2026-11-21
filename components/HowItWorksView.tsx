@@ -32,7 +32,7 @@ export const HowItWorksView: React.FC<HowItWorksViewProps> = ({ onBack, onStart 
       <p className="mt-3 text-gray-300">{t('how.intro')}</p>
 
       <h2 className="mt-8 text-xl font-semibold text-white">{t('how.stepsHeading')}</h2>
-      <ol className="mt-3 list-decimal space-y-2 pl-6 text-gray-300">
+      <ol className="mt-3 list-decimal space-y-2 ps-6 text-gray-300">
         {([1, 2, 3] as const).map(n => (
           <li key={n}>
             <strong className="text-white">{t(`how.step${n}.title`)}.</strong> {t(`how.step${n}.text`)}
@@ -41,7 +41,7 @@ export const HowItWorksView: React.FC<HowItWorksViewProps> = ({ onBack, onStart 
       </ol>
 
       <h2 className="mt-8 text-xl font-semibold text-white">{t('how.useHeading')}</h2>
-      <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-300">
+      <ul className="mt-3 list-disc space-y-2 ps-6 text-gray-300">
         {([1, 2, 3, 4] as const).map(n => (
           <li key={n}>
             <strong className="text-white">{t(`how.use${n}.title`)}.</strong> {t(`how.use${n}.text`)}

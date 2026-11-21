@@ -5,8 +5,8 @@
  * - A message that depends on a count has one entry per plural form, written `key.one` and `key.other` (some languages
  *   add `few` and `many`); the app picks the right one (see translatePlural in utils/i18n.ts).
  * - Another language is a file of the same keys (locales/hi.ts, ...). The compiler lists any key it is missing.
- * - What stays in English everywhere: the name SpotCam, the stamp drawn on photos and videos, the privacy policy, the step
- *   lists for turning a blocked permission back on, and the names of map services.
+ * - What stays in English everywhere: the name SpotCam, the stamp drawn on photos and videos, the privacy policy, and the
+ *   names of map services. (The steps for turning a blocked permission back on are translated: see the `step.*` keys.)
  */
 export const en = {
   // Page titles
@@ -48,6 +48,23 @@ export const en = {
   'perm.noPrompt': 'No prompt? Enable it manually',
   'perm.howToCamera': 'How to turn the camera back on',
   'perm.howToLocation': 'How to turn location back on',
+  'perm.name.Camera': 'Camera',
+  'perm.name.Location': 'Location',
+  'step.reload': 'Come back here and tap "Reload page".',
+  'step.set': 'Set {what} to "Allow".',
+  'step.switch': 'Switch {what} to "Allow".',
+  'step.ios.aA': 'Tap the "aA" icon in the address bar.',
+  'step.ios.website': 'Tap "Website Settings".',
+  'step.ios.locationServices': 'Still blocked? Open Settings > Privacy & Security > Location Services > Safari Websites and choose "While Using the App".',
+  'step.android.menu': 'Tap the ⋮ menu (top right), then tap the ⓘ (info) icon in the row at the top. If you see a lock or settings icon at the left of the address bar, you can tap that instead.',
+  'step.android.permissions': 'Tap "Permissions".',
+  'step.android.phone': "Still blocked? Open your phone's Settings > Apps > your browser > Permissions and allow {what} there.",
+  'step.firefox.icon': 'Click the permissions icon at the left of the address bar.',
+  'step.firefox.remove': 'Next to {what}, remove the "Blocked" setting.',
+  'step.safari.menu': 'In the Safari menu, choose "Settings for This Website…".',
+  'step.chromium.icon': 'Click the lock (or settings) icon at the left of the address bar.',
+  'step.chromium.switch': 'Switch {what} to "Allow" (or open "Site settings" and set it there).',
+  'step.other.open': "Open this site's settings from your browser's address bar or menu.",
 
   // Landing page
   'landing.hero': 'A free <b>timestamp camera</b> for photos and video, with the <b>date, time and GPS location</b> stamped on every one.',
@@ -60,6 +77,7 @@ export const en = {
   'landing.needs': 'Camera and location access required',
   'landing.privacy': 'Privacy',
   'landing.how': 'How it works',
+  'landing.language': 'Language',
   'landing.shareSite': 'Share this website',
   'landing.linkCopied': 'Link copied',
   'landing.linkFailed': 'Could not share the link',
@@ -241,7 +259,7 @@ export const en = {
   // Settings
   'settings.title': 'Settings',
   'settings.language.heading': 'Language',
-  'settings.language.text': 'The language of the buttons and messages. It is kept on this device. The privacy policy and the steps for turning a blocked permission back on stay in English.',
+  'settings.language.text': 'The language of the buttons and messages. It is kept on this device. The privacy policy stays in English.',
   'settings.language.label': 'Language',
   'settings.language.saved': 'Language: {name}.',
   'settings.cache.heading': 'Address cache',

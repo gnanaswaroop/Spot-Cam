@@ -96,7 +96,7 @@ const App: React.FC = () => {
       )}
       {/* Only on the landing page: on the other pages the fixed banner would sit on top of their headings. */}
       {view === 'landing' && <ConsentBanner onPrivacy={() => switchView('privacy')} />}
-      {view === 'landing' && <LandingView onStart={() => { track('start_cam'); switchView('camera'); }} onPrivacy={() => switchView('privacy')} onHowItWorks={() => switchView('howItWorks')} />}
+      {view === 'landing' && <LandingView onStart={() => { track('start_cam'); switchView('camera'); }} onPrivacy={() => switchView('privacy')} onHowItWorks={() => switchView('howItWorks')} onSettings={() => switchView('settings')} />}
       <Suspense fallback={null}>
       {view === 'howItWorks' && <HowItWorksView onBack={() => switchView('landing')} onStart={() => switchView('camera')} />}
       {view === 'privacy' && <PrivacyView onBack={() => switchView('landing')} />}

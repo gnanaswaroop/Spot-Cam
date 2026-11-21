@@ -36,7 +36,7 @@ export const PermissionNotice: React.FC<PermissionNoticeProps> = ({ title, messa
   <div className="max-w-sm max-h-full overflow-y-auto p-6 text-center text-white short:p-3 short:max-w-md" role="alert">
     <h2 className="mb-3 text-xl font-semibold text-red-400">
       {/* A symbol as well as the red colour, so the problem is not signalled by colour alone. */}
-      <span aria-hidden="true" className="mr-2">&#9888;</span>
+      <span aria-hidden="true" className="me-2">&#9888;</span>
       {title}
     </h2>
     <p className="mb-5 text-gray-300">{message}</p>
@@ -56,7 +56,7 @@ export const PermissionNotice: React.FC<PermissionNoticeProps> = ({ title, messa
         <summary className="cursor-pointer text-center text-gray-300">
           {hardBlocked ? t(what === 'Camera' ? 'perm.howToCamera' : 'perm.howToLocation') : t('perm.noPrompt')}
         </summary>
-        <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-gray-300">
+        <ol className="mt-3 list-decimal space-y-1.5 ps-5 text-gray-300">
           {getEnableSteps(what).map(step => (
             <li key={step}>{step}</li>
           ))}

@@ -208,7 +208,7 @@ const ConfirmationDialog = ({ count = 1, noun = 'photo', onConfirm, onCancel }: 
         <div ref={ref} tabIndex={-1} className="focus:outline-none app-h fixed inset-x-0 top-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm animate-fade-in" aria-modal="true" role="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
             <div className="bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 shadow-2xl border border-gray-700">
                 <h3 className="text-white text-lg font-semibold mb-4" id="dialog-title">{t('confirm.title')}</h3>
-                <p className="text-gray-300 mb-6" id="dialog-description">{tn(`confirm.${noun}s`, count)}</p>
+                <p className="text-gray-300 mb-6" id="dialog-description">{count === 1 ? t(`confirm.${noun}`) : tn(`confirm.${noun}s`, count)}</p>
                 <div className="flex justify-end space-x-4">
                     <button 
                         onClick={onCancel} 
@@ -413,7 +413,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
       )}
       {selection && (
         <div role="toolbar" aria-label={t('gallery.toolbar')} className="flex flex-wrap items-center gap-2 px-4 pt-2">
-          <span role="status" className="mr-auto text-sm text-gray-300">{tn('gallery.selected', selectedIds.length)}</span>
+          <span role="status" className="me-auto text-sm text-gray-300">{tn('gallery.selected', selectedIds.length)}</span>
           <button type="button" onClick={() => setSelection(allSelected ? new Set() : new Set(listed.map(p => p.id)))} className="min-h-11 rounded-md bg-gray-700 px-3 text-sm hover:bg-gray-600">
             {allSelected ? t('gallery.clearSelection') : t('gallery.selectAll')}
           </button>

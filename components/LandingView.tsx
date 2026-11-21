@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { CloseIcon, ShareIcon } from './icons';
+import { CloseIcon, SettingsIcon, ShareIcon } from './icons';
 import { dataURLtoFile } from '../utils/helpers';
 import { rich, translate, useT } from '../utils/i18n';
 import { useDialogFocus } from '../hooks/useDialogFocus';
@@ -37,12 +37,13 @@ interface LandingViewProps {
   onStart: () => void;
   onPrivacy: () => void;
   onHowItWorks: () => void;
+  onSettings: () => void;
 }
 
 
 const FEATURES = ['landing.feature1', 'landing.feature2', 'landing.feature3'] as const;
 
-export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy, onHowItWorks }) => {
+export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy, onHowItWorks, onSettings }) => {
   const installProps = useInstallPrompt();
   const { t } = useT();
   // The sample viewer owns a history entry, so the Back gesture closes it instead of leaving the page.
@@ -53,6 +54,19 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy, on
       {/* Soft background glow */}
       <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-blue-600/25 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-24 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl" />
+
+      {/* Settings (and with it the language), one tap from the first page. A real link, like the others. */}
+      <a
+        href={`${import.meta.env.BASE_URL}settings/`}
+        onClick={e => {
+          e.preventDefault();
+          onSettings();
+        }}
+        className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur hover:bg-white/20"
+        aria-label={t('camera.settings')}
+      >
+        <SettingsIcon className="h-5 w-5" />
+      </a>
 
       <main className="relative mx-auto flex h-full max-w-5xl flex-col justify-center-safe overflow-y-auto gap-5 px-6 py-5 md:flex-row md:items-center md:gap-14 md:py-10">
         {/* Intro */}
@@ -78,7 +92,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy, on
 
           {/* Desktop call to action (mobile one sits under the sample) */}
           <div className="hidden md:mt-10 md:block md:w-72">
-            <StartButton onStart={onStart} onPrivacy={onPrivacy} onHowItWorks={onHowItWorks} {...installProps} />
+            <StartButton onStart={onStart} onPrivacy={onPrivacy} onHowItWorks={onHowItWorks} onSettings={onSettings} {...installProps} />
           </div>
         </section>
 
@@ -101,7 +115,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart, onPrivacy, on
 
         {/* Mobile call to action */}
         <div className="shrink-0 md:hidden">
-          <StartButton onStart={onStart} onPrivacy={onPrivacy} onHowItWorks={onHowItWorks} {...installProps} />
+          <StartButton onStart={onStart} onPrivacy={onPrivacy} onHowItWorks={onHowItWorks} onSettings={onSettings} {...installProps} />
         </div>
       </main>
 
@@ -149,6 +163,7 @@ const StartButton = ({
   onStart,
   onPrivacy,
   onHowItWorks,
+  onSettings,
   canInstall,
   install,
   showIosSteps,
@@ -156,6 +171,7 @@ const StartButton = ({
   onStart: () => void;
   onPrivacy: () => void;
   onHowItWorks: () => void;
+  onSettings: () => void;
   canInstall: boolean;
   install: () => void;
   showIosSteps: boolean;
@@ -203,6 +219,17 @@ const StartButton = ({
         className="underline hover:text-gray-200"
       >
         {t('landing.how')}
+      </a>
+      <span aria-hidden="true"> · </span>
+      <a
+        href={`${import.meta.env.BASE_URL}settings/`}
+        onClick={e => {
+          e.preventDefault();
+          onSettings();
+        }}
+        className="underline hover:text-gray-200"
+      >
+        {t('landing.language')}
       </a>
       <span aria-hidden="true"> · </span>
       <button type="button" onClick={shareSite} className="underline hover:text-gray-200">

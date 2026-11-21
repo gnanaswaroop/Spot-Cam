@@ -4,6 +4,8 @@
  * again and pages cannot reset it. The only way back is the browser's site settings.
  */
 
+import { translate } from './i18n';
+
 export type PermissionName = 'Camera' | 'Location';
 
 type BrowserKind = 'ios' | 'android' | 'firefox' | 'safari-mac' | 'desktop-chromium' | 'other';
@@ -18,52 +20,36 @@ export const detectBrowser = (ua: string = navigator.userAgent): BrowserKind => 
   return 'other';
 };
 
-/** Step-by-step instructions for turning a blocked permission back on. */
+/** Step-by-step instructions for turning a blocked permission back on, in the chosen language. */
 export const getEnableSteps = (what: PermissionName, ua?: string): string[] => {
-  const reload = 'Come back here and tap "Reload page".';
+  const name = translate(`perm.name.${what}`);
+  const set = translate('step.set', { what: name });
+  const reload = translate('step.reload');
   switch (detectBrowser(ua)) {
     case 'ios':
       return [
-        'Tap the "aA" icon in the address bar.',
-        'Tap "Website Settings".',
-        `Set ${what} to "Allow".`,
-        ...(what === 'Location'
-          ? ['Still blocked? Open Settings > Privacy & Security > Location Services > Safari Websites and choose "While Using the App".']
-          : []),
+        translate('step.ios.aA'),
+        translate('step.ios.website'),
+        set,
+        ...(what === 'Location' ? [translate('step.ios.locationServices')] : []),
         reload,
       ];
     case 'android':
       // The site-info icon is not always shown at the left of the address bar, so lead with the menu.
       return [
-        'Tap the ⋮ menu (top right), then tap the ⓘ (info) icon in the row at the top. If you see a lock or settings icon at the left of the address bar, you can tap that instead.',
-        'Tap "Permissions".',
-        `Switch ${what} to "Allow".`,
-        `Still blocked? Open your phone's Settings > Apps > your browser > Permissions and allow ${what} there.`,
+        translate('step.android.menu'),
+        translate('step.android.permissions'),
+        translate('step.switch', { what: name }),
+        translate('step.android.phone', { what: name }),
         reload,
       ];
     case 'firefox':
-      return [
-        'Click the permissions icon at the left of the address bar.',
-        `Next to ${what}, remove the "Blocked" setting.`,
-        reload,
-      ];
+      return [translate('step.firefox.icon'), translate('step.firefox.remove', { what: name }), reload];
     case 'safari-mac':
-      return [
-        'In the Safari menu, choose "Settings for This Website…".',
-        `Set ${what} to "Allow".`,
-        reload,
-      ];
+      return [translate('step.safari.menu'), set, reload];
     case 'desktop-chromium':
-      return [
-        'Click the lock (or settings) icon at the left of the address bar.',
-        `Switch ${what} to "Allow" (or open "Site settings" and set it there).`,
-        reload,
-      ];
+      return [translate('step.chromium.icon'), translate('step.chromium.switch', { what: name }), reload];
     default:
-      return [
-        "Open this site's settings from your browser's address bar or menu.",
-        `Set ${what} to "Allow".`,
-        reload,
-      ];
+      return [translate('step.other.open'), set, reload];
   }
 };

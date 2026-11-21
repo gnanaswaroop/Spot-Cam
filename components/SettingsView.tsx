@@ -259,7 +259,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
             {customised && (
               <button
                 type="button"
-                className="ml-3 underline text-blue-300 hover:text-blue-200"
+                className="ms-3 underline text-blue-300 hover:text-blue-200"
                 onClick={() => {
                   applyRadius(DEFAULT_CACHE_RADIUS_M);
                   setStatus(t('settings.radius.resetDone', { value: DEFAULT_CACHE_RADIUS_M }));

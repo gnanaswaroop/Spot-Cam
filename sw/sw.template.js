@@ -7,6 +7,7 @@
  *  - pages: network first, falling back to the cached copy when offline or slow, so a deploy shows up
  *    straight away for people who are online;
  *  - scripts, styles and images: cache first (their file names carry a content hash);
+ *  - the words of each language are not precached; each is kept the first time it is used, so a language used online also opens offline;
  *  - never touches anything it did not precache: other sites (the address services), version.txt,
  *    sitemap.xml and robots.txt all go straight to the network;
  *  - a new version waits until the person taps "Reload" in the app (SKIP_WAITING), so nobody has the
@@ -57,6 +58,18 @@ async function pageResponse(request) {
   }
 }
 
+/** A language's words (assets/hi-<hash>.js): kept the first time they are used, then served from the cache (names carry a hash). */
+const isLanguageChunk = pathname => pathname.startsWith(`${BASE}assets/`) && /\/[a-z]{2}-[\w-]+\.js$/.test(pathname);
+
+async function languageResponse(request) {
+  const cache = await caches.open(CACHE);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (response.ok) cache.put(request, response.clone()).catch(() => {});
+  return response;
+}
+
 async function assetResponse(request) {
   const cache = await caches.open(CACHE);
   return (await cache.match(request)) || fetch(request);
@@ -73,4 +86,5 @@ self.addEventListener('fetch', event => {
     return;
   }
   if (PRECACHED.has(url.pathname)) event.respondWith(assetResponse(request));
+  else if (isLanguageChunk(url.pathname)) event.respondWith(languageResponse(request));
 });
