@@ -93,10 +93,27 @@ describe('consent storage', () => {
 
 describe('events', () => {
   it('are a short fixed list with only coarse options', () => {
-    expect(Object.keys(EVENTS)).toEqual(['start_cam', 'photo_captured', 'share_used', 'permission_blocked', 'pwa_installed']);
+    expect(Object.keys(EVENTS)).toEqual([
+      'start_cam',
+      'photo_captured',
+      'video_recorded',
+      'share_used',
+      'download_used',
+      'photos_deleted',
+      'permission_blocked',
+      'pwa_installed',
+      'language_changed',
+      'map_service_changed',
+      'share_signature_changed',
+      'keep_photos_changed',
+    ]);
     // Every event name is a plain snake_case word, so GTM triggers match it exactly.
     for (const name of Object.keys(EVENTS)) expect(name).toMatch(/^[a-z]+(_[a-z]+)*$/);
     expect(EVENTS.permission_blocked).toEqual(['camera', 'location']);
-    for (const name of ['start_cam', 'photo_captured', 'share_used', 'pwa_installed'] as const) expect(EVENTS[name]).toEqual([]);
+    expect(EVENTS.map_service_changed).toEqual(['google', 'apple', 'osm']);
+    expect(EVENTS.keep_photos_changed).toEqual(['forever', 'hour', 'day', 'week', 'month']);
+    for (const name of ['start_cam', 'photo_captured', 'video_recorded', 'share_used', 'download_used', 'photos_deleted', 'pwa_installed', 'language_changed'] as const) {
+      expect(EVENTS[name]).toEqual([]);
+    }
   });
 });

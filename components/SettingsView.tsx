@@ -31,6 +31,7 @@ import {
   setVideoMaxMinutes,
 } from '../utils/settings';
 import { PHOTO_TTL_OPTIONS, expiredCount } from '../utils/photoExpiry';
+import { track } from '../utils/analytics';
 import { MAP_SERVICES, shareSignature, type MapService } from '../utils/maps';
 import { AppHeader } from './AppHeader';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -116,6 +117,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
   const chooseLanguage = async (code: string) => {
     if (!isLanguage(code)) return;
     setLanguage(code);
+    track('language_changed');
     await activateLanguage(code);
     setStatus(t('settings.language.saved', { name: LANGUAGES.find(l => l.code === code)!.name }));
   };
@@ -148,6 +150,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
   const [mapService, setMapServiceState] = useState<MapService>(getMapService);
   const chooseMapService = (service: MapService) => {
     setMapService(service);
+    track('map_service_changed', service);
     setMapServiceState(service);
     setStatus(t('settings.maps.saved', { name: MAP_SERVICES.find(s => s.id === service)!.label }));
   };
@@ -156,6 +159,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
   const [signature, setSignatureState] = useState(getShareSignature);
   const chooseSignature = (on: boolean) => {
     setShareSignature(on);
+    track('share_signature_changed', on ? 'on' : 'off');
     setSignatureState(on);
     setStatus(on ? t('settings.signature.on') : t('settings.signature.off'));
   };
@@ -185,6 +189,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
   const [pendingKeepFor, setPendingKeepFor] = useState<{ ms: number } | null>(null);
   const applyKeepFor = (ms: number | null) => {
     setPhotoTtlMs(ms); // the app removes any expired photos as soon as it hears about the change
+    track('keep_photos_changed', ms === null ? 'forever' : (PHOTO_TTL_OPTIONS.find(option => option.ms === ms)!.key.replace('ttl.', '') as 'hour' | 'day' | 'week' | 'month'));
     setKeepFor(ms);
     setPendingKeepFor(null);
     setStatus(ms === null ? t('settings.keep.forever') : t('settings.keep.after', { time: ttlLabel(ms) }));

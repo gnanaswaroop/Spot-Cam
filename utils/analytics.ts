@@ -28,9 +28,16 @@ export type Consent = 'granted' | 'denied' | undefined;
 export const EVENTS = {
   start_cam: [],
   photo_captured: [],
+  video_recorded: [],
   share_used: [],
+  download_used: [],
+  photos_deleted: [],
   permission_blocked: ['camera', 'location'],
   pwa_installed: [],
+  language_changed: [],
+  map_service_changed: ['google', 'apple', 'osm'],
+  share_signature_changed: ['on', 'off'],
+  keep_photos_changed: ['forever', 'hour', 'day', 'week', 'month'],
 } as const satisfies Record<string, readonly string[]>;
 
 export type EventName = keyof typeof EVENTS;

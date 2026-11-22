@@ -297,8 +297,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
   /** Saves a photo to the device's downloads. */
   const handleDownload = async (photo: GalleryPhoto) => {
     const file = await photoFile(photo);
-    if (file) downloadFile(file);
-    else alert(translate(photo.kind === 'video' ? 'share.errorRead.video' : 'share.errorRead.photo'));
+    if (file) {
+      downloadFile(file);
+      track('download_used');
+    } else alert(translate(photo.kind === 'video' ? 'share.errorRead.video' : 'share.errorRead.photo'));
   };
 
   /** Downloads every selected photo, one after another (browsers ignore downloads that arrive all in the same instant). */
@@ -319,6 +321,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
   const handleConfirmDelete = () => {
     if (photoIdToDelete) {
       onDelete(photoIdToDelete);
+      track('photos_deleted');
       // Close the confirm dialog and the viewer together: both history entries go in one step.
       if (hasOverlayEntry('deleteConfirm') && hasOverlayEntry('photoViewer')) {
         window.history.go(-2);
@@ -331,7 +334,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
 
   /** Deletes the selected photos and leaves select mode. */
   const handleConfirmDeleteMany = () => {
-    if (idsToDelete) onDeleteMany(idsToDelete);
+    if (idsToDelete) {
+      onDeleteMany(idsToDelete);
+      track('photos_deleted');
+    }
     closeDeleteMany();
     setSelection(null);
   };

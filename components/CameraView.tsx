@@ -13,6 +13,7 @@ import { drawStamp, type StampText } from '../utils/stamp';
 import { startRecording, type Recording } from '../utils/videoRecorder';
 import { canRecordVideo, formatDuration } from '../utils/video';
 import { getRecordSound, getVideoEnabled, getVideoMaxMinutes } from '../utils/settings';
+import { track } from '../utils/analytics';
 import { makeThumbnail } from '../utils/thumbnail';
 import { useCameraRecovery } from '../hooks/useCameraRecovery';
 import { continuousModes, openingZoom, videoRequests, worthAskingAgain } from '../utils/cameraSettings';
@@ -316,6 +317,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
     recorder.done
       .then(result => {
         latestRef.current.onVideo({ id: `video_${startedAt}`, blob: result.blob, mimeType: result.mimeType, durationMs: result.durationMs, thumbUrl: result.thumbUrl, timestamp: startedAt, location: where });
+        track('video_recorded');
         setAnnouncement(translate('camera.said.videoSaved'));
       })
       .catch(err => {

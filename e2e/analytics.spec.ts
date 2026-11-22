@@ -5,6 +5,7 @@
 import { Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 import { SITE, setUpGrantedCamera, skipIfNoCameraFrames } from './helpers';
+import { EVENTS } from '../utils/analytics';
 
 const TEST_ID = 'GTM-TEST1234';
 
@@ -212,7 +213,7 @@ test.describe('with a config', () => {
     }
     // Every event is one of the known names, with at most a coarse option.
     for (const c of calls.filter(c => c[0] === 'event' && c[1] !== 'page_view')) {
-      expect(['start_cam', 'photo_captured', 'share_used', 'permission_blocked', 'pwa_installed']).toContain(c[1]);
+      expect(Object.keys(EVENTS)).toContain(c[1]);
       expect(Object.keys((c[2] ?? {}) as object).filter(k => k !== 'option')).toEqual([]);
     }
   });
