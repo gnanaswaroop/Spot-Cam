@@ -7,23 +7,24 @@ const memory = () => {
 };
 
 describe('parseConfig', () => {
-  it('accepts a GA4 measurement ID', () => {
-    expect(parseConfig({ provider: 'ga4', id: 'G-ABCD1234' })).toEqual({ provider: 'ga4', id: 'G-ABCD1234' });
+  it('accepts a Google Tag Manager container ID', () => {
+    expect(parseConfig({ provider: 'gtm', id: 'GTM-ABCD123' })).toEqual({ provider: 'gtm', id: 'GTM-ABCD123' });
   });
 
-  it('defaults the provider to ga4', () => {
-    expect(parseConfig({ id: 'G-ABCD1234' })).toEqual({ provider: 'ga4', id: 'G-ABCD1234' });
+  it('defaults the provider to gtm', () => {
+    expect(parseConfig({ id: 'GTM-ABCD123' })).toEqual({ provider: 'gtm', id: 'GTM-ABCD123' });
   });
 
   it.each([
     ['null', null],
-    ['a string', 'G-ABCD1234'],
-    ['no id', { provider: 'ga4' }],
-    ['a lower-case id', { id: 'g-abcd1234' }],
+    ['a string', 'GTM-ABCD123'],
+    ['no id', { provider: 'gtm' }],
+    ['a lower-case id', { id: 'gtm-abcd123' }],
+    ['a GA4 measurement ID', { provider: 'gtm', id: 'G-ABCD1234' }],
     ['an old UA id', { id: 'UA-12345-1' }],
-    ['an id with a quote', { id: 'G-ABCD"1234' }],
-    ['a script URL', { id: 'G-ABCD1234&x=<script>' }],
-    ['another provider', { provider: 'other', id: 'G-ABCD1234' }],
+    ['an id with a quote', { id: 'GTM-ABCD"123' }],
+    ['a script URL', { id: 'GTM-ABCD123&x=<script>' }],
+    ['another provider', { provider: 'ga4', id: 'GTM-ABCD123' }],
     ['a number', { id: 12345 }],
   ])('rejects %s, so analytics stays off', (_name, value) => {
     expect(parseConfig(value)).toBeNull();
@@ -93,6 +94,8 @@ describe('consent storage', () => {
 describe('events', () => {
   it('are a short fixed list with only coarse options', () => {
     expect(Object.keys(EVENTS)).toEqual(['start_cam', 'photo_captured', 'share_used', 'permission_blocked', 'pwa_installed']);
+    // Every event name is a plain snake_case word, so GTM triggers match it exactly.
+    for (const name of Object.keys(EVENTS)) expect(name).toMatch(/^[a-z]+(_[a-z]+)*$/);
     expect(EVENTS.permission_blocked).toEqual(['camera', 'location']);
     for (const name of ['start_cam', 'photo_captured', 'share_used', 'pwa_installed'] as const) expect(EVENTS[name]).toEqual([]);
   });

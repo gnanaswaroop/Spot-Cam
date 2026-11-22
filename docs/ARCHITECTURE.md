@@ -198,9 +198,10 @@ Tests: `e2e/pwa.spec.ts` turns the worker on (every other spec blocks it, in `pl
 
 - `utils/analytics.ts` asks for `analytics.config.json` next to the page. The file is not in the repository: the deploy workflow writes it into `dist/` from the `ANALYTICS_ID` repository variable. No file (a 404, a fork, a local build, the tests) means nothing happens: no banner, no script, no request.
 - With a file, `hooks/useAnalytics.ts` shares the visitor's choice (stored in `localStorage` as `spotcam.analytics`) between the consent banner (shown on the landing, privacy, how-it-works and settings pages, never on the camera or gallery), Settings and the privacy page.
-- The Google tag is added only after "Yes", never when the browser sends Do Not Track or Global Privacy Control (that overrides an earlier "Yes"). It is set up with consent mode (analytics storage only), no Google signals and no ad personalisation, and automatic page views off.
-- App code calls only `pageView()` (on every route change, path only, no query string) and `track()` with one of five fixed events: `start_cam`, `photo_captured`, `share_used`, `permission_blocked` (with `camera` or `location`) and `pwa_installed`. Anything else is dropped. Events that happen before the choice wait in memory and are sent only after an Accept.
-- The config file is never precached by the service worker. The e2e fixtures block Google's hosts for every test, and `e2e/analytics.spec.ts` uses a fake tag script.
+- The config names a Google Tag Manager container (`{"provider":"gtm","id":"GTM-…"}`). The container script is added only after "Yes", never when the browser sends Do Not Track or Global Privacy Control (that overrides an earlier "Yes"). Consent mode is set in code (analytics storage only, default denied, granted on Yes).
+- App code calls only `pageView()` (on every route change, path only, no query string) and `track()`. `track()` pushes `{ event, option? }` to `window.dataLayer`; the container decides which tags run on it. Only the names in `EVENTS` are accepted, each with at most its listed option. Events that happen before the choice wait in memory and are sent only after an Accept.
+- Adding a tag for a new feature: add the name to `EVENTS`, call `track()` where it happens, then in GTM create a trigger for "Custom Event" with that name and a tag for it.
+- The config file is never precached by the service worker. The e2e fixtures block Google's hosts for every test, and `e2e/analytics.spec.ts` uses a fake container script.
 
 ## 12. Dependencies and updates
 

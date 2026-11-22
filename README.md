@@ -98,15 +98,15 @@ The site is served from the root of its domain, so the build uses `base: '/'`. T
 
 ### Optional analytics
 
-The repository contains no analytics account or tracking ID. A deploy can switch on Google Analytics (GA4) by setting a repository **variable** (Settings > Secrets and variables > Actions > Variables):
+The repository contains no analytics account or tracking ID. A deploy can switch on analytics by setting a repository **variable** (Settings > Secrets and variables > Actions > Variables) to a Google Tag Manager container ID. The container holds the Google Analytics (GA4) tag and any other tags, so new tags are added in the GTM web UI without a code change:
 
 | Variable | Value |
 |---|---|
-| `ANALYTICS_ID` | A GA4 measurement ID, like `G-XXXXXXXXXX` |
+| `ANALYTICS_ID` | A Google Tag Manager container ID, like `GTM-XXXXXX` |
 
 When it is set, the deploy workflow writes `analytics.config.json` into the built site (it is never committed). With no variable, or in a fork, a pull request or a local build, analytics is off: no banner, no script and no request. To turn it off again, delete the variable and redeploy.
 
-Visitors are asked first; nothing is sent before they accept, or at all if their browser sends Do Not Track or Global Privacy Control. Only page views and five plain events are sent, never a photo, coordinates or an address. The privacy page and Settings describe it when it is on. See `docs/ARCHITECTURE.md`.
+Visitors are asked first; nothing is sent before they accept, or at all if their browser sends Do Not Track or Global Privacy Control. Only page views and a short list of plain events (`EVENTS` in `utils/analytics.ts`) are pushed to the data layer, never a photo, coordinates or an address. The privacy page and Settings describe it when it is on. See `docs/ARCHITECTURE.md`.
 
 ## Project layout
 

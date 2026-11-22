@@ -6,21 +6,25 @@
  * builds, in tests or in forks; the deploy workflow writes it from repository variables. With no
  * file, nothing here does anything: no banner, no script, no network request.
  *
- * With a file, the provider's script is added only AFTER the visitor accepts, and never when the
- * browser sends Do Not Track or Global Privacy Control. Only a short list of event names is ever
- * sent, with at most one coarse option each. Nothing from a photo or the stamp (coordinates, address,
- * image) goes to analytics, and page views carry the path without any query string.
+ * With a file, the Google Tag Manager container is added only AFTER the visitor accepts, and never when
+ * the browser sends Do Not Track or Global Privacy Control. The site only pushes event names to the
+ * data layer; which tags (Google Analytics, others) run on them is decided in the GTM container.
+ * Nothing from a photo or the stamp (coordinates, address, image) is ever pushed, and page views carry
+ * the path without any query string.
  */
 
 export interface AnalyticsConfig {
-  provider: 'ga4';
-  /** The GA4 measurement ID, like G-XXXXXXXXXX. It is visible in any page that uses GA4 by design. */
+  provider: 'gtm';
+  /** The Google Tag Manager container ID, like GTM-XXXXXX. It is visible in any page that uses GTM by design. */
   id: string;
 }
 
 export type Consent = 'granted' | 'denied' | undefined;
 
-/** The only events that can be sent, and the only option each may carry. */
+/**
+ * The events the site can send, and the only option each may carry. To add an event: list it here,
+ * call `track()` where it happens, then add a trigger for it in the GTM container.
+ */
 export const EVENTS = {
   start_cam: [],
   photo_captured: [],
@@ -32,15 +36,15 @@ export const EVENTS = {
 export type EventName = keyof typeof EVENTS;
 
 const CONSENT_KEY = 'spotcam.analytics';
-const GA_ID = /^G-[A-Z0-9]{4,20}$/;
+const CONTAINER_ID = /^GTM-[A-Z0-9]{4,20}$/;
 
 /** Checks an untrusted config file. Anything unexpected means analytics stays off. */
 export function parseConfig(data: unknown): AnalyticsConfig | null {
   if (typeof data !== 'object' || data === null) return null;
   const { provider, id } = data as Record<string, unknown>;
-  if ((provider ?? 'ga4') !== 'ga4') return null;
-  if (typeof id !== 'string' || !GA_ID.test(id)) return null;
-  return { provider: 'ga4', id };
+  if ((provider ?? 'gtm') !== 'gtm') return null;
+  if (typeof id !== 'string' || !CONTAINER_ID.test(id)) return null;
+  return { provider: 'gtm', id };
 }
 
 /** The address of the page without a query string or fragment. */
@@ -82,7 +86,7 @@ export async function loadConfig(baseUrl = import.meta.env.BASE_URL): Promise<An
   }
 }
 
-type GtagWindow = Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
+type DataLayerWindow = Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
 
 let started: AnalyticsConfig | null = null;
 
@@ -93,31 +97,30 @@ let started: AnalyticsConfig | null = null;
 const waiting: [EventName, string | undefined][] = [];
 const MAX_WAITING = 20;
 
-/** Adds the Google tag. Called only after consent. Safe to call more than once. */
+/**
+ * Adds the Google Tag Manager container. Called only after consent. Safe to call more than once.
+ * Consent commands use the gtag form (the `arguments` object), which GTM reads as consent settings;
+ * everything else is a plain object on the data layer.
+ */
 export function startAnalytics(config: AnalyticsConfig): void {
   if (started) return;
   started = config;
-  const w = window as GtagWindow;
+  const w = window as DataLayerWindow;
   w.dataLayer = w.dataLayer ?? [];
-  // gtag must push the `arguments` object itself, which is what the Google tag reads.
   w.gtag = function () {
     // eslint-disable-next-line prefer-rest-params
     w.dataLayer!.push(arguments);
   };
+  // Consent defaults must be set before the container loads, so its tags wait for the choice below.
   w.gtag('consent', 'default', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
-  w.gtag('js', new Date());
-  w.gtag('config', config.id, {
-    send_page_view: false, // we send them ourselves on every route change
-    allow_google_signals: false,
-    allow_ad_personalization_signals: false,
-    page_location: cleanLocation(window.location.href),
-  });
   // The visitor said yes to analytics, and only to analytics.
   w.gtag('consent', 'update', { analytics_storage: 'granted' });
 
+  // The same start the standard Tag Manager snippet makes, then the container's own loader.
+  w.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
   const script = document.createElement('script');
   script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(config.id)}`;
+  script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(config.id)}`;
   document.head.appendChild(script);
   for (const [name, option] of waiting.splice(0)) send(name, option);
 }
@@ -125,21 +128,19 @@ export function startAnalytics(config: AnalyticsConfig): void {
 /** Stops sending (the page keeps working) and clears Google's cookies for this site. */
 export function stopAnalytics(): void {
   waiting.length = 0;
-  const w = window as unknown as GtagWindow & Record<string, unknown>;
-  if (started) {
-    w[`ga-disable-${started.id}`] = true;
-    w.gtag?.('consent', 'update', { analytics_storage: 'denied' });
-  }
+  const w = window as DataLayerWindow;
+  if (started) w.gtag?.('consent', 'update', { analytics_storage: 'denied' });
   for (const name of document.cookie.split(';').map(c => c.split('=')[0].trim())) {
     if (name === '_ga' || name.startsWith('_ga_')) document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
   }
 }
 
-/** Counts a page view. Does nothing until analytics has been started. */
+/** Pushes a page view. Does nothing until analytics has been started. */
 export function pageView(pathname: string): void {
-  const w = window as GtagWindow;
-  if (!started || !w.gtag) return;
-  w.gtag('event', 'page_view', {
+  const w = window as DataLayerWindow;
+  if (!started || !w.dataLayer) return;
+  w.dataLayer.push({
+    event: 'page_view',
     page_location: cleanLocation(window.location.href),
     page_path: pathname,
     page_title: document.title,
@@ -147,10 +148,12 @@ export function pageView(pathname: string): void {
 }
 
 const send = (name: EventName, option: string | undefined) => {
-  (window as GtagWindow).gtag?.('event', name, option !== undefined ? { option } : {});
+  const w = window as DataLayerWindow;
+  if (!w.dataLayer) return;
+  w.dataLayer.push(option !== undefined ? { event: name, option } : { event: name });
 };
 
-/** Counts one of the known events. Anything else is dropped. */
+/** Pushes one of the known events to the data layer. Anything else is dropped. */
 export function track<E extends EventName>(name: E, option?: (typeof EVENTS)[E][number]): void {
   if (!(name in EVENTS)) return;
   const allowed: readonly string[] = EVENTS[name];

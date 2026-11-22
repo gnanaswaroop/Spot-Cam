@@ -36,18 +36,18 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      # Optional analytics: written only when the repository variable ANALYTICS_ID is set (a GA4 measurement
-      # ID). It is never committed, so forks, pull requests and local builds have analytics off.
+      # Optional analytics: written only when the repository variable ANALYTICS_ID is set (a Google Tag Manager
+      # container ID). It is never committed, so forks, pull requests and local builds have analytics off.
       - name: Analytics config
         env:
           ANALYTICS_ID: ${{ vars.ANALYTICS_ID }}
         run: |
           if [ -n "$ANALYTICS_ID" ]; then
-            if ! printf '%s' "$ANALYTICS_ID" | grep -Eq '^G-[A-Z0-9]{4,20}$'; then
-              echo "ANALYTICS_ID is not a GA4 measurement ID (G-XXXXXXXXXX)." >&2
+            if ! printf '%s' "$ANALYTICS_ID" | grep -Eq '^GTM-[A-Z0-9]{4,20}$'; then
+              echo "ANALYTICS_ID is not a Google Tag Manager container ID (GTM-XXXXXX)." >&2
               exit 1
             fi
-            printf '{"provider":"ga4","id":"%s"}\n' "$ANALYTICS_ID" > dist/analytics.config.json
+            printf '{"provider":"gtm","id":"%s"}\n' "$ANALYTICS_ID" > dist/analytics.config.json
           fi
       # A marker the verify step reads to be sure the NEW build is the one being served.
       - run: echo "$GITHUB_SHA" > dist/version.txt
@@ -137,18 +137,18 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      # Optional analytics: written only when the repository variable ANALYTICS_ID is set (a GA4 measurement
-      # ID). It is never committed, so forks, pull requests and local builds have analytics off.
+      # Optional analytics: written only when the repository variable ANALYTICS_ID is set (a Google Tag Manager
+      # container ID). It is never committed, so forks, pull requests and local builds have analytics off.
       - name: Analytics config
         env:
           ANALYTICS_ID: ${{ vars.ANALYTICS_ID }}
         run: |
           if [ -n "$ANALYTICS_ID" ]; then
-            if ! printf '%s' "$ANALYTICS_ID" | grep -Eq '^G-[A-Z0-9]{4,20}$'; then
-              echo "ANALYTICS_ID is not a GA4 measurement ID (G-XXXXXXXXXX)." >&2
+            if ! printf '%s' "$ANALYTICS_ID" | grep -Eq '^GTM-[A-Z0-9]{4,20}$'; then
+              echo "ANALYTICS_ID is not a Google Tag Manager container ID (GTM-XXXXXX)." >&2
               exit 1
             fi
-            printf '{"provider":"ga4","id":"%s"}\n' "$ANALYTICS_ID" > dist/analytics.config.json
+            printf '{"provider":"gtm","id":"%s"}\n' "$ANALYTICS_ID" > dist/analytics.config.json
           fi
       - run: echo "${{ steps.good.outputs.sha }}" > dist/version.txt
       # A different artifact name: the build job already uploaded "github-pages" in this run.
