@@ -192,6 +192,30 @@ test.describe('with a config', () => {
     expect(updates[updates.length - 1][2]).toEqual({ analytics_storage: 'denied' });
   });
 
+  test('after a No in the same visit nothing is sent, and a later Yes counts again', async ({ page }) => {
+    await setUpAnalytics(page, { provider: 'gtm', id: TEST_ID });
+    await page.goto(`${SITE}/`);
+    await banner(page).getByRole('button', { name: 'Yes, allow' }).click();
+    await page.getByRole('link', { name: 'Settings' }).click();
+    await page.getByRole('radio', { name: 'No thanks' }).check();
+    const declinedAt = (await layerCalls(page))!.length;
+
+    await page.goBack();
+    await page.getByRole('link', { name: 'Start Cam' }).click();
+    await expect(page).toHaveURL(`${SITE}/cam/`);
+    expect((await layerCalls(page))!.slice(declinedAt)).toEqual([]);
+
+    await page.goBack();
+    await page.getByRole('link', { name: 'Settings' }).click();
+    await page.getByRole('radio', { name: 'Yes, allow' }).check();
+    await page.goBack();
+    await page.getByRole('link', { name: 'Start Cam' }).click();
+    await expect(page).toHaveURL(`${SITE}/cam/`);
+    const after = (await layerCalls(page))!.slice(declinedAt);
+    expect(after.some(c => c[0] === 'consent' && c[1] === 'update' && (c[2] as { analytics_storage: string }).analytics_storage === 'granted')).toBe(true);
+    expect(after.map(c => c[1])).toEqual(expect.arrayContaining(['page_view', 'start_cam']));
+  });
+
   test('events carry no coordinates, address or photo data', async ({ page, context }) => {
     await skipIfNoCameraFrames(page);
     await setUpAnalytics(page, { provider: 'gtm', id: TEST_ID });
