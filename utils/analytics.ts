@@ -95,7 +95,10 @@ export async function loadConfig(baseUrl = import.meta.env.BASE_URL): Promise<An
 
 type DataLayerWindow = Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
 
-let started: AnalyticsConfig | null = null;
+let started: AnalyticsConfig | null = null; // the container is set up (once per page load)
+let loaded = false; // the container script has been added
+let active = false; // the visitor has said Yes and has not said No since
+let declined = false; // the visitor said No: events are dropped, not queued
 
 /**
  * Events that happen while the config is still loading or the visitor has not chosen yet. They stay in
@@ -105,36 +108,45 @@ const waiting: [EventName, string | undefined][] = [];
 const MAX_WAITING = 20;
 
 /**
- * Adds the Google Tag Manager container. Called only after consent. Safe to call more than once.
- * Consent commands use the gtag form (the `arguments` object), which GTM reads as consent settings;
- * everything else is a plain object on the data layer.
+ * Turns analytics on after a Yes. Safe to call again: a Yes after an earlier No in the same visit sends
+ * the consent update again, and the container script is added only once. Consent commands use the gtag
+ * form (the `arguments` object), which GTM reads as consent settings; everything else is a plain object
+ * on the data layer.
  */
 export function startAnalytics(config: AnalyticsConfig): void {
-  if (started) return;
-  started = config;
   const w = window as DataLayerWindow;
-  w.dataLayer = w.dataLayer ?? [];
-  w.gtag = function () {
-    // eslint-disable-next-line prefer-rest-params
-    w.dataLayer!.push(arguments);
-  };
-  // Consent defaults must be set before the container loads, so its tags wait for the choice below.
-  w.gtag('consent', 'default', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
-  // The visitor said yes to analytics, and only to analytics.
-  w.gtag('consent', 'update', { analytics_storage: 'granted' });
+  if (!started) {
+    started = config;
+    w.dataLayer = w.dataLayer ?? [];
+    w.gtag = function () {
+      // eslint-disable-next-line prefer-rest-params
+      w.dataLayer!.push(arguments);
+    };
+    // Consent defaults must be set before the container loads, so its tags wait for the choice below.
+    w.gtag('consent', 'default', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
+  }
+  active = true;
+  declined = false;
+  // The visitor said yes to analytics, and only to analytics. Sent on every Yes, not just the first.
+  w.gtag!('consent', 'update', { analytics_storage: 'granted' });
 
-  // The same start the standard Tag Manager snippet makes, then the container's own loader.
-  w.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(config.id)}`;
-  document.head.appendChild(script);
+  if (!loaded) {
+    loaded = true;
+    // The same start the standard Tag Manager snippet makes, then the container's own loader.
+    w.dataLayer!.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(config.id)}`;
+    document.head.appendChild(script);
+  }
   for (const [name, option] of waiting.splice(0)) send(name, option);
 }
 
 /** Stops sending (the page keeps working) and clears Google's cookies for this site. */
 export function stopAnalytics(): void {
   waiting.length = 0;
+  active = false;
+  declined = true;
   const w = window as DataLayerWindow;
   if (started) w.gtag?.('consent', 'update', { analytics_storage: 'denied' });
   for (const name of document.cookie.split(';').map(c => c.split('=')[0].trim())) {
@@ -142,10 +154,10 @@ export function stopAnalytics(): void {
   }
 }
 
-/** Pushes a page view. Does nothing until analytics has been started. */
+/** Pushes a page view. Does nothing unless the visitor has said Yes. */
 export function pageView(pathname: string): void {
   const w = window as DataLayerWindow;
-  if (!started || !w.dataLayer) return;
+  if (!active || !w.dataLayer) return;
   w.dataLayer.push({
     event: 'page_view',
     page_location: cleanLocation(window.location.href),
@@ -165,6 +177,6 @@ export function track<E extends EventName>(name: E, option?: (typeof EVENTS)[E][
   if (!(name in EVENTS)) return;
   const allowed: readonly string[] = EVENTS[name];
   if (option !== undefined && !allowed.includes(option)) return;
-  if (started) send(name, option);
-  else if (waiting.length < MAX_WAITING) waiting.push([name, option]);
+  if (active) send(name, option);
+  else if (!declined && waiting.length < MAX_WAITING) waiting.push([name, option]);
 }
