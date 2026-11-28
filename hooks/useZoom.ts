@@ -123,7 +123,16 @@ export function useZoom() {
       apply(clampPan(next, size().width, size().height));
     };
     el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
+    // A two-finger move is the zoom, so the browser must not also pinch-zoom the whole page with it (some phone browsers do
+    // that unless the touch is cancelled here). A one-finger move is cancelled only while zoomed, where it pans.
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length >= 2 || viewRef.current.scale > 1) e.preventDefault();
+    };
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('touchmove', onTouchMove);
+    };
   }, [apply, centre, size]);
 
   return {
