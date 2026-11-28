@@ -234,8 +234,8 @@ test.describe('installed app: reopening and updates', () => {
     const failed: string[] = [];
     page.on('requestfailed', req => {
       const url = new URL(req.url());
-      // Only this site's own files matter (the analytics config is optional and is allowed to fail).
-      if (url.origin === new URL(page.url()).origin && !url.pathname.endsWith('analytics.config.json')) failed.push(url.pathname);
+      // Only this site's own files matter.
+      if (url.origin === new URL(page.url()).origin) failed.push(url.pathname);
     });
     for (const path of ['/', '/cam/', '/gallery/', '/settings/', '/privacy/', '/how-it-works/']) {
       await page.goto(`${SITE}${path}`);

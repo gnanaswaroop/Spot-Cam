@@ -27,11 +27,6 @@ export const ur: Messages = {
   'update.message': 'SpotCam کا نیا ورژن دستیاب ہے۔',
   'update.reload': 'اپڈیٹ کریں',
 
-  'consent.label': 'استعمال کے اعداد و شمار',
-  'consent.text': 'استعمال کے بنیادی اعداد و شمار کی اجازت دے کر SpotCam کو بہتر بنانے میں ہماری مدد کریں۔ آپ کی تصویریں اور مقام کبھی شیئر نہیں کیے جاتے۔',
-  'consent.details': 'تفصیل',
-  'consent.no': 'نہیں، شکریہ',
-  'consent.yes': 'ہاں، اجازت ہے',
 
   'perm.allow': 'رسائی کی اجازت دیں',
   'perm.tryAgain': 'دوبارہ کوشش کریں',
@@ -269,11 +264,6 @@ export const ur: Messages = {
   'settings.maps.text': 'شیئر کی گئی تصویروں میں اس جگہ کا لنک ہوتا ہے جہاں وہ کھینچی گئیں۔ چنیں کہ لنک پر ٹیپ کرنے سے کون سا نقشہ کھلے۔',
   'settings.maps.legend': 'نقشہ سروس',
   'settings.maps.saved': 'شیئر کی گئی تصویروں کا لنک {name} پر جائے گا۔',
-  'settings.stats.heading': 'استعمال کے اعداد و شمار',
-  'settings.stats.text': 'SpotCam سائٹ کو بہتر بنانے کے لیے وزٹ گن سکتا ہے۔ اس میں آپ کی تصویریں، مقام یا پتہ کبھی شامل نہیں ہوتے۔ آپ کا انتخاب اسی ڈیوائس پر محفوظ رہتا ہے۔',
-  'settings.stats.legend': 'میرے وزٹ گنیں',
-  'settings.stats.on': 'وزٹ گننا آن ہے۔',
-  'settings.stats.off': 'وزٹ گننا آف ہے۔',
   'settings.signature.heading': 'شیئر کرتے وقت SpotCam کا ذکر',
   'settings.signature.label': 'شیئر کی گئی تصویر کے پیغام میں SpotCam کے بارے میں ایک سطر شامل کریں',
   'settings.signature.help': 'اس میں لکھا ہوتا ہے: «{text}»۔ یہ پیغام کی تحریر ہے، تصویر پر نہیں بنتی۔ پہلے سے آن ہے۔',

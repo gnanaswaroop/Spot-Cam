@@ -14,9 +14,6 @@ import { usePathRoute } from './hooks/usePathRoute';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import { useServiceWorkerUpdate } from './hooks/useServiceWorker';
 import { UpdateToast } from './components/UpdateToast';
-import { ConsentBanner } from './components/ConsentBanner';
-import { useAnalytics } from './hooks/useAnalytics';
-import { pageView, track } from './utils/analytics';
 import { requestPersistentStorage } from './utils/storageUsage';
 
 // The pages that are not the first screen load when they are opened (and are kept for offline use by the service worker),
@@ -45,12 +42,6 @@ const App: React.FC = () => {
     document.title = t(`title.${view}` as const);
   }, [view, t, lang]);
 
-  // Analytics (only when the site is configured for it and the visitor agreed): one page view per route.
-  const { consent } = useAnalytics();
-  useEffect(() => {
-    if (consent === 'granted') pageView(window.location.pathname);
-  }, [view, consent]);
-
   // Custom hook to manage the photos array, persisting it to IndexedDB.
   const [photos, setPhotos, , saveFailed] = usePersistedPhotos();
 
@@ -62,7 +53,6 @@ const App: React.FC = () => {
     void requestPersistentStorage(); // asks the browser to keep the photos even when space runs low
     holdFull(photo.id, photo.dataUrl); // the full-size photo waits here until it is written; the gallery only keeps the small record
     setPhotos(prevPhotos => [metaFor(photo), ...prevPhotos]);
-    track('photo_captured');
   };
 
   /** Adds a video that was just recorded, next to the photos. */
@@ -95,8 +85,7 @@ const App: React.FC = () => {
         </div>
       )}
       {/* Only on the landing page: on the other pages the fixed banner would sit on top of their headings. */}
-      {view === 'landing' && <ConsentBanner onPrivacy={() => switchView('privacy')} />}
-      {view === 'landing' && <LandingView onStart={() => { track('start_cam'); switchView('camera'); }} onPrivacy={() => switchView('privacy')} onHowItWorks={() => switchView('howItWorks')} onSettings={() => switchView('settings')} />}
+      {view === 'landing' && <LandingView onStart={() => switchView('camera')} onPrivacy={() => switchView('privacy')} onHowItWorks={() => switchView('howItWorks')} onSettings={() => switchView('settings')} />}
       <Suspense fallback={null}>
       {view === 'howItWorks' && <HowItWorksView onBack={() => switchView('landing')} onStart={() => switchView('camera')} />}
       {view === 'privacy' && <PrivacyView onBack={() => switchView('landing')} />}

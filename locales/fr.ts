@@ -27,11 +27,6 @@ export const fr: Messages = {
   'update.message': 'Une nouvelle version de SpotCam est disponible.',
   'update.reload': 'Actualiser',
 
-  'consent.label': 'Statistiques d’utilisation',
-  'consent.text': 'Aidez-nous à améliorer SpotCam en autorisant des statistiques d’utilisation de base. Vos photos et votre position ne sont jamais partagées.',
-  'consent.details': 'En savoir plus',
-  'consent.no': 'Non merci',
-  'consent.yes': 'Oui, autoriser',
 
   'perm.allow': 'Autoriser l’accès',
   'perm.tryAgain': 'Réessayer',
@@ -269,11 +264,6 @@ export const fr: Messages = {
   'settings.maps.text': 'Les photos partagées contiennent un lien vers l’endroit où elles ont été prises. Choisissez la carte qui s’ouvre quand on touche ce lien.',
   'settings.maps.legend': 'Service de cartes',
   'settings.maps.saved': 'Les photos partagées renverront vers {name}.',
-  'settings.stats.heading': 'Statistiques d’utilisation',
-  'settings.stats.text': 'SpotCam peut compter les visites pour améliorer le site. Ni vos photos, ni votre position, ni votre adresse n’y figurent jamais. Ce choix est gardé sur cet appareil.',
-  'settings.stats.legend': 'Compter mes visites',
-  'settings.stats.on': 'Le comptage des visites est activé.',
-  'settings.stats.off': 'Le comptage des visites est désactivé.',
   'settings.signature.heading': 'Mentionner SpotCam au partage',
   'settings.signature.label': 'Ajouter une ligne sur SpotCam au message d’une photo partagée',
   'settings.signature.help': 'Elle dit : « {text} ». C’est du texte dans le message, pas dessiné sur la photo. Activé par défaut.',

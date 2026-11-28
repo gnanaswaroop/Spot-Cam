@@ -27,11 +27,6 @@ export const hi: Messages = {
   'update.message': 'SpotCam का नया संस्करण उपलब्ध है।',
   'update.reload': 'फिर से लोड करें',
 
-  'consent.label': 'उपयोग के आँकड़े',
-  'consent.text': 'बुनियादी उपयोग के आँकड़ों की अनुमति देकर SpotCam को बेहतर बनाने में मदद करें। आपकी फ़ोटो और लोकेशन कभी शेयर नहीं की जाती।',
-  'consent.details': 'ब्योरा',
-  'consent.no': 'नहीं, धन्यवाद',
-  'consent.yes': 'हाँ, अनुमति है',
 
   'perm.allow': 'अनुमति दें',
   'perm.tryAgain': 'फिर कोशिश करें',
@@ -269,11 +264,6 @@ export const hi: Messages = {
   'settings.maps.text': 'शेयर की गई फ़ोटो में उस जगह का लिंक होता है जहाँ वह ली गई थी। चुनें कि टैप करने पर कौन-सा मैप खुले।',
   'settings.maps.legend': 'मैप सेवा',
   'settings.maps.saved': 'शेयर की गई फ़ोटो में {name} का लिंक होगा।',
-  'settings.stats.heading': 'उपयोग के आँकड़े',
-  'settings.stats.text': 'SpotCam साइट को बेहतर बनाने के लिए विज़िट गिन सकता है। इसमें आपकी फ़ोटो, लोकेशन या पता कभी शामिल नहीं होता। आपका चुनाव इसी डिवाइस पर रखा जाता है।',
-  'settings.stats.legend': 'मेरी विज़िट गिनें',
-  'settings.stats.on': 'विज़िट गिनना चालू है।',
-  'settings.stats.off': 'विज़िट गिनना बंद है।',
   'settings.signature.heading': 'शेयर करते समय SpotCam का ज़िक्र',
   'settings.signature.label': 'शेयर की गई फ़ोटो के संदेश में SpotCam के बारे में एक पंक्ति जोड़ें',
   'settings.signature.help': 'इसमें लिखा होता है: “{text}”। यह संदेश का हिस्सा है, फ़ोटो पर छपा नहीं होता। डिफ़ॉल्ट रूप से चालू।',

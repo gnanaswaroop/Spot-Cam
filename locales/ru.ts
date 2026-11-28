@@ -29,11 +29,6 @@ export const ru: Messages = {
   'update.message': 'Вышла новая версия SpotCam.',
   'update.reload': 'Обновить',
 
-  'consent.label': 'Статистика использования',
-  'consent.text': 'Помогите улучшить SpotCam: разрешите простую статистику использования. Ваши фото и местоположение никогда не передаются.',
-  'consent.details': 'Подробнее',
-  'consent.no': 'Нет, спасибо',
-  'consent.yes': 'Да, разрешить',
 
   'perm.allow': 'Разрешить доступ',
   'perm.tryAgain': 'Повторить',
@@ -271,11 +266,6 @@ export const ru: Messages = {
   'settings.maps.text': 'К отправленным фото добавляется ссылка на место, где они сделаны. Выберите, какая карта откроется по этой ссылке.',
   'settings.maps.legend': 'Картографический сервис',
   'settings.maps.saved': 'Отправленные фото будут вести на {name}.',
-  'settings.stats.heading': 'Статистика использования',
-  'settings.stats.text': 'SpotCam может считать посещения, чтобы улучшать сайт. В статистику никогда не попадают ваши фото, местоположение и адрес. Выбор сохраняется на этом устройстве.',
-  'settings.stats.legend': 'Считать мои посещения',
-  'settings.stats.on': 'Подсчёт посещений включён.',
-  'settings.stats.off': 'Подсчёт посещений выключен.',
   'settings.signature.heading': 'Упоминать SpotCam при отправке',
   'settings.signature.label': 'Добавлять в сообщение с фото строку о SpotCam',
   'settings.signature.help': 'Строка такая: «{text}». Это текст сообщения, на фото он не рисуется. По умолчанию включено.',

@@ -18,7 +18,6 @@ import { translate, useT } from '../utils/i18n';
 import { PHOTO_TTL_OPTIONS } from '../utils/photoExpiry';
 import { shareSignature, shareText } from '../utils/maps';
 import { getMapService, getPhotoTtlMs, getShareSignature } from '../utils/settings';
-import { track } from '../utils/analytics';
 import { estimateFreeBytes, formatBytes, isLowOnSpace } from '../utils/storageUsage';
 import { ShareIcon, DeleteIcon, DownloadIcon, CloseIcon, GalleryIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { AppHeader } from './AppHeader';
@@ -270,7 +269,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ photos, onDelete, onDe
           title: translate(photo.kind === 'video' ? 'share.title.video' : 'share.title.photo'),
           text: shareText(photo, getMapService(), getShareSignature() ? shareSignature(window.location.origin) : null),
         });
-        track('share_used');
       } catch (error) {
         // Closing the share sheet without sharing is not an error: say nothing. Anything else is, so name what was being shared.
         if (error instanceof DOMException && error.name === 'AbortError') return;

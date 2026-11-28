@@ -27,11 +27,6 @@ export const zh: Messages = {
   'update.message': 'SpotCam 有新版本了。',
   'update.reload': '刷新',
 
-  'consent.label': '使用统计',
-  'consent.text': '允许我们收集基本的使用统计，帮助改进 SpotCam。你的照片和位置不会被分享。',
-  'consent.details': '了解详情',
-  'consent.no': '不用了',
-  'consent.yes': '允许',
 
   'perm.allow': '允许访问',
   'perm.tryAgain': '再试一次',
@@ -269,11 +264,6 @@ export const zh: Messages = {
   'settings.maps.text': '分享的照片会附带指向拍摄地点的链接。选择别人点开链接时使用哪个地图。',
   'settings.maps.legend': '地图服务',
   'settings.maps.saved': '分享的照片将链接到{name}。',
-  'settings.stats.heading': '使用统计',
-  'settings.stats.text': 'SpotCam 可以统计访问次数来改进网站。统计里绝不包含你的照片、位置或地址。你的选择保存在这台设备上。',
-  'settings.stats.legend': '统计我的访问',
-  'settings.stats.on': '访问统计已开启。',
-  'settings.stats.off': '访问统计已关闭。',
   'settings.signature.heading': '分享时提到 SpotCam',
   'settings.signature.label': '在分享照片的消息里加一行介绍 SpotCam 的话',
   'settings.signature.help': '内容是：“{text}”。它是消息里的文字，不会画在照片上。默认开启。',

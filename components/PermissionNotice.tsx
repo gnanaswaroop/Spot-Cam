@@ -6,9 +6,8 @@
  * a Reload button. Otherwise we can still ask again, so the primary button re-requests it.
  */
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { PermissionName, getEnableSteps } from '../utils/permissionHelp';
-import { track } from '../utils/analytics';
 import { useT } from '../utils/i18n';
 
 interface PermissionNoticeProps {
@@ -27,11 +26,6 @@ const primaryButton =
 
 export const PermissionNotice: React.FC<PermissionNoticeProps> = ({ title, message, what, hardBlocked, onRetry }) => {
   const { t } = useT();
-  // Which kind of permission was blocked, and nothing else.
-  useEffect(() => {
-    if (what === 'Camera') track('permission_blocked', 'camera');
-    if (what === 'Location') track('permission_blocked', 'location');
-  }, [what]);
   return (
   <div className="max-w-sm max-h-full overflow-y-auto p-6 text-center text-white short:p-3 short:max-w-md" role="alert">
     <h2 className="mb-3 text-xl font-semibold text-red-400">

@@ -27,11 +27,6 @@ export const pt: Messages = {
   'update.message': 'Há uma nova versão do SpotCam.',
   'update.reload': 'Atualizar',
 
-  'consent.label': 'Estatísticas de uso',
-  'consent.text': 'Ajude a melhorar o SpotCam permitindo estatísticas básicas de uso. Suas fotos e sua localização nunca são compartilhadas.',
-  'consent.details': 'Saiba mais',
-  'consent.no': 'Não, obrigado',
-  'consent.yes': 'Sim, permitir',
 
   'perm.allow': 'Permitir acesso',
   'perm.tryAgain': 'Tentar de novo',
@@ -269,11 +264,6 @@ export const pt: Messages = {
   'settings.maps.text': 'As fotos compartilhadas levam um link para o lugar onde foram tiradas. Escolha qual mapa abre quando alguém tocar nele.',
   'settings.maps.legend': 'Serviço de mapas',
   'settings.maps.saved': 'As fotos compartilhadas vão apontar para {name}.',
-  'settings.stats.heading': 'Estatísticas de uso',
-  'settings.stats.text': 'O SpotCam pode contar as visitas para melhorar o site. Isso nunca inclui suas fotos, sua localização nem seu endereço. Sua escolha fica salva neste aparelho.',
-  'settings.stats.legend': 'Contar minhas visitas',
-  'settings.stats.on': 'A contagem de visitas está ativada.',
-  'settings.stats.off': 'A contagem de visitas está desativada.',
   'settings.signature.heading': 'Mencionar o SpotCam ao compartilhar',
   'settings.signature.label': 'Incluir uma linha sobre o SpotCam na mensagem da foto compartilhada',
   'settings.signature.help': 'O texto é: “{text}”. É texto da mensagem, não é desenhado na foto. Ativado por padrão.',

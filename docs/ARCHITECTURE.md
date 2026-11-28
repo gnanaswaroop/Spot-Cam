@@ -194,14 +194,6 @@ Tests: `e2e/pwa.spec.ts` turns the worker on (every other spec blocks it, in `pl
 - `.github/workflows/deploy.yml` builds on every push to `main` and publishes `dist/` with the official Pages actions.
 - The dev server (`npm run dev`) uses `@vitejs/plugin-basic-ssl`. That gives phones on the same Wi-Fi the HTTPS they need for the camera and location.
 
-### Analytics (optional, off by default)
-
-- `utils/analytics.ts` asks for `analytics.config.json` next to the page. The file is not in the repository: the deploy workflow writes it into `dist/` from the `ANALYTICS_ID` repository variable. No file (a 404, a fork, a local build, the tests) means nothing happens: no banner, no script, no request.
-- With a file, `hooks/useAnalytics.ts` shares the visitor's choice (stored in `localStorage` as `spotcam.analytics`) between the consent banner (shown on the landing, privacy, how-it-works and settings pages, never on the camera or gallery), Settings and the privacy page.
-- The Google tag is added only after "Yes", never when the browser sends Do Not Track or Global Privacy Control (that overrides an earlier "Yes"). It is set up with consent mode (analytics storage only), no Google signals and no ad personalisation, and automatic page views off.
-- App code calls only `pageView()` (on every route change, path only, no query string) and `track()` with one of five fixed events: `start_cam`, `photo_captured`, `share_used`, `permission_blocked` (with `camera` or `location`) and `pwa_installed`. Anything else is dropped. Events that happen before the choice wait in memory and are sent only after an Accept.
-- The config file is never precached by the service worker. The e2e fixtures block Google's hosts for every test, and `e2e/analytics.spec.ts` uses a fake tag script.
-
 ## 12. Dependencies and updates
 
 Everything the browser runs (React, ReactDOM, `idb-keyval`) is **bundled into our own JavaScript** (about 78 KB gzipped). We deliberately don't load libraries from a public CDN:
@@ -243,7 +235,7 @@ Playwright end-to-end tests live in `e2e/` and run against the **production buil
 
 ## 15. Privacy policy
 
-The policy lives in `components/PrivacyView.tsx` and is served at `/privacy`. It describes what the code really does: the camera and location are used on-device, photos stay in IndexedDB, and **the only data that leaves the device is the coordinates sent to the geocoder that answers (Photon, then BigDataCloud, then OpenStreetMap Nominatim)** for the address lookup. **Keep it in step with the code:** if you add analytics, uploads, cookies or change the geocoder, update the page text and `PRIVACY_LAST_UPDATED`. The test in `privacy.spec.ts` checks for the key statements.
+The policy lives in `components/PrivacyView.tsx` and is served at `/privacy`. It describes what the code really does: the camera and location are used on-device, photos stay in IndexedDB, and **the only data that leaves the device is the coordinates sent to the geocoder that answers (Photon, then BigDataCloud, then OpenStreetMap Nominatim)** for the address lookup. **Keep it in step with the code:** if you add a tracker, uploads, cookies or change the geocoder, update the page text and `PRIVACY_LAST_UPDATED`. The test in `privacy.spec.ts` checks for the key statements.
 
 ## 16. Known limits and ideas
 
