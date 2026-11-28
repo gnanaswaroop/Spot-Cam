@@ -6,6 +6,7 @@ import React, { useCallback, useRef, useEffect, useState } from 'react';
 import { CapturedPhoto, CapturedVideo, GeolocationData } from '../types';
 import { useGeolocation, AddressStatus } from '../hooks/useGeolocation';
 import { usePermissionState } from '../hooks/usePermissionState';
+import { usePinchZoom } from '../hooks/usePinchZoom';
 import { PermissionNotice } from './PermissionNotice';
 import { GalleryIcon, SettingsIcon, SwitchCameraIcon } from './icons';
 import { FONT_FAMILY_OVERLAY } from '../utils/constants';
@@ -454,6 +455,9 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
     }
   };
 
+  // Two fingers on the picture change the camera's own zoom, the same as the slider (only where the camera can zoom).
+  const pinch = usePinchZoom(zoomCapabilities, currentZoom, applyZoom);
+
 
   return (
     <main className="relative w-full h-full flex flex-col items-center justify-center bg-black">
@@ -489,7 +493,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
           onRetry={handleRetryPermissions}
         />
       ) : (
-        <video ref={videoRef} autoPlay playsInline muted onLoadedMetadata={e => setVideoReady(e.currentTarget.videoWidth > 0)} onResize={e => setVideoReady(e.currentTarget.videoWidth > 0)} aria-label={t('camera.live')} className="w-full h-full object-cover"></video>
+        <video ref={videoRef} autoPlay playsInline muted onLoadedMetadata={e => setVideoReady(e.currentTarget.videoWidth > 0)} onResize={e => setVideoReady(e.currentTarget.videoWidth > 0)} aria-label={t('camera.live')} className="w-full h-full object-cover touch-none" onPointerDown={pinch.onPointerDown} onPointerMove={pinch.onPointerMove} onPointerUp={pinch.onPointerUp} onPointerCancel={pinch.onPointerCancel}></video>
       )}
 
       {/* Live data overlay */}
