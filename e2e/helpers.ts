@@ -19,6 +19,10 @@ export interface MockOptions {
   noFacingMode?: boolean;
   /** How many cameras the device lists (default 1). The switch button needs two. */
   cameras?: number;
+  /** The cameras by name, as a phone lists them once the camera is allowed (overrides `cameras`). */
+  lenses?: Array<{ id: string; label: string }>;
+  /** Browsers hide camera names until the camera is allowed (the first visit): the names only appear after a first open. */
+  hideNamesUntilAllowed?: boolean;
   /** The camera cannot open at a large picture size (some phones fail with "NotReadableError"): requests with a size are refused. */
   failsAtLargeSize?: boolean;
   /** The first time the camera opens it takes this long, so a test can leave the page while it is opening. */
@@ -95,6 +99,10 @@ export async function installMocks(page: Page, options: MockOptions) {
           throw err;
         }
         const video = constraints?.video as MediaTrackConstraints | undefined;
+        // The camera the page asked for by name (an "exact" deviceId), if any.
+        const namedCamera = video && typeof video === 'object' && video.deviceId && typeof video.deviceId === 'object'
+          ? (video.deviceId as { exact?: string }).exact
+          : undefined;
         if (o.failsAtLargeSize && video && typeof video === 'object' && video.width) {
           const err = new Error('Could not start video source');
           err.name = 'NotReadableError';
@@ -127,14 +135,27 @@ export async function installMocks(page: Page, options: MockOptions) {
               ? { zoom: { min: o.zoom.min, max: o.zoom.max, step: o.zoom.step }, focusMode: ['manual', 'continuous'], exposureMode: ['manual', 'continuous'], whiteBalanceMode: ['manual', 'continuous'] }
               : {},
           );
-          override(track, 'getSettings', () => ({ ...(realSettings?.() ?? {}), ...(o.zoom ? { zoom: o.zoom.initial } : {}) }));
+          override(track, 'getSettings', () => ({
+            ...(realSettings?.() ?? {}),
+            ...(o.zoom ? { zoom: o.zoom.initial } : {}),
+            ...(namedCamera ? { deviceId: namedCamera } : {}),
+          }));
           override(track, 'applyConstraints', async (c?: MediaTrackConstraints) => {
             w.__mock.applied.push(JSON.parse(JSON.stringify(c ?? null)));
           });
         }
         return stream;
       });
-      override(mediaDevicesTarget, 'enumerateDevices', async () => Array.from({ length: o.cameras ?? 1 }, () => ({ kind: 'videoinput' }) as MediaDeviceInfo));
+      override(mediaDevicesTarget, 'enumerateDevices', async () =>
+        o.lenses
+          ? o.lenses.map(lens => ({
+              kind: 'videoinput',
+              deviceId: lens.id,
+              label: o.hideNamesUntilAllowed && w.__mock.asked.indexOf('camera') === -1 ? '' : lens.label,
+              groupId: '',
+            }) as MediaDeviceInfo)
+          : Array.from({ length: o.cameras ?? 1 }, () => ({ kind: 'videoinput' }) as MediaDeviceInfo),
+      );
     }
 
     if (o.location) {

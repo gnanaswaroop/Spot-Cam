@@ -15,7 +15,7 @@ import { canRecordVideo, formatDuration } from '../utils/video';
 import { getRecordSound, getVideoEnabled, getVideoMaxMinutes } from '../utils/settings';
 import { makeThumbnail } from '../utils/thumbnail';
 import { useCameraRecovery } from '../hooks/useCameraRecovery';
-import { continuousModes, openingZoom, videoRequests, worthAskingAgain } from '../utils/cameraSettings';
+import { continuousModes, openingZoom, pickWideLens, videoRequests, worthAskingAgain } from '../utils/cameraSettings';
 import { translate, useT } from '../utils/i18n';
 
 /** Props for the CameraView component. */
@@ -82,9 +82,9 @@ const Overlay = ({ location, addressStatus, dateTime, onHome, onRetryAddress, on
  * The main component for the camera interface.
  */
 /** Opens the camera, asking for less each time a request fails (see videoRequests); gives the last error if none works. */
-async function openCamera(facing: 'environment' | 'user'): Promise<MediaStream> {
+async function openCamera(facing: 'environment' | 'user', deviceId?: string): Promise<MediaStream> {
   let lastError: unknown;
-  for (const video of videoRequests(facing)) {
+  for (const video of videoRequests(facing, deviceId)) {
     try {
       return await navigator.mediaDevices.getUserMedia({ video, audio: false });
     } catch (err) {
@@ -93,6 +93,38 @@ async function openCamera(facing: 'environment' | 'user'): Promise<MediaStream> 
     }
   }
   throw lastError;
+}
+
+/** The widest rear lens the phone names (see pickWideLens), or null when the names are not known yet. */
+async function widestBackLensId(): Promise<string | null> {
+  try {
+    return pickWideLens(await navigator.mediaDevices.enumerateDevices());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Opens the camera for this facing. The rear camera is opened on its widest lens when the phone names one
+ * (ultra-wide, else wide-angle): the browser's default rear camera is usually the main lens. Names are hidden
+ * until the camera is allowed, so on a first visit the camera is opened first and the lens is looked for after.
+ */
+async function openPreferredCamera(facing: 'environment' | 'user'): Promise<MediaStream> {
+  if (facing === 'user') return openCamera(facing);
+  const named = await widestBackLensId();
+  if (named) return openCamera(facing, named);
+  const stream = await openCamera(facing);
+  const later = await widestBackLensId();
+  if (later && later !== stream.getVideoTracks()[0]?.getSettings().deviceId) {
+    try {
+      const wider = await openCamera(facing, later);
+      stream.getTracks().forEach(track => track.stop());
+      return wider;
+    } catch {
+      // The camera that already opens is kept.
+    }
+  }
+  return stream;
 }
 
 export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSwitchView, lastPhotoUrl, onHome, onOpenSettings }) => {
@@ -177,7 +209,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCapture, onVideo, onSw
             // fits the requested size better. A device with no camera facing that way (a laptop) is asked again.
             // If the camera will not open with the size wishes (or at all with "exact"), the next simpler request is tried.
             // A refused permission is never asked again.
-            const newStream = await openCamera(currentFacingMode);
+            const newStream = await openPreferredCamera(currentFacingMode);
             // The page moved on (camera switched, retry pressed, left the page) while the camera was opening:
             // let this one go, or it would keep the camera busy and could replace the one now wanted.
             if (cancelled) {
