@@ -23,9 +23,10 @@ const zoomLevel = (page: Page) => viewer(page).getByRole('button', { name: 'Rese
 /** The shift and scale the zoomed picture is drawn with, read back from its transform. */
 async function transformOf(page: Page) {
   const style = (await pane(page).getAttribute('style')) ?? '';
-  const m = style.match(/translate\(([-\d.]+)px, ([-\d.]+)px\) scale\(([\d.]+)\)/);
+  // Some browsers write "translate(0px)" when y is 0, so the y part is optional.
+  const m = style.match(/translate\(([-\d.]+)px(?:, ([-\d.]+)px)?\) scale\(([\d.]+)\)/);
   if (!m) throw new Error(`no transform in "${style}"`);
-  return { x: Number(m[1]), y: Number(m[2]), scale: Number(m[3]) };
+  return { x: Number(m[1]), y: Number(m[2] ?? 0), scale: Number(m[3]) };
 }
 
 test.describe('zooming a photo', () => {
