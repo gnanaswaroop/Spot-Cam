@@ -163,12 +163,12 @@ test.describe('with a config', () => {
     await page.goto(`${SITE}/`);
     await banner(page).getByRole('button', { name: 'Yes, allow' }).click();
     await page.getByRole('link', { name: 'Privacy' }).click();
-    await expect(page).toHaveURL(`${SITE}/privacy/`);
+    await expect(page).toHaveURL(`${SITE}/privacy`);
     await page.getByRole('link', { name: 'Back to SpotCam' }).click();
     await expect(page).toHaveURL(`${SITE}/`);
 
     const views = (await layerCalls(page))!.filter(c => c[0] === 'event' && c[1] === 'page_view').map(c => c[2] as { page_path: string; page_location: string });
-    expect(views.map(v => v.page_path)).toEqual(['/', '/privacy/', '/']);
+    expect(views.map(v => v.page_path)).toEqual(['/', '/privacy', '/']);
     for (const v of views) expect(v.page_location).not.toMatch(/[?#]/);
   });
 
@@ -202,7 +202,7 @@ test.describe('with a config', () => {
 
     await page.goBack();
     await page.getByRole('link', { name: 'Start Cam' }).click();
-    await expect(page).toHaveURL(`${SITE}/cam/`);
+    await expect(page).toHaveURL(`${SITE}/cam`);
     expect((await layerCalls(page))!.slice(declinedAt)).toEqual([]);
 
     await page.goBack();
@@ -210,7 +210,7 @@ test.describe('with a config', () => {
     await page.getByRole('radio', { name: 'Yes, allow' }).check();
     await page.goBack();
     await page.getByRole('link', { name: 'Start Cam' }).click();
-    await expect(page).toHaveURL(`${SITE}/cam/`);
+    await expect(page).toHaveURL(`${SITE}/cam`);
     const after = (await layerCalls(page))!.slice(declinedAt);
     expect(after.some(c => c[0] === 'consent' && c[1] === 'update' && (c[2] as { analytics_storage: string }).analytics_storage === 'granted')).toBe(true);
     expect(after.map(c => c[1])).toEqual(expect.arrayContaining(['page_view', 'start_cam']));
