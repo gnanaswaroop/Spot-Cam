@@ -62,7 +62,8 @@ test('closing two fingers zooms back out, and never below the camera\'s 1x', asy
   await expect(page.getByRole('slider', { name: 'ZOOM' })).toHaveValue('1');
 });
 
-test('one finger on the picture does not zoom', async ({ page, context }) => {
+test('one finger on the picture does not zoom', async ({ page, context, browserName }) => {
+  test.skip(browserName !== 'chromium', 'one-finger touch is sent through the Chromium DevTools protocol');
   await openCameraWithZoom(page, context);
   const before = (await applied(page)).length;
   const video = page.locator('video[aria-label]').first();
