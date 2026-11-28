@@ -33,7 +33,6 @@ import {
 import { PHOTO_TTL_OPTIONS, expiredCount } from '../utils/photoExpiry';
 import { MAP_SERVICES, shareSignature, type MapService } from '../utils/maps';
 import { AppHeader } from './AppHeader';
-import { useAnalytics } from '../hooks/useAnalytics';
 import { LANGUAGES, activateLanguage, isLanguage, useT } from '../utils/i18n';
 
 interface SettingsViewProps {
@@ -108,7 +107,6 @@ const ConfirmAction = ({
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTimestamps, onDeleteAllPhotos, onBack }) => {
   const [status, setStatus] = useState('');
-  const analytics = useAnalytics();
   const { t, tn, lang } = useT();
   const minutesLabel = (minutes: number) => tn('video.minutes', minutes);
   const ttlLabel = (ms: number | null) => t(PHOTO_TTL_OPTIONS.find(option => option.ms === ms)!.key as 'ttl.hour');
@@ -329,33 +327,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ photoCount, photoTim
             ))}
           </fieldset>
         </Section>
-
-        {analytics.available && (
-          <Section id="stats-heading" title={t('settings.stats.heading')}>
-            <p className="text-sm text-gray-300">
-              {t('settings.stats.text')}
-            </p>
-            <fieldset className="space-y-2">
-              <legend className="sr-only">{t('settings.stats.legend')}</legend>
-              {([['granted', t('consent.yes')], ['denied', t('consent.no')]] as const).map(([value, label]) => (
-                <label key={value} className="flex min-h-11 items-center gap-3 text-base">
-                  <input
-                    type="radio"
-                    name="usage-statistics"
-                    checked={analytics.consent === value}
-                    onChange={() => {
-                      if (value === 'granted') analytics.accept();
-                      else analytics.decline();
-                      setStatus(value === 'granted' ? t('settings.stats.on') : t('settings.stats.off'));
-                    }}
-                    className="h-5 w-5 accent-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                  <span>{label}</span>
-                </label>
-              ))}
-            </fieldset>
-          </Section>
-        )}
 
         <Section id="signature-heading" title={t('settings.signature.heading')}>
           <label className="flex min-h-11 items-start gap-3 text-base">

@@ -35,12 +35,6 @@ export const en = {
   'update.message': 'A new version of SpotCam is available.',
   'update.reload': 'Reload',
 
-  // Visit counting banner
-  'consent.label': 'Usage statistics',
-  'consent.text': 'Help us improve SpotCam by allowing basic usage statistics. Your photos and location are never shared.',
-  'consent.details': 'Details',
-  'consent.no': 'No thanks',
-  'consent.yes': 'Yes, allow',
 
   // Permission notices
   'perm.allow': 'Allow access',
@@ -288,11 +282,6 @@ export const en = {
   'settings.maps.text': 'Shared photos include a link to the spot where they were taken. Choose which map opens when someone taps it.',
   'settings.maps.legend': 'Map service',
   'settings.maps.saved': 'Shared photos will link to {name}.',
-  'settings.stats.heading': 'Usage statistics',
-  'settings.stats.text': 'SpotCam can count visits to improve the site. It never includes your photos, location or address. Your choice is kept on this device.',
-  'settings.stats.legend': 'Count my visits',
-  'settings.stats.on': 'Visit counting is on.',
-  'settings.stats.off': 'Visit counting is off.',
   'settings.signature.heading': 'Mention SpotCam when sharing',
   'settings.signature.label': 'Add a line about SpotCam to the message of a shared photo',
   'settings.signature.help': 'It reads: “{text}”. It is text in the message, not drawn on the photo. On by default.',

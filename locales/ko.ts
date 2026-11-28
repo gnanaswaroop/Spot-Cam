@@ -27,11 +27,6 @@ export const ko: Messages = {
   'update.message': 'SpotCam 새 버전이 나왔어요.',
   'update.reload': '새로고침',
 
-  'consent.label': '사용 통계',
-  'consent.text': '기본적인 사용 통계를 허용해서 SpotCam이 더 좋아지도록 도와주세요. 사진과 위치는 절대 공유되지 않아요.',
-  'consent.details': '자세히 보기',
-  'consent.no': '허용 안 함',
-  'consent.yes': '허용',
 
   'perm.allow': '접근 허용',
   'perm.tryAgain': '다시 시도',
@@ -272,11 +267,6 @@ export const ko: Messages = {
   'settings.maps.text': '공유한 사진에는 촬영 장소로 가는 링크가 들어가요. 링크를 눌렀을 때 열릴 지도를 고르세요.',
   'settings.maps.legend': '지도 서비스',
   'settings.maps.saved': '공유한 사진은 {name}(으)로 연결돼요.',
-  'settings.stats.heading': '사용 통계',
-  'settings.stats.text': 'SpotCam은 사이트를 개선하려고 방문 수를 셀 수 있어요. 사진, 위치, 주소는 절대 포함되지 않아요. 선택은 이 기기에 저장돼요.',
-  'settings.stats.legend': '내 방문 수 집계',
-  'settings.stats.on': '방문 수를 집계해요.',
-  'settings.stats.off': '방문 수를 집계하지 않아요.',
   'settings.signature.heading': '공유할 때 SpotCam 소개',
   'settings.signature.label': '공유하는 사진의 메시지에 SpotCam 소개 한 줄 넣기',
   'settings.signature.help': '내용은 “{text}”예요. 메시지에 들어가는 글이고, 사진에는 그려지지 않아요. 기본값은 켜짐이에요.',

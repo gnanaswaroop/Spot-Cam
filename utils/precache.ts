@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 
 /** Files that must never be cached by the service worker. */
 /** social-card.png is only for link previews and crawlers; the app itself never shows it. */
-const NEVER_PRECACHE = new Set(['sw.js', 'version.txt', 'sitemap.xml', 'robots.txt', '404.html', 'social-card.png', 'analytics.config.json']);
+const NEVER_PRECACHE = new Set(['sw.js', 'version.txt', 'sitemap.xml', 'robots.txt', '404.html', 'social-card.png']);
 
 /**
  * The words of each language are a separate file (assets/hi-<hash>.js, a two-letter language code then a hash). They are not

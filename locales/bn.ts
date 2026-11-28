@@ -27,11 +27,6 @@ export const bn: Messages = {
   'update.message': 'SpotCam-এর নতুন সংস্করণ এসেছে।',
   'update.reload': 'আপডেট করুন',
 
-  'consent.label': 'ব্যবহারের পরিসংখ্যান',
-  'consent.text': 'ব্যবহারের সাধারণ পরিসংখ্যান নেওয়ার অনুমতি দিয়ে SpotCam আরও ভালো করতে সাহায্য করুন। আপনার ছবি ও লোকেশন কখনও শেয়ার করা হয় না।',
-  'consent.details': 'বিস্তারিত',
-  'consent.no': 'না, ধন্যবাদ',
-  'consent.yes': 'হ্যাঁ, অনুমতি দিচ্ছি',
 
   'perm.allow': 'অ্যাক্সেসের অনুমতি দিন',
   'perm.tryAgain': 'আবার চেষ্টা করুন',
@@ -272,11 +267,6 @@ export const bn: Messages = {
   'settings.maps.text': 'শেয়ার করা ছবিতে যেখানে ছবিটি তোলা, সেই জায়গার লিংক থাকে। লিংকে ট্যাপ করলে কোন মানচিত্র খুলবে, তা বেছে নিন।',
   'settings.maps.legend': 'মানচিত্র সেবা',
   'settings.maps.saved': 'শেয়ার করা ছবির লিংক {name}-এ যাবে।',
-  'settings.stats.heading': 'ব্যবহারের পরিসংখ্যান',
-  'settings.stats.text': 'সাইট ভালো করতে SpotCam ভিজিট গুনতে পারে। এতে আপনার ছবি, লোকেশন বা ঠিকানা কখনও থাকে না। আপনার পছন্দ এই ডিভাইসেই থাকে।',
-  'settings.stats.legend': 'আমার ভিজিট গুনুন',
-  'settings.stats.on': 'ভিজিট গোনা চালু আছে।',
-  'settings.stats.off': 'ভিজিট গোনা বন্ধ আছে।',
   'settings.signature.heading': 'শেয়ারের সময় SpotCam-এর কথা উল্লেখ',
   'settings.signature.label': 'শেয়ার করা ছবির বার্তায় SpotCam সম্পর্কে এক লাইন যোগ করুন',
   'settings.signature.help': 'লেখাটি হলো: “{text}”। এটি বার্তার লেখা, ছবিতে আঁকা হয় না। ডিফল্টে চালু।',

@@ -27,11 +27,6 @@ export const ja: Messages = {
   'update.message': 'SpotCamの新しいバージョンがあります。',
   'update.reload': '更新',
 
-  'consent.label': '利用状況の統計',
-  'consent.text': '基本的な利用状況の統計を許可して、SpotCamの改善にご協力ください。写真や位置情報が共有されることはありません。',
-  'consent.details': '詳しく見る',
-  'consent.no': '許可しない',
-  'consent.yes': '許可する',
 
   'perm.allow': 'アクセスを許可',
   'perm.tryAgain': 'もう一度試す',
@@ -272,11 +267,6 @@ export const ja: Messages = {
   'settings.maps.text': '共有した写真には、撮影場所へのリンクが付きます。リンクをタップしたときに開く地図を選べます。',
   'settings.maps.legend': '地図サービス',
   'settings.maps.saved': '共有した写真は{name}にリンクします。',
-  'settings.stats.heading': '利用状況の統計',
-  'settings.stats.text': 'SpotCamは、サイトの改善のために訪問回数を数えることがあります。写真、位置情報、住所は決して含まれません。この選択は端末に保存されます。',
-  'settings.stats.legend': '訪問回数を数える',
-  'settings.stats.on': '訪問回数の集計はオンです。',
-  'settings.stats.off': '訪問回数の集計はオフです。',
   'settings.signature.heading': '共有時にSpotCamを紹介',
   'settings.signature.label': '共有する写真のメッセージに、SpotCamについての1行を加える',
   'settings.signature.help': '内容は「{text}」です。メッセージの文章であり、写真には描き込まれません。初期設定ではオンです。',

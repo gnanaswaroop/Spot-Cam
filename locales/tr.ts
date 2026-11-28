@@ -27,11 +27,6 @@ export const tr: Messages = {
   'update.message': 'SpotCam’in yeni bir sürümü var.',
   'update.reload': 'Yenile',
 
-  'consent.label': 'Kullanım istatistikleri',
-  'consent.text': 'Temel kullanım istatistiklerine izin vererek SpotCam’i geliştirmemize yardım edin. Fotoğraflarınız ve konumunuz hiçbir zaman paylaşılmaz.',
-  'consent.details': 'Ayrıntılar',
-  'consent.no': 'Hayır, teşekkürler',
-  'consent.yes': 'Evet, izin ver',
 
   'perm.allow': 'Erişime izin ver',
   'perm.tryAgain': 'Tekrar dene',
@@ -272,11 +267,6 @@ export const tr: Messages = {
   'settings.maps.text': 'Paylaşılan fotoğraflarda, çekildikleri yere giden bir bağlantı bulunur. Bağlantıya dokunulunca hangi haritanın açılacağını seçin.',
   'settings.maps.legend': 'Harita servisi',
   'settings.maps.saved': 'Paylaşılan fotoğraflar {name} bağlantısı içerecek.',
-  'settings.stats.heading': 'Kullanım istatistikleri',
-  'settings.stats.text': 'SpotCam, siteyi geliştirmek için ziyaretleri sayabilir. Fotoğraflarınız, konumunuz ve adresiniz hiçbir zaman buna dahil edilmez. Seçiminiz bu cihazda saklanır.',
-  'settings.stats.legend': 'Ziyaretlerimi say',
-  'settings.stats.on': 'Ziyaret sayımı açık.',
-  'settings.stats.off': 'Ziyaret sayımı kapalı.',
   'settings.signature.heading': 'Paylaşırken SpotCam’i an',
   'settings.signature.label': 'Paylaşılan fotoğrafın mesajına SpotCam hakkında bir satır ekle',
   'settings.signature.help': 'Şöyle yazar: “{text}”. Bu, mesajın içindeki bir yazıdır; fotoğrafa çizilmez. Varsayılan olarak açık.',

@@ -27,11 +27,6 @@ export const kn: Messages = {
   'update.message': 'SpotCam ನ ಹೊಸ ಆವೃತ್ತಿ ಲಭ್ಯವಿದೆ.',
   'update.reload': 'ಅಪ್‌ಡೇಟ್ ಮಾಡಿ',
 
-  'consent.label': 'ಬಳಕೆಯ ಅಂಕಿಅಂಶಗಳು',
-  'consent.text': 'ಮೂಲ ಬಳಕೆಯ ಅಂಕಿಅಂಶಗಳಿಗೆ ಅನುಮತಿ ನೀಡಿ SpotCam ಅನ್ನು ಉತ್ತಮಗೊಳಿಸಲು ಸಹಾಯ ಮಾಡಿ. ನಿಮ್ಮ ಫೋಟೋಗಳು ಮತ್ತು ಸ್ಥಳವನ್ನು ಎಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳುವುದಿಲ್ಲ.',
-  'consent.details': 'ವಿವರಗಳು',
-  'consent.no': 'ಬೇಡ, ಧನ್ಯವಾದಗಳು',
-  'consent.yes': 'ಸರಿ, ಅನುಮತಿಸುತ್ತೇನೆ',
 
   'perm.allow': 'ಪ್ರವೇಶಕ್ಕೆ ಅನುಮತಿಸಿ',
   'perm.tryAgain': 'ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ',
@@ -272,11 +267,6 @@ export const kn: Messages = {
   'settings.maps.text': 'ಹಂಚಿಕೊಂಡ ಫೋಟೋಗಳಲ್ಲಿ ಅವನ್ನು ತೆಗೆದ ಸ್ಥಳದ ಲಿಂಕ್ ಇರುತ್ತದೆ. ಲಿಂಕ್ ಒತ್ತಿದಾಗ ಯಾವ ನಕ್ಷೆ ತೆರೆಯಬೇಕು ಎಂಬುದನ್ನು ಆರಿಸಿ.',
   'settings.maps.legend': 'ನಕ್ಷೆ ಸೇವೆ',
   'settings.maps.saved': 'ಹಂಚಿಕೊಂಡ ಫೋಟೋಗಳ ಲಿಂಕ್ {name} ಗೆ ಹೋಗುತ್ತದೆ.',
-  'settings.stats.heading': 'ಬಳಕೆಯ ಅಂಕಿಅಂಶಗಳು',
-  'settings.stats.text': 'ಸೈಟ್ ಉತ್ತಮಗೊಳಿಸಲು SpotCam ಭೇಟಿಗಳನ್ನು ಎಣಿಸಬಹುದು. ಅದರಲ್ಲಿ ನಿಮ್ಮ ಫೋಟೋ, ಸ್ಥಳ ಅಥವಾ ವಿಳಾಸ ಎಂದಿಗೂ ಇರುವುದಿಲ್ಲ. ನಿಮ್ಮ ಆಯ್ಕೆ ಈ ಸಾಧನದಲ್ಲೇ ಇರುತ್ತದೆ.',
-  'settings.stats.legend': 'ನನ್ನ ಭೇಟಿಗಳನ್ನು ಎಣಿಸಿ',
-  'settings.stats.on': 'ಭೇಟಿ ಎಣಿಕೆ ಆನ್ ಆಗಿದೆ.',
-  'settings.stats.off': 'ಭೇಟಿ ಎಣಿಕೆ ಆಫ್ ಆಗಿದೆ.',
   'settings.signature.heading': 'ಹಂಚಿಕೊಳ್ಳುವಾಗ SpotCam ಉಲ್ಲೇಖ',
   'settings.signature.label': 'ಹಂಚಿಕೊಳ್ಳುವ ಫೋಟೋದ ಸಂದೇಶಕ್ಕೆ SpotCam ಬಗ್ಗೆ ಒಂದು ಸಾಲು ಸೇರಿಸಿ',
   'settings.signature.help': 'ಆ ಸಾಲು: “{text}”. ಇದು ಸಂದೇಶದಲ್ಲಿರುವ ಬರಹ, ಫೋಟೋದ ಮೇಲೆ ಚಿತ್ರಿಸುವುದಿಲ್ಲ. ಡಿಫಾಲ್ಟ್ ಆಗಿ ಆನ್ ಇರುತ್ತದೆ.',

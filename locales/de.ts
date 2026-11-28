@@ -27,11 +27,6 @@ export const de: Messages = {
   'update.message': 'Es gibt eine neue Version von SpotCam.',
   'update.reload': 'Neu laden',
 
-  'consent.label': 'Nutzungsstatistik',
-  'consent.text': 'Hilf uns, SpotCam zu verbessern, und erlaube eine einfache Nutzungsstatistik. Deine Fotos und dein Standort werden nie weitergegeben.',
-  'consent.details': 'Mehr dazu',
-  'consent.no': 'Nein, danke',
-  'consent.yes': 'Ja, erlauben',
 
   'perm.allow': 'Zugriff erlauben',
   'perm.tryAgain': 'Erneut versuchen',
@@ -272,11 +267,6 @@ export const de: Messages = {
   'settings.maps.text': 'Geteilte Fotos enthalten einen Link zum Aufnahmeort. Wähle, welche Karte sich beim Antippen öffnet.',
   'settings.maps.legend': 'Kartendienst',
   'settings.maps.saved': 'Geteilte Fotos verweisen auf {name}.',
-  'settings.stats.heading': 'Nutzungsstatistik',
-  'settings.stats.text': 'SpotCam kann Besuche zählen, um die Website zu verbessern. Deine Fotos, dein Standort und deine Adresse sind nie dabei. Deine Wahl wird auf diesem Gerät gespeichert.',
-  'settings.stats.legend': 'Meine Besuche zählen',
-  'settings.stats.on': 'Besuche werden gezählt.',
-  'settings.stats.off': 'Besuche werden nicht gezählt.',
   'settings.signature.heading': 'SpotCam beim Teilen erwähnen',
   'settings.signature.label': 'Der Nachricht eines geteilten Fotos eine Zeile über SpotCam hinzufügen',
   'settings.signature.help': 'Sie lautet: „{text}“. Das ist Text in der Nachricht, nicht ins Foto gezeichnet. Standardmäßig an.',

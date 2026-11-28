@@ -27,11 +27,6 @@ export const mr: Messages = {
   'update.message': 'SpotCam ची नवी आवृत्ती उपलब्ध आहे.',
   'update.reload': 'अपडेट करा',
 
-  'consent.label': 'वापराची आकडेवारी',
-  'consent.text': 'वापराची साधी आकडेवारी घेण्याची परवानगी देऊन SpotCam सुधारण्यात आम्हाला मदत करा. तुमचे फोटो आणि लोकेशन कधीही शेअर केले जात नाहीत.',
-  'consent.details': 'तपशील',
-  'consent.no': 'नको, धन्यवाद',
-  'consent.yes': 'हो, परवानगी आहे',
 
   'perm.allow': 'प्रवेशाची परवानगी द्या',
   'perm.tryAgain': 'पुन्हा प्रयत्न करा',
@@ -272,11 +267,6 @@ export const mr: Messages = {
   'settings.maps.text': 'शेअर केलेल्या फोटोंमध्ये ते जिथे काढले त्या ठिकाणाची लिंक असते. लिंकवर टॅप केल्यावर कोणता नकाशा उघडेल ते निवडा.',
   'settings.maps.legend': 'नकाशा सेवा',
   'settings.maps.saved': 'शेअर केलेल्या फोटोंची लिंक {name} वर जाईल.',
-  'settings.stats.heading': 'वापराची आकडेवारी',
-  'settings.stats.text': 'साइट सुधारण्यासाठी SpotCam भेटी मोजू शकते. त्यात तुमचे फोटो, लोकेशन किंवा पत्ता कधीही येत नाही. तुमची निवड याच डिव्हाइसवर राहते.',
-  'settings.stats.legend': 'माझ्या भेटी मोजा',
-  'settings.stats.on': 'भेटी मोजणे चालू आहे.',
-  'settings.stats.off': 'भेटी मोजणे बंद आहे.',
   'settings.signature.heading': 'शेअर करताना SpotCam चा उल्लेख',
   'settings.signature.label': 'शेअर केलेल्या फोटोच्या संदेशात SpotCam बद्दल एक ओळ जोडा',
   'settings.signature.help': 'ओळ अशी आहे: “{text}”. हा संदेशातील मजकूर आहे, फोटोवर छापला जात नाही. डीफॉल्टनुसार चालू.',

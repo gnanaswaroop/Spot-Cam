@@ -29,11 +29,6 @@ export const ar: Messages = {
   'update.message': 'يتوفر إصدار جديد من SpotCam.',
   'update.reload': 'تحديث',
 
-  'consent.label': 'إحصاءات الاستخدام',
-  'consent.text': 'ساعدنا على تحسين SpotCam بالسماح بإحصاءات استخدام بسيطة. لا تتم مشاركة صورك أو موقعك أبدًا.',
-  'consent.details': 'التفاصيل',
-  'consent.no': 'لا، شكرًا',
-  'consent.yes': 'نعم، أسمح',
 
   'perm.allow': 'السماح بالوصول',
   'perm.tryAgain': 'أعد المحاولة',
@@ -274,11 +269,6 @@ export const ar: Messages = {
   'settings.maps.text': 'تتضمن الصور المشاركة رابطًا إلى المكان الذي التُقطت فيه. اختر الخريطة التي تُفتح عند الضغط على الرابط.',
   'settings.maps.legend': 'خدمة الخرائط',
   'settings.maps.saved': 'ستؤدي روابط الصور المشاركة إلى {name}.',
-  'settings.stats.heading': 'إحصاءات الاستخدام',
-  'settings.stats.text': 'يمكن لـ SpotCam عدّ الزيارات لتحسين الموقع. لا يشمل ذلك صورك أو موقعك أو عنوانك أبدًا. يُحفظ اختيارك على هذا الجهاز.',
-  'settings.stats.legend': 'عدّ زياراتي',
-  'settings.stats.on': 'عدّ الزيارات مفعّل.',
-  'settings.stats.off': 'عدّ الزيارات متوقف.',
   'settings.signature.heading': 'ذكر SpotCam عند المشاركة',
   'settings.signature.label': 'أضف سطرًا عن SpotCam إلى رسالة الصورة المشاركة',
   'settings.signature.help': 'نصه: «{text}». هو نص في الرسالة وليس مرسومًا على الصورة. مفعّل افتراضيًا.',

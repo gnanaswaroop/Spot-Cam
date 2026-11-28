@@ -27,11 +27,6 @@ export const id: Messages = {
   'update.message': 'Versi baru SpotCam tersedia.',
   'update.reload': 'Muat ulang',
 
-  'consent.label': 'Statistik penggunaan',
-  'consent.text': 'Bantu kami memperbaiki SpotCam dengan mengizinkan statistik penggunaan dasar. Foto dan lokasi Anda tidak pernah dibagikan.',
-  'consent.details': 'Selengkapnya',
-  'consent.no': 'Tidak, terima kasih',
-  'consent.yes': 'Ya, izinkan',
 
   'perm.allow': 'Izinkan akses',
   'perm.tryAgain': 'Coba lagi',
@@ -272,11 +267,6 @@ export const id: Messages = {
   'settings.maps.text': 'Foto yang dibagikan menyertakan tautan ke tempat foto diambil. Pilih peta yang terbuka saat tautan diketuk.',
   'settings.maps.legend': 'Layanan peta',
   'settings.maps.saved': 'Foto yang dibagikan akan menautkan ke {name}.',
-  'settings.stats.heading': 'Statistik penggunaan',
-  'settings.stats.text': 'SpotCam dapat menghitung kunjungan untuk memperbaiki situs. Foto, lokasi, dan alamat Anda tidak pernah disertakan. Pilihan Anda disimpan di perangkat ini.',
-  'settings.stats.legend': 'Hitung kunjungan saya',
-  'settings.stats.on': 'Penghitungan kunjungan aktif.',
-  'settings.stats.off': 'Penghitungan kunjungan nonaktif.',
   'settings.signature.heading': 'Sebut SpotCam saat membagikan',
   'settings.signature.label': 'Tambahkan satu baris tentang SpotCam pada pesan foto yang dibagikan',
   'settings.signature.help': 'Bunyinya: “{text}”. Ini teks di dalam pesan, bukan gambar di foto. Aktif secara bawaan.',

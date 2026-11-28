@@ -27,11 +27,6 @@ export const vi: Messages = {
   'update.message': 'SpotCam có phiên bản mới.',
   'update.reload': 'Tải lại',
 
-  'consent.label': 'Thống kê sử dụng',
-  'consent.text': 'Hãy giúp chúng tôi cải thiện SpotCam bằng cách cho phép thống kê sử dụng cơ bản. Ảnh và vị trí của bạn không bao giờ bị chia sẻ.',
-  'consent.details': 'Chi tiết',
-  'consent.no': 'Không, cảm ơn',
-  'consent.yes': 'Có, cho phép',
 
   'perm.allow': 'Cho phép truy cập',
   'perm.tryAgain': 'Thử lại',
@@ -272,11 +267,6 @@ export const vi: Messages = {
   'settings.maps.text': 'Ảnh được chia sẻ kèm liên kết đến nơi ảnh được chụp. Chọn bản đồ sẽ mở khi ai đó nhấn vào liên kết.',
   'settings.maps.legend': 'Dịch vụ bản đồ',
   'settings.maps.saved': 'Ảnh được chia sẻ sẽ liên kết đến {name}.',
-  'settings.stats.heading': 'Thống kê sử dụng',
-  'settings.stats.text': 'SpotCam có thể đếm lượt truy cập để cải thiện trang web. Số liệu không bao giờ gồm ảnh, vị trí hay địa chỉ của bạn. Lựa chọn của bạn được lưu trên thiết bị này.',
-  'settings.stats.legend': 'Đếm lượt truy cập của tôi',
-  'settings.stats.on': 'Đang đếm lượt truy cập.',
-  'settings.stats.off': 'Đã tắt đếm lượt truy cập.',
   'settings.signature.heading': 'Nhắc đến SpotCam khi chia sẻ',
   'settings.signature.label': 'Thêm một dòng về SpotCam vào tin nhắn của ảnh được chia sẻ',
   'settings.signature.help': 'Dòng đó là: “{text}”. Đây là chữ trong tin nhắn, không vẽ lên ảnh. Mặc định là bật.',
