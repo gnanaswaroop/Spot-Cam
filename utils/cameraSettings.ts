@@ -17,14 +17,50 @@ export const VIDEO_QUALITY = {
   frameRate: { ideal: 30 },
 } as const;
 
+/** A camera as the browser lists it. Its label is empty until the person has allowed the camera. */
+export interface CameraInfo {
+  deviceId: string;
+  kind: string;
+  label: string;
+}
+
+/** Which lens of the rear cameras a name describes. */
+export type BackLens = 'ultra-wide' | 'wide' | 'telephoto' | 'main';
+
+export function backLensOf(label: string): BackLens {
+  if (/ultra/i.test(label)) return 'ultra-wide';
+  if (/tele/i.test(label)) return 'telephoto';
+  if (/wide/i.test(label)) return 'wide';
+  return 'main';
+}
+
+const FRONT_CAMERA = /front|selfie|user/i;
+
+/**
+ * The widest rear camera the names of the cameras say: the ultra-wide lens, else the wide-angle one. Null
+ * when no name says so (the browser's default rear camera is used then, as before).
+ */
+export function pickWideLens(cameras: readonly CameraInfo[]): string | null {
+  const rear = cameras.filter(c => c.kind === 'videoinput' && c.label && !FRONT_CAMERA.test(c.label));
+  const ultra = rear.find(c => backLensOf(c.label) === 'ultra-wide');
+  if (ultra) return ultra.deviceId;
+  const wide = rear.find(c => backLensOf(c.label) === 'wide');
+  return wide ? wide.deviceId : null;
+}
+
 /**
  * The video requests to try, in order, for one camera. The first is the best: the chosen camera as a hard
  * requirement ("exact"), so the size wishes only rank cameras that face the right way (as a plain wish, a phone
  * can open the front camera because it fits the size better). Each later one asks for less, so a camera that
  * cannot do the first (a laptop with no rear camera, a phone that fails at a large picture) still opens.
+ * A named camera (from pickWideLens) comes first, with the facing requests after it as the fallback.
  */
-export function videoRequests(facing: 'environment' | 'user') {
+export function videoRequests(facing: 'environment' | 'user', deviceId?: string): MediaTrackConstraints[] {
+  const named = deviceId
+    ? [{ deviceId: { exact: deviceId }, ...VIDEO_QUALITY }, { deviceId: { exact: deviceId } }]
+    : [];
   return [
+    ...named,
     { facingMode: { exact: facing }, ...VIDEO_QUALITY },
     { facingMode: { exact: facing } },
     { facingMode: facing, ...VIDEO_QUALITY },

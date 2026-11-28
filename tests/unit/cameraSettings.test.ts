@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { VIDEO_QUALITY, continuousModes, openingZoom, videoRequests, worthAskingAgain } from '../../utils/cameraSettings';
+import { VIDEO_QUALITY, backLensOf, continuousModes, openingZoom, pickWideLens, videoRequests, worthAskingAgain } from '../../utils/cameraSettings';
 
 describe('VIDEO_QUALITY', () => {
   it('asks for a large 4:3 picture at 30 fps, as ideals so no camera is refused', () => {
@@ -61,6 +61,50 @@ describe('videoRequests', () => {
 
   it('asks for the front camera the same way', () => {
     expect(videoRequests('user')[0].facingMode).toEqual({ exact: 'user' });
+  });
+
+  it('asks for a named camera first, then falls back to the facing requests', () => {
+    const requests = videoRequests('environment', 'ultra-id');
+    expect(requests[0].deviceId).toEqual({ exact: 'ultra-id' });
+    expect(requests[0]).toMatchObject({ width: { ideal: VIDEO_QUALITY.width.ideal } });
+    expect(requests[1]).toEqual({ deviceId: { exact: 'ultra-id' } });
+    expect(requests.slice(2).map(r => r.facingMode)).toEqual([{ exact: 'environment' }, { exact: 'environment' }, 'environment', 'environment']);
+  });
+});
+
+describe('backLensOf', () => {
+  it('reads the lens from the camera name', () => {
+    expect(backLensOf('Back Ultra Wide Camera')).toBe('ultra-wide');
+    expect(backLensOf('camera2 2, facing back, ultrawide')).toBe('ultra-wide');
+    expect(backLensOf('Back Wide Angle Camera')).toBe('wide');
+    expect(backLensOf('Back Telephoto Camera')).toBe('telephoto');
+    expect(backLensOf('Back Camera')).toBe('main');
+    expect(backLensOf('camera2 0, facing back')).toBe('main');
+  });
+});
+
+describe('pickWideLens', () => {
+  const cam = (deviceId: string, label: string, kind = 'videoinput') => ({ deviceId, label, kind });
+
+  it('picks the ultra-wide rear camera over the main one and the telephoto one', () => {
+    expect(pickWideLens([cam('main', 'Back Camera'), cam('tele', 'Back Telephoto Camera'), cam('uw', 'Back Ultra Wide Camera')])).toBe('uw');
+  });
+
+  it('picks the wide-angle one when there is no ultra-wide', () => {
+    expect(pickWideLens([cam('main', 'Back Camera'), cam('wide', 'Back Wide Angle Camera')])).toBe('wide');
+  });
+
+  it('never picks a front camera', () => {
+    expect(pickWideLens([cam('front-uw', 'Front Ultra Wide Camera'), cam('main', 'Back Camera')])).toBeNull();
+  });
+
+  it('is null when the names say nothing (labels are hidden before the camera is allowed)', () => {
+    expect(pickWideLens([cam('', ''), cam('', '')])).toBeNull();
+    expect(pickWideLens([cam('main', 'Back Camera')])).toBeNull();
+  });
+
+  it('ignores microphones and other devices', () => {
+    expect(pickWideLens([cam('mic', 'Ultra Wide Microphone', 'audioinput')])).toBeNull();
   });
 });
 

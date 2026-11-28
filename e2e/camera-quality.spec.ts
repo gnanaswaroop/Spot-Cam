@@ -9,7 +9,7 @@ import { SITE, grantLocation, installMocks, mockGeocoder, skipIfNoCameraFrames, 
 
 type Zoom = NonNullable<Parameters<typeof installMocks>[1]['zoom']>;
 
-type Extra = Pick<MockOptions, 'noFacingMode' | 'cameras' | 'failsAtLargeSize' | 'slowFirstOpenMs'>;
+type Extra = Pick<MockOptions, 'noFacingMode' | 'cameras' | 'lenses' | 'hideNamesUntilAllowed' | 'failsAtLargeSize' | 'slowFirstOpenMs'>;
 
 async function openCamera(page: Page, context: Parameters<typeof grantLocation>[0], zoom?: Zoom, extra: Extra = {}, waitUntilOpen = true) {
   await skipIfNoCameraFrames(page);
@@ -63,6 +63,64 @@ test.describe('camera stream', () => {
     const constraints = (await mock(page, 'constraints')) as Array<{ video: { facingMode: unknown } }>;
     expect(constraints.map(c => c.video.facingMode)).toEqual([{ exact: 'environment' }, { exact: 'environment' }, 'environment']);
     await expect(page.getByRole('button', { name: 'Capture photo' })).toBeEnabled();
+  });
+
+  test('a phone with an ultra-wide rear lens opens that lens, not the main one', async ({ page, context }) => {
+    await openCamera(page, context, undefined, {
+      lenses: [
+        { id: 'main-id', label: 'Back Camera' },
+        { id: 'ultra-id', label: 'Back Ultra Wide Camera' },
+        { id: 'tele-id', label: 'Back Telephoto Camera' },
+      ],
+    });
+    const [first] = (await mock(page, 'constraints')) as Array<{ video: Record<string, any> }>;
+    expect(first.video.deviceId).toEqual({ exact: 'ultra-id' });
+    await expect(page.getByRole('button', { name: 'Capture photo' })).toBeEnabled();
+  });
+
+  test('on a first visit, where the names appear only once the camera is allowed, the wide lens is opened after that', async ({ page, context }) => {
+    await openCamera(page, context, undefined, {
+      lenses: [{ id: 'main-id', label: 'Back Camera' }, { id: 'ultra-id', label: 'Back Ultra Wide Camera' }],
+      hideNamesUntilAllowed: true,
+    });
+    const constraints = (await mock(page, 'constraints')) as Array<{ video: Record<string, any> }>;
+    expect(constraints).toHaveLength(2);
+    expect(constraints[0].video.deviceId).toBeUndefined();
+    expect(constraints[1].video.deviceId).toEqual({ exact: 'ultra-id' });
+    await expect(page.getByRole('button', { name: 'Capture photo' })).toBeEnabled();
+  });
+
+  test('a phone with a wide-angle but no ultra-wide lens opens the wide-angle one', async ({ page, context }) => {
+    await openCamera(page, context, undefined, {
+      lenses: [{ id: 'main-id', label: 'Back Camera' }, { id: 'wide-id', label: 'Back Wide Angle Camera' }],
+    });
+    const [first] = (await mock(page, 'constraints')) as Array<{ video: Record<string, any> }>;
+    expect(first.video.deviceId).toEqual({ exact: 'wide-id' });
+  });
+
+  test('a phone that names no wide lens keeps the default rear camera', async ({ page, context }) => {
+    await openCamera(page, context, undefined, { lenses: [{ id: 'main-id', label: 'Back Camera' }] });
+    const [first] = (await mock(page, 'constraints')) as Array<{ video: Record<string, any> }>;
+    expect(first.video.deviceId).toBeUndefined();
+    expect(first.video.facingMode).toEqual({ exact: 'environment' });
+  });
+
+  test('the front camera never uses the wide lens, and switching back to the rear one does', async ({ page, context }) => {
+    await openCamera(page, context, undefined, {
+      lenses: [
+        { id: 'main-id', label: 'Back Camera' },
+        { id: 'ultra-id', label: 'Back Ultra Wide Camera' },
+        { id: 'front-id', label: 'Front Camera' },
+      ],
+    });
+    await page.getByRole('button', { name: /switch camera/i }).click();
+    await expect.poll(async () => ((await mock(page, 'constraints')) as unknown[]).length).toBe(2);
+    await page.getByRole('button', { name: /switch camera/i }).click();
+    await expect.poll(async () => ((await mock(page, 'constraints')) as unknown[]).length).toBe(3);
+    const video = ((await mock(page, 'constraints')) as Array<{ video: Record<string, any> }>).map(c => c.video);
+    expect(video[1].deviceId).toBeUndefined();
+    expect(video[1].facingMode).toEqual({ exact: 'user' });
+    expect(video[2].deviceId).toEqual({ exact: 'ultra-id' });
   });
 
   test('a phone that cannot open at the large size still opens, with the same camera and a simpler request', async ({ page, context }) => {
