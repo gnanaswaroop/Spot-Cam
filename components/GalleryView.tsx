@@ -8,6 +8,8 @@ import { GalleryPhoto } from '../types';
 import { useHistoryOverlay, hasOverlayEntry } from '../hooks/useHistoryOverlay';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 import { useSwipe } from '../hooks/useSwipe';
+import { useZoom } from '../hooks/useZoom';
+import { MAX_ZOOM } from '../utils/zoom';
 import { SLIDE_MS, prefersReducedMotion, useSlide } from '../hooks/useSlide';
 import { dataURLtoFile, downloadFile, formatDateTime } from '../utils/helpers';
 import { readFull, readVideo } from '../utils/photoStore';
@@ -104,32 +106,54 @@ const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext,
     const { t, lang } = useT();
     // The photos before and after this one sit beside it, so they glide in as the finger moves.
     const { go, settling, instant } = useSlide({ onNext, onPrevious });
-    const { handlers, offset, dragging } = useSwipe({ onNext: onNext && (() => go('next')), onPrevious: onPrevious && (() => go('previous')) });
+    // A zoomed photo is panned, not swiped away: the swipe is off until it is back at 1x.
+    const zoom = useZoom();
+    const { zoomIn, zoomOut, reset: resetZoom } = zoom;
+    const zoomed = zoom.view.scale > 1;
+    const { handlers, offset, dragging } = useSwipe({ onNext: onNext && (() => go('next')), onPrevious: onPrevious && (() => go('previous')), enabled: !zoomed });
     const day = localDay(dayLabel(photo.timestamp, undefined, dayLocale(lang)));
     const noun = photo.kind === 'video' ? 'video' : 'photo';
     const glide = !dragging && !instant && !prefersReducedMotion();
     const strip = settling === 'next' ? 'translateX(-200%)' : settling === 'previous' ? 'translateX(0%)' : `translateX(calc(-100% + ${offset}px))`;
 
-    // Left and right arrow keys move between photos (a keyboard or a tablet with one).
+    // Each photo opens at 1x.
+    useEffect(() => {
+        resetZoom();
+    }, [photo.id, resetZoom]);
+
+    // Left and right arrow keys move between photos (a keyboard or a tablet with one). +, - and 0 zoom in, out and reset.
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowRight') go('next');
+            if (e.key === '+' || e.key === '=') zoomIn();
+            else if (e.key === '-') zoomOut();
+            else if (e.key === '0') resetZoom();
+            else if (zoomed) return;
+            else if (e.key === 'ArrowRight') go('next');
             else if (e.key === 'ArrowLeft') go('previous');
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [go]);
+    }, [go, zoomed, zoomIn, zoomOut, resetZoom]);
 
     /** One photo's place in the strip. The neighbours are only for looking at while sliding. */
-    const slot = (shown: GalleryPhoto | undefined, current: boolean) => (
-        <div className="flex h-full w-full shrink-0 items-center justify-center" aria-hidden={current ? undefined : true}>
-            {shown && (shown.kind === 'video' && current
-                ? <VideoPlayer photo={shown} alt={t('viewer.alt.video', { when: photoDescription(shown) })} />
-                : shown.kind === 'video'
-                    ? <img src={shown.thumbUrl} alt="" draggable={false} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
-                    : <FullPhoto photo={shown} alt={current ? t('viewer.alt.photo', { when: photoDescription(shown) }) : ''} />)}
-        </div>
-    );
+    const slot = (shown: GalleryPhoto | undefined, current: boolean) => {
+        const media = shown && (shown.kind === 'video' && current
+            ? <VideoPlayer photo={shown} alt={t('viewer.alt.video', { when: photoDescription(shown) })} />
+            : shown.kind === 'video'
+                ? <img src={shown.thumbUrl} alt="" draggable={false} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
+                : <FullPhoto photo={shown} alt={current ? t('viewer.alt.photo', { when: photoDescription(shown) }) : ''} />);
+        return (
+            <div className="flex h-full w-full shrink-0 items-center justify-center" aria-hidden={current ? undefined : true}>
+                {current
+                    ? <div
+                        ref={zoom.paneRef}
+                        className="flex h-full w-full items-center justify-center"
+                        style={{ transform: `translate(${zoom.view.x}px, ${zoom.view.y}px) scale(${zoom.view.scale})`, touchAction: 'none' }}
+                    >{media}</div>
+                    : media}
+            </div>
+        );
+    };
 
     return (
         <div ref={ref} tabIndex={-1} className="app-h fixed inset-x-0 top-0 z-40 flex flex-col items-center bg-black/90 px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in focus:outline-none" role="dialog" aria-modal="true" aria-label={t(noun === 'video' ? 'viewer.dialog.video' : 'viewer.dialog.photo')}>
@@ -144,8 +168,26 @@ const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext,
                     <span aria-hidden="true">{position} / {total}</span>
                 </p>
             )}
-            {/* Image Container: fills the remaining height. Swipe sideways for the next or previous photo. */}
-            <div className="relative min-h-0 w-full max-w-4xl flex-1 touch-pan-y select-none overflow-hidden" {...handlers}>
+            {/* Zoom: pinch, scroll wheel, or these buttons; + - and 0 keys do the same */}
+            <div className="absolute left-1/2 top-3 flex h-11 -translate-x-1/2 items-center rounded-full bg-gray-800 text-white">
+                <button type="button" onClick={zoomOut} disabled={zoom.view.scale <= 1} className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-gray-700 disabled:opacity-40 disabled:hover:bg-transparent" aria-label={t('viewer.zoomOut')}>
+                    <span aria-hidden="true" className="text-xl leading-none">−</span>
+                </button>
+                <button type="button" onClick={resetZoom} disabled={!zoomed} className="min-w-14 px-1 text-sm tabular-nums disabled:opacity-60">
+                    {Math.round(zoom.view.scale * 100)}%<span className="sr-only"> {t('viewer.zoomReset')}</span>
+                </button>
+                <button type="button" onClick={zoomIn} disabled={zoom.view.scale >= MAX_ZOOM} className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-gray-700 disabled:opacity-40 disabled:hover:bg-transparent" aria-label={t('viewer.zoomIn')}>
+                    <span aria-hidden="true" className="text-xl leading-none">+</span>
+                </button>
+            </div>
+            {/* Image Container: fills the remaining height. Swipe sideways for the next or previous photo, or pinch and drag to zoom. */}
+            <div
+                className="relative min-h-0 w-full max-w-4xl flex-1 touch-pan-y select-none overflow-hidden"
+                onPointerDown={e => { zoom.handlers.onPointerDown(e); handlers.onPointerDown(e); }}
+                onPointerMove={e => { zoom.handlers.onPointerMove(e); handlers.onPointerMove(e); }}
+                onPointerUp={e => { zoom.handlers.onPointerUp(e); handlers.onPointerUp(e); }}
+                onPointerCancel={e => { zoom.handlers.onPointerCancel(e); handlers.onPointerCancel(); }}
+            >
                 <div
                     className="flex h-full w-full will-change-transform"
                     style={{ transform: strip, transition: glide ? `transform ${SLIDE_MS}ms cubic-bezier(0.22, 1, 0.36, 1)` : 'none' }}
@@ -154,12 +196,12 @@ const PhotoModal = ({ photo, before, after, position, total, onPrevious, onNext,
                     {slot(photo, true)}
                     {slot(after, false)}
                 </div>
-                {onPrevious && (
+                {onPrevious && !zoomed && (
                     <button onClick={() => go('previous')} className="absolute left-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-gray-900/70 text-white hover:bg-gray-700" aria-label={t(before?.kind === 'video' ? 'viewer.previous.video' : 'viewer.previous.photo')}>
                         <ChevronLeftIcon className="h-6 w-6" />
                     </button>
                 )}
-                {onNext && (
+                {onNext && !zoomed && (
                     <button onClick={() => go('next')} className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-gray-900/70 text-white hover:bg-gray-700" aria-label={t(after?.kind === 'video' ? 'viewer.next.video' : 'viewer.next.photo')}>
                         <ChevronRightIcon className="h-6 w-6" />
                     </button>
